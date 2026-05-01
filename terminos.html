@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Términos y Condiciones</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E2C289;
+    --gold-dim: rgba(201,168,76,0.12);
+    --charcoal: #1C1C1E;
+    --charcoal2: #2A2A2D;
+    --concrete: #9B9B9F;
+    --surface: #F9F7F4;
+    --white: #FAFAFA;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: var(--white);
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+  }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,250,250,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(28,28,30,0.08);
+  }
+  .header-inner {
+    max-width: 900px; margin: 0 auto; padding: 0 24px;
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-inner img { height: 36px; width: auto; }
+  .header-badge { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--concrete); }
+
+  /* ── Hero ── */
+  .doc-hero {
+    background: var(--charcoal); padding: 64px 24px 56px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .doc-hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 260px; height: 260px; border-radius: 50%;
+    border: 1px solid rgba(201,168,76,.12); pointer-events: none;
+  }
+  .doc-hero::after {
+    content: ''; position: absolute; bottom: -80px; left: -60px;
+    width: 320px; height: 320px; border-radius: 50%;
+    border: 1px solid rgba(201,168,76,.07); pointer-events: none;
+  }
+  .doc-hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+  .doc-hero-label {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px;
+  }
+  .doc-hero h1 {
+    font-size: clamp(24px, 4vw, 36px); font-weight: 900;
+    letter-spacing: -.025em; line-height: 1.1; color: var(--white); margin-bottom: 16px;
+  }
+  .doc-hero p { font-size: 14px; color: var(--concrete); line-height: 1.7; }
+  .gold-line { width: 40px; height: 2px; background: var(--gold); margin: 24px auto 0; border-radius: 2px; }
+
+  /* ── Layout ── */
+  .doc-wrap {
+    max-width: 900px; margin: 0 auto; padding: 0 24px 80px;
+    display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: start;
+  }
+  @media (max-width: 720px) {
+    .doc-wrap { grid-template-columns: 1fr; gap: 0; }
+    .doc-toc { display: none; }
+  }
+
+  /* ── TOC ── */
+  .doc-toc { position: sticky; top: 80px; padding-top: 48px; }
+  .doc-toc-label {
+    font-size: 9px; font-weight: 800; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--concrete); margin-bottom: 16px; display: block;
+  }
+  .doc-toc ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .doc-toc a {
+    font-size: 11px; font-weight: 600; color: var(--concrete); text-decoration: none;
+    padding: 6px 10px; border-radius: 6px; display: block; transition: all .2s; line-height: 1.4;
+  }
+  .doc-toc a:hover { color: var(--charcoal); background: var(--gold-dim); }
+  .doc-toc a.active { color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Contenido ── */
+  .doc-content { padding-top: 48px; }
+
+  .clause { margin-bottom: 48px; scroll-margin-top: 90px; }
+  .clause-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 1px solid rgba(28,28,30,.07);
+  }
+  .clause-num {
+    width: 32px; height: 32px; background: var(--gold); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 900; color: var(--charcoal); flex-shrink: 0;
+  }
+  .clause h2 { font-size: 15px; font-weight: 800; letter-spacing: -.01em; color: var(--charcoal); }
+  .clause p { font-size: 13.5px; line-height: 1.85; color: #444; margin-bottom: 14px; }
+  .clause p:last-child { margin-bottom: 0; }
+  .clause ul { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+  .clause ul li { font-size: 13.5px; line-height: 1.75; color: #444; padding-left: 18px; position: relative; }
+  .clause ul li::before {
+    content: ''; width: 6px; height: 6px; background: var(--gold); border-radius: 50%;
+    position: absolute; left: 0; top: 10px;
+  }
+  .clause strong { font-weight: 700; color: var(--charcoal); }
+
+  .highlight-box {
+    background: var(--gold-dim); border-left: 3px solid var(--gold);
+    border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 16px 0;
+    font-size: 13px; line-height: 1.7; color: var(--charcoal);
+  }
+  .clause-divider {
+    height: 1px; background: linear-gradient(90deg, rgba(201,168,76,.3), transparent);
+    margin: 48px 0;
+  }
+
+  /* ── Footer ── */
+  .doc-footer { background: var(--charcoal); padding: 40px 24px; text-align: center; }
+  .doc-footer img { height: 32px; width: auto; filter: brightness(0) invert(1); margin-bottom: 16px; }
+  .doc-footer p { font-size: 11px; color: var(--concrete); letter-spacing: .06em; line-height: 1.8; }
+  .doc-footer a { color: var(--gold); text-decoration: none; }
+
+  /* ── Animaciones ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .doc-hero-inner > * { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both; }
+  .doc-hero-inner > *:nth-child(1) { animation-delay: 0ms; }
+  .doc-hero-inner > *:nth-child(2) { animation-delay: 80ms; }
+  .doc-hero-inner > *:nth-child(3) { animation-delay: 160ms; }
+  .doc-hero-inner > *:nth-child(4) { animation-delay: 220ms; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s cubic-bezier(.16,1,.3,1), transform .5s cubic-bezier(.16,1,.3,1); }
+  .reveal.visible { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span id="header-nombre" style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:#1C1C1E;letter-spacing:-.01em"></span>
+    <span class="header-badge">Términos y Condiciones</span>
+  </div>
+</header>
+
+<section class="doc-hero">
+  <div class="doc-hero-inner">
+    <span class="doc-hero-label">Documento legal</span>
+    <h1>Contrato de Servicios de Fotografía — Propuestas de Matrimonio</h1>
+    <p id="hero-desc">Este documento establece los términos y condiciones que rigen la prestación de servicios fotográficos. Léelo con atención antes de confirmar tu sesión.</p>
+    <div class="gold-line"></div>
+  </div>
+</section>
+
+<div class="doc-wrap">
+
+  <aside class="doc-toc">
+    <span class="doc-toc-label">Contenido</span>
+    <ul>
+      <li><a href="#c1">1. Pre-producción</a></li>
+      <li><a href="#c2">2. Logística y Acceso</a></li>
+      <li><a href="#c3">3. Preparación del Lugar</a></li>
+      <li><a href="#c4">4. Talento en Cámara</a></li>
+      <li><a href="#c5">5. Ejecución del Servicio</a></li>
+      <li><a href="#c6">6. Entregables y Revisiones</a></li>
+      <li><a href="#c7">7. Condiciones de Pago</a></li>
+      <li><a href="#c8">8. Horarios de Atención</a></li>
+      <li><a href="#c9">9. Cancelaciones</a></li>
+      <li><a href="#c10">10. Uso Promocional</a></li>
+      <li><a href="#c11">11. Derechos de Autor</a></li>
+    </ul>
+  </aside>
+
+  <main class="doc-content">
+
+    <!-- C1 -->
+    <article class="clause reveal" id="c1">
+      <div class="clause-header"><div class="clause-num">01</div><h2>Pre-producción y Planificación</h2></div>
+      <p>Para garantizar la máxima calidad en la sesión de fotografía, el cliente deberá proporcionar la siguiente información al momento de la contratación:</p>
+      <ul>
+        <li><strong>Ubicaciones:</strong> Se incluyen hasta 2 locaciones. Dirección exacta de cada lugar, acompañada de un enlace de Google Maps.</li>
+        <li><strong>Tema y estilo:</strong> Descripción de la propuesta: intención, estilo visual deseado, inspiraciones o referencias.</li>
+        <li><strong>Participantes:</strong> Nombres y cantidad de personas que aparecerán en la sesión.</li>
+      </ul>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C2 -->
+    <article class="clause reveal" id="c2">
+      <div class="clause-header"><div class="clause-num">02</div><h2>Logística y Acceso al Lugar</h2></div>
+      <p><strong>Responsabilidad del cliente:</strong> Es responsabilidad del cliente garantizar que el equipo de fotografía tenga acceso a ambas locaciones en la fecha y hora acordadas.</p>
+      <p><strong>Duración de la sesión:</strong> La sesión tiene una duración típica de 2 horas, que incluye ambas locaciones.</p>
+      <p><strong>Cambios de vestuario:</strong> Se incluye 1 cambio de outfit durante la sesión.</p>
+      <div class="highlight-box">
+        <strong>Tolerancia de tiempo:</strong> Se otorga un máximo de 20 minutos de tolerancia sobre la hora acordada. Pasado este tiempo, podrá aplicarse un cargo por espera o la sesión quedará sujeta a cancelación sin reembolso del anticipo.
+      </div>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C3 -->
+    <article class="clause reveal" id="c3">
+      <div class="clause-header"><div class="clause-num">03</div><h2>Preparación del Lugar</h2></div>
+      <p>Cada locación será documentada en las condiciones en que se encuentre al momento de la llegada del equipo. El fotógrafo no realiza limpieza ni reubica objetos o mobiliario.</p>
+      <ul>
+        <li><strong>Objetos personales:</strong> Es responsabilidad del cliente retirar previamente cualquier elemento que no desee que aparezca en las fotografías.</li>
+        <li><strong>Iluminación natural:</strong> Se solicita que las locaciones cuenten con buena iluminación natural o se haya previsto iluminación artificial según lo requiera el lugar.</li>
+      </ul>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C4 -->
+    <article class="clause reveal" id="c4">
+      <div class="clause-header"><div class="clause-num">04</div><h2>Preparación de los Participantes</h2></div>
+      <p><strong>Presentación previa:</strong> Toda persona que vaya a aparecer en las fotografías deberá presentarse a la hora acordada debidamente preparada (vestuario, maquillaje, peinado).</p>
+      <p><strong>Disponibilidad:</strong> Se requiere que los participantes estén disponibles durante la duración total de la sesión sin interrupciones.</p>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C5 -->
+    <article class="clause reveal" id="c5">
+      <div class="clause-header"><div class="clause-num">05</div><h2>Ejecución de la Sesión Fotográfica</h2></div>
+      <p><strong>Criterio creativo:</strong> El orden y la metodología de captura serán definidos por el fotógrafo bajo su criterio técnico y creativo. Si el cliente tiene preferencias específicas, deberá comunicarlas antes del inicio de la sesión.</p>
+      <p><strong>Limitaciones externas:</strong> El fotógrafo no asume responsabilidad por condiciones fuera de su control, como clima adverso, ruido exterior u otras circunstancias del entorno que puedan afectar el resultado.</p>
+      <p><strong>Servicio de drone:</strong> Si está incluido, el servicio aéreo está sujeto a regulaciones locales y condiciones meteorológicas. Si el lugar se encuentra en zona de restricción de vuelo o el clima representa un riesgo, la operación no se realizará sin responsabilidad del fotógrafo.</p>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C6 -->
+    <article class="clause reveal" id="c6">
+      <div class="clause-header"><div class="clause-num">06</div><h2>Entregables, Edición y Revisiones</h2></div>
+      <p><strong>Tiempos de entrega:</strong> Las fotografías editadas se entregarán por Google Drive en un plazo de 7 días hábiles, una vez que el servicio esté liquidado en su totalidad.</p>
+      <p><strong>Cantidad de fotos:</strong> La cantidad de fotografías editadas varía según el paquete contratado. Se seleccionan las mejores tomas después del procesamiento.</p>
+      <p><strong>Archivos originales:</strong> No se entregan archivos en bruto (RAW) ni originales sin editar. El servicio incluye exclusivamente las fotografías finales editadas.</p>
+      <p><strong>Edición estándar:</strong> Incluye corrección de color, ajuste de iluminación y edición profesional. No incluye eliminación digital de elementos.</p>
+      <div class="highlight-box">
+        <strong>Revisiones:</strong> Se incluyen hasta 2 rondas de correcciones menores. No se aceptan cambios mayores como reselección completa de fotos o cambios de estilo. Las solicitudes de revisión deberán enviarse por escrito.
+      </div>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C7 -->
+    <article class="clause reveal" id="c7">
+      <div class="clause-header"><div class="clause-num">07</div><h2>Condiciones de Pago</h2></div>
+      <p><strong>Estructura de pagos:</strong> Se requiere un anticipo del 50% del total para confirmar la fecha de sesión. El 50% restante deberá liquidarse al momento de la entrega de las fotografías editadas.</p>
+      <div class="highlight-box">
+        Las fotografías finales no se entregarán hasta que el servicio esté completamente liquidado. El anticipo no es reembolsable en caso de cancelación; sin embargo, podrá aplicarse como crédito para una nueva fecha dentro de un periodo razonable, sujeto a disponibilidad.
+      </div>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C8 -->
+    <article class="clause reveal" id="c8">
+      <div class="clause-header"><div class="clause-num">08</div><h2>Horarios de Atención</h2></div>
+      <p><strong>Disponibilidad:</strong> La comunicación, recepción de solicitudes y entrega de materiales se realiza de lunes a viernes, 9 a.m. a 6 p.m.</p>
+      <p><strong>Mensajes fuera de horario:</strong> Cualquier solicitud recibida fuera del horario establecido será respondida al siguiente día hábil.</p>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C9 -->
+    <article class="clause reveal" id="c9">
+      <div class="clause-header"><div class="clause-num">09</div><h2>Cancelaciones y Reagendamientos</h2></div>
+      <p><strong>Cancelaciones con aviso previo:</strong> Las solicitudes de cambio de fecha notificadas con 7 días de anticipación no generan penalización. El anticipo podrá aplicarse como crédito para una nueva fecha.</p>
+      <p><strong>Cancelaciones tardías:</strong> Las cancelaciones notificadas con menos de 7 días de anticipación causarán un cargo equivalente al 25% del total del servicio.</p>
+      <p><strong>Almacenamiento:</strong> Las fotografías finales permanecerán disponibles en la nube por 30 días naturales tras la entrega. Transcurrido este plazo, el fotógrafo podrá eliminarlas.</p>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C10 -->
+    <article class="clause reveal" id="c10">
+      <div class="clause-header"><div class="clause-num">10</div><h2>Uso de Fotografías para Promoción</h2></div>
+      <p>El fotógrafo retiene el derecho de utilizar las fotografías generadas con fines promocionales, integración a su portafolio profesional y difusión en sus plataformas propias. Las fotografías podrán ser publicadas en redes sociales y sitio web del fotógrafo sin límite de tiempo.</p>
+    </article>
+
+    <div class="clause-divider"></div>
+
+    <!-- C11 -->
+    <article class="clause reveal" id="c11">
+      <div class="clause-header"><div class="clause-num">11</div><h2>Derechos de Autor y Licencia de Uso</h2></div>
+      <p>El fotógrafo retiene los derechos de autor sobre todas las fotografías producidas. El cliente recibe una licencia de uso no exclusiva para los fines personales acordados. Queda prohibida la reventa, sublicencia o distribución comercial del material sin autorización escrita del fotógrafo.</p>
+    </article>
+
+  </main>
+</div>
+
+<footer class="doc-footer">
+  <span id="footer-nombre" style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#fff;display:block;margin-bottom:12px"></span>
+  <p id="footer-txt"></p>
+</footer>
+
+<script>
+// ─── CONFIGURACIÓN — edita aquí durante la instalación ───────────────────────
+const CONFIG = {
+  WHATSAPP       : '8118642478',
+  NOMBRE_NEGOCIO : 'Proposal Inc',
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Aplicar CONFIG al HTML
+document.getElementById('header-nombre').textContent = CONFIG.NOMBRE_NEGOCIO;
+document.getElementById('footer-nombre').textContent = CONFIG.NOMBRE_NEGOCIO;
+document.getElementById('footer-txt').innerHTML =
+  '© ' + new Date().getFullYear() + ' ' + CONFIG.NOMBRE_NEGOCIO +
+  ' · <a href="https://wa.me/' + CONFIG.WHATSAPP + '">WhatsApp</a>';
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// TOC: resaltar sección activa al hacer scroll
+const clauses  = document.querySelectorAll('.clause');
+const tocLinks = document.querySelectorAll('.doc-toc a');
+const tocObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector('.doc-toc a[href="#' + e.target.id + '"]');
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+clauses.forEach(c => tocObserver.observe(c));
+</script>
+
+</body>
+</html>

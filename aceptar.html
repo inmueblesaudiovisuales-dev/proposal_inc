@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirma tu sesión</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #C9A84C;
+    --gold-dim: rgba(201,168,76,0.12);
+    --charcoal: #1C1C1E;
+    --concrete: #9B9B9F;
+    --surface: #F9F7F4;
+    --white: #FAFAFA;
+    --border: rgba(28,28,30,0.1);
+    --error: #E05252;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: var(--surface);
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--charcoal);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  header img { height: 36px; width: auto; }
+
+  #state-loading,
+  #state-invalid,
+  #state-expired,
+  #state-success,
+  #state-form { display: none; }
+
+  #state-loading.active,
+  #state-invalid.active,
+  #state-expired.active,
+  #state-success.active,
+  #state-form.active { display: block; }
+
+  .center-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 4px 24px rgba(28,28,30,.07);
+    margin-bottom: 16px;
+  }
+
+  /* ── Resumen del servicio ── */
+  .service-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .service-icon {
+    width: 40px; height: 40px;
+    background: var(--gold-dim);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .service-icon svg { width: 20px; height: 20px; }
+  .service-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--concrete); margin-bottom: 2px;
+  }
+  .service-title { font-size: 15px; font-weight: 800; color: var(--charcoal); }
+  .service-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .service-row:last-child { border-bottom: none; }
+  .service-row-label { color: var(--concrete); font-weight: 500; }
+  .service-row-value { font-weight: 700; color: var(--charcoal); text-align: right; max-width: 60%; }
+  .service-row-value.gold { color: var(--gold); }
+
+  .entregables-list { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .entregables-title {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--concrete); margin-bottom: 10px;
+  }
+  .entregables-list ul { list-style: none; padding: 0; margin: 0; }
+  .entregables-list ul li {
+    font-size: 12px; color: #555;
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+  }
+  .entregables-list ul li:last-child { border-bottom: none; }
+  .entregables-list ul li::before {
+    content: ''; width: 6px; height: 6px;
+    background: var(--gold); border-radius: 50%;
+    flex-shrink: 0; margin-top: 5px;
+  }
+
+  /* ── Formulario ── */
+  .form-section-title {
+    font-size: 10px; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px;
+  }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--concrete); margin-bottom: 7px;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Montserrat', sans-serif; font-size: 14px;
+    font-weight: 500; color: var(--charcoal); background: #fff;
+    outline: none; transition: border-color .2s; -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .field-hint { font-size: 11px; color: var(--concrete); margin-top: 5px; line-height: 1.5; }
+  .field-error { font-size: 11px; color: var(--error); margin-top: 5px; display: none; }
+  .field.has-error input,
+  .field.has-error select,
+  .field.has-error textarea { border-color: var(--error); }
+  .field.has-error .field-error { display: block; }
+
+  /* ── Orientación: botones CSS puros, sin imágenes externas ── */
+  .orientacion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .orientacion-btn {
+    background: #fff; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 20px 12px 16px;
+    cursor: pointer; transition: border-color .2s, background .2s;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; user-select: none; gap: 14px;
+  }
+  .orientacion-btn:hover { border-color: var(--gold); }
+  .orientacion-btn.active {
+    border-color: var(--gold); border-width: 2px;
+    background: rgba(201,168,76,.08);
+  }
+  .orientacion-btn .video-preview {
+    background: var(--charcoal); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .orientacion-btn .video-preview.horizontal { width: 80px; height: 48px; }
+  .orientacion-btn .video-preview.vertical   { width: 34px; height: 60px; }
+  .orientacion-btn .video-preview svg { opacity: .5; }
+  .orientacion-btn .titulo {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; color: var(--charcoal);
+  }
+  .orientacion-btn .descripcion {
+    font-size: 10px; color: var(--concrete);
+    font-weight: 500; line-height: 1.5;
+  }
+
+  /* ── Términos ── */
+  .terms-box {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 20px;
+  }
+  .terms-box p { font-size: 13px; line-height: 1.7; color: #555; }
+  .terms-box a { color: var(--gold); font-weight: 700; text-decoration: none; }
+  .terms-box a:hover { text-decoration: underline; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 14px; }
+  .checkbox-row input[type="checkbox"] {
+    width: 18px; height: 18px; min-width: 18px; flex-shrink: 0;
+    margin-top: 2px; accent-color: var(--gold); cursor: pointer;
+    padding: 0; border: none; background: none;
+    -webkit-appearance: auto; appearance: auto;
+  }
+  .checkbox-row label {
+    font-size: 13px; font-weight: 600; color: var(--charcoal);
+    cursor: pointer; line-height: 1.5;
+    text-transform: none; letter-spacing: 0; margin-bottom: 0; display: inline;
+  }
+
+  /* ── Botón submit ── */
+  .btn-submit {
+    width: 100%; padding: 16px;
+    background: var(--gold); color: var(--charcoal);
+    font-family: 'Montserrat', sans-serif; font-size: 12px;
+    font-weight: 900; letter-spacing: .12em; text-transform: uppercase;
+    border: none; border-radius: 8px; cursor: pointer;
+    transition: background .2s, transform .15s;
+    box-shadow: 0 8px 24px rgba(201,168,76,.3);
+  }
+  .btn-submit:hover { background: #E2C289; }
+  .btn-submit:active { transform: scale(.98); }
+  .btn-submit:disabled { background: var(--concrete); box-shadow: none; cursor: not-allowed; }
+
+  /* ── Estados ── */
+  .state-card { text-align: center; padding: 56px 28px; }
+  .state-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+  }
+  .state-icon.success { background: rgba(52,199,89,.12); }
+  .state-icon.error   { background: rgba(224,82,82,.12); }
+  .state-icon.warning { background: rgba(201,168,76,.12); }
+  .state-title { font-size: 20px; font-weight: 900; letter-spacing: -.02em; color: var(--charcoal); margin-bottom: 10px; }
+  .state-desc { font-size: 14px; line-height: 1.7; color: var(--concrete); max-width: 360px; margin: 0 auto; }
+
+  /* ── Spinner ── */
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--gold-dim); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-top: 18px; }
+  .progress-text {
+    font-size: 12px; font-weight: 500; color: var(--charcoal);
+    text-align: center; margin-bottom: 10px; letter-spacing: .3px;
+  }
+  .progress-track { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-bar {
+    height: 100%; width: 0%; background: var(--gold);
+    border-radius: 3px; transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── Saludo ── */
+  .greeting { font-size: 22px; font-weight: 900; color: var(--charcoal); letter-spacing: -.02em; margin-bottom: 4px; }
+  .greeting span { color: var(--gold); }
+  .greeting-sub { font-size: 13px; color: var(--concrete); margin-bottom: 24px; }
+
+  /* ── Animación ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .center-wrap > * { animation: fadeUp .4s cubic-bezier(.22,1,.36,1) both; }
+
+  footer { text-align: center; padding: 32px 24px; font-size: 11px; color: var(--concrete); letter-spacing: .06em; }
+  footer a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <span id="header-nombre" style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em"></span>
+</header>
+
+<div class="center-wrap">
+
+  <!-- CARGANDO -->
+  <div id="state-loading" class="card state-card active">
+    <div class="spinner"></div>
+    <p class="state-desc">Cargando tu información...</p>
+  </div>
+
+  <!-- TOKEN INVÁLIDO -->
+  <div id="state-invalid" class="card state-card">
+    <div class="state-icon error">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E05252" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <h2 class="state-title">Enlace no válido</h2>
+    <p class="state-desc">Este enlace no existe o ha sido revocado. Pide a tu fotógrafo que te envíe uno nuevo.</p>
+  </div>
+
+  <!-- TOKEN EXPIRADO / USADO -->
+  <div id="state-expired" class="card state-card">
+    <div class="state-icon warning">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h2 class="state-title">Enlace expirado</h2>
+    <p class="state-desc">Este enlace ya fue utilizado y no puede volver a usarse. Si tienes alguna duda escríbenos por WhatsApp.</p>
+    <a id="btn-wa-expired" href="#" style="display:inline-block;margin-top:20px;background:var(--gold);color:var(--charcoal);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:12px 24px;border-radius:6px;text-decoration:none">Escribir por WhatsApp</a>
+  </div>
+
+  <!-- ÉXITO -->
+  <div id="state-success" class="card state-card">
+    <div class="state-icon success">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 class="state-title">¡Todo listo!</h2>
+    <p class="state-desc">Tu contrato fue generado y enviado a tu correo. Revisa tu bandeja de entrada, incluyendo spam.</p>
+    <p class="state-desc" style="margin-top:12px">Para asegurar tu fecha, realiza el pago del anticipo lo antes posible.</p>
+    <p class="state-desc" style="margin-top:12px">Cualquier duda, escríbenos por <a id="btn-wa-success" href="#">WhatsApp</a>.</p>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div id="state-form">
+
+    <div id="greeting-wrap">
+      <p class="greeting">Hola, <span id="txt-saludo">—</span>.</p>
+      <p class="greeting-sub">Revisa los detalles de tu sesión, completa la información y genera tu contrato.</p>
+    </div>
+
+    <!-- Resumen del servicio -->
+    <div class="card">
+      <div class="service-header">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div>
+          <div class="service-label">Detalles de tu sesión</div>
+          <div class="service-title" id="txt-paquete">—</div>
+        </div>
+      </div>
+      <div class="service-row">
+        <span class="service-row-label">Cliente</span>
+        <span class="service-row-value" id="txt-nombre">—</span>
+      </div>
+      <div class="service-row">
+        <span class="service-row-label">Inversión total</span>
+        <span class="service-row-value" id="txt-precio">—</span>
+      </div>
+      <div class="service-row">
+        <span class="service-row-label">Anticipo requerido (50%)</span>
+        <span class="service-row-value gold" id="txt-anticipo">—</span>
+      </div>
+      <div class="service-row">
+        <span class="service-row-label">Fecha de sesión</span>
+        <span class="service-row-value" id="txt-fecha">—</span>
+      </div>
+      <div class="entregables-list">
+        <p class="entregables-title">Incluido en tu paquete</p>
+        <ul id="txt-entregables"></ul>
+      </div>
+    </div>
+
+    <!-- Tus datos -->
+    <div class="card">
+      <p class="form-section-title">Tus datos</p>
+      <input type="hidden" id="inp-nombre">
+
+      <div class="field" id="field-correo">
+        <label for="inp-correo">Correo electrónico *</label>
+        <input type="email" id="inp-correo" placeholder="Aquí recibirás tu contrato">
+        <span class="field-error">Ingresa un correo válido</span>
+      </div>
+
+      <div class="field" id="field-telefono">
+        <label for="inp-telefono">Teléfono móvil *</label>
+        <input type="text" id="inp-telefono" placeholder="Ej: 8127174207" inputmode="tel">
+        <span class="field-error">Este campo es obligatorio</span>
+      </div>
+
+      <div class="field">
+        <label for="inp-agencia">Empresa o agencia (opcional)</label>
+        <input type="text" id="inp-agencia" placeholder="Nombre de tu empresa, agencia o cliente">
+      </div>
+    </div>
+
+    <!-- Lugar de la sesión -->
+    <div class="card">
+      <p class="form-section-title">Lugar de la sesión</p>
+
+      <div class="field" id="field-direccion">
+        <label for="inp-direccion">Dirección completa *</label>
+        <input type="text" id="inp-direccion" placeholder="Calle, número, colonia, ciudad">
+        <span class="field-error">Este campo es obligatorio</span>
+      </div>
+
+      <div class="field" id="field-mapas">
+        <label for="inp-mapas">Enlace de ubicación *</label>
+        <input type="text" id="inp-mapas" placeholder="Google Maps, Apple Maps, Waze...">
+        <span class="field-error">Ingresa el enlace de ubicación</span>
+      </div>
+
+      <div class="field">
+        <label for="inp-referencias">Referencias de cómo llegar (opcional)</label>
+        <textarea id="inp-referencias" placeholder="Entre calles, color de la fachada, señas particulares, etc."></textarea>
+      </div>
+    </div>
+
+    <!-- Tu sesión -->
+    <div class="card">
+      <p class="form-section-title">Tu sesión</p>
+
+      <div class="field" id="field-orientacion">
+        <label>Orientación del video (opcional)</label>
+        <div class="orientacion-grid">
+
+          <div class="orientacion-btn" data-value="Horizontal (16:9)" onclick="seleccionarOrientacion(this)">
+            <div class="video-preview horizontal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <div class="titulo">HORIZONTAL</div>
+            <div class="descripcion">YouTube · Sitios web · Pantallas</div>
+          </div>
+
+          <div class="orientacion-btn" data-value="Vertical (9:16)" onclick="seleccionarOrientacion(this)">
+            <div class="video-preview vertical">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <div class="titulo">VERTICAL</div>
+            <div class="descripcion">Reels · TikTok · Instagram</div>
+          </div>
+
+        </div>
+        <input type="hidden" id="inp-orientacion" value="">
+      </div>
+
+      <div class="field">
+        <label for="inp-sobre-sesion">Cuéntanos sobre tu sesión (opcional)</label>
+        <textarea id="inp-sobre-sesion" placeholder="Entre más detalles nos des, mejor será el resultado. Tema, ambiente, personas que participan, estilo que buscas, inspiraciones, etc." style="min-height:120px"></textarea>
+      </div>
+
+      <div class="field" style="margin-bottom:0">
+        <label for="inp-presentes">¿Quién estará presente ese día? (opcional)</label>
+        <input type="text" id="inp-presentes" placeholder="Ej: la novia y el novio, el cliente, nadie (tienen llave)">
+      </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="card">
+      <p class="form-section-title">Comentarios adicionales</p>
+      <div class="field" style="margin-bottom:0">
+        <label for="inp-comentarios">¿Hay algo más que debamos saber? (opcional)</label>
+        <textarea id="inp-comentarios" placeholder="Referencias visuales, colores de tu marca, detalles especiales, cualquier cosa que nos ayude a hacer un mejor trabajo." style="min-height:100px"></textarea>
+      </div>
+    </div>
+
+    <!-- Términos -->
+    <div class="card">
+      <p class="form-section-title">Aceptación de términos</p>
+      <div class="terms-box">
+        <p>Antes de confirmar, lee el contrato completo con los términos y condiciones del servicio.</p>
+        <p style="margin-top:10px"><a href="terminos.html" target="_blank">→ Ver términos y condiciones completos</a></p>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chk-info">
+          <label for="chk-info">Confirmo que toda la información proporcionada es correcta.</label>
+        </div>
+        <p id="chk-info-error" style="display:none;font-size:11px;color:var(--error);margin-top:8px">Debes confirmar que la información es correcta para continuar.</p>
+        <div class="checkbox-row">
+          <input type="checkbox" id="chk-terminos">
+          <label for="chk-terminos">He leído y acepto los términos y condiciones del servicio.</label>
+        </div>
+        <p id="chk-terminos-error" style="display:none;font-size:11px;color:var(--error);margin-top:8px">Debes aceptar los términos y condiciones para continuar.</p>
+      </div>
+
+      <button class="btn-submit" id="btn-submit" onclick="submitForm()">
+        Confirmar y generar contrato →
+      </button>
+
+      <div id="progress-wrap" class="progress-wrap" style="display:none">
+        <div class="progress-text" id="progress-text">Procesando información...</div>
+        <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+      </div>
+
+      <p style="font-size:11px;color:var(--concrete);text-align:center;margin-top:14px;line-height:1.6">
+        Al confirmar, recibirás una copia del contrato en tu correo electrónico.
+      </p>
+    </div>
+
+  </div><!-- /state-form -->
+
+</div><!-- /center-wrap -->
+
+<footer id="footer-txt"></footer>
+
+<script>
+// ─── CONFIGURACIÓN — edita aquí durante la instalación ───────────────────────
+const CONFIG = {
+  SCRIPT_URL     : 'PENDIENTE',
+  WHATSAPP       : '8118642478',
+  NOMBRE_NEGOCIO : 'Proposal Inc',
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+let currentToken = null;
+
+// Aplicar CONFIG al HTML
+document.getElementById('header-nombre').textContent = CONFIG.NOMBRE_NEGOCIO;
+document.getElementById('btn-wa-expired').href  = 'https://wa.me/' + CONFIG.WHATSAPP;
+document.getElementById('btn-wa-success').href  = 'https://wa.me/' + CONFIG.WHATSAPP;
+document.getElementById('footer-txt').innerHTML =
+  '© ' + new Date().getFullYear() + ' ' + CONFIG.NOMBRE_NEGOCIO +
+  ' · <a href="https://wa.me/' + CONFIG.WHATSAPP + '">WhatsApp</a>';
+
+function showState(id) {
+  ['state-loading','state-invalid','state-expired','state-success','state-form']
+    .forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (!token) { showState('state-invalid'); return; }
+  currentToken = token;
+
+  try {
+    const res  = await fetch(CONFIG.SCRIPT_URL + '?token=' + token);
+    const data = await res.json();
+
+    if (!data.ok) {
+      const err = data.error || '';
+      if (err.includes('expirado') || err.includes('utilizado')) {
+        showState('state-expired');
+      } else {
+        showState('state-invalid');
+      }
+      return;
+    }
+
+    // Llenar resumen
+    document.getElementById('txt-paquete').textContent = data.paquete || '—';
+    document.getElementById('txt-nombre').textContent  = data.nombre  || '—';
+
+    const precioNum = parseFloat(String(data.precioRaw || '').replace(/[^0-9.]/g, ''));
+    if (!isNaN(precioNum) && precioNum > 0) {
+      const fmt = n => '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 0 }) + ' MXN';
+      document.getElementById('txt-precio').textContent   = fmt(precioNum);
+      document.getElementById('txt-anticipo').textContent = fmt(precioNum / 2);
+    } else {
+      document.getElementById('txt-precio').textContent   = data.precio   || '—';
+      document.getElementById('txt-anticipo').textContent = data.anticipo  || '—';
+    }
+
+    const fechaEl = document.getElementById('txt-fecha');
+    if (data.fecha && data.fecha.includes(' · ')) {
+      const [dia, hora] = data.fecha.split(' · ');
+      fechaEl.innerHTML = dia + '<br><span style="font-weight:500;color:var(--concrete)">' + hora + '</span>';
+    } else {
+      fechaEl.textContent = data.fecha || '—';
+    }
+
+    const nombreCorto = (data.nombre || '').split(' ')[0];
+    document.getElementById('txt-saludo').textContent = nombreCorto || 'bienvenido';
+    document.getElementById('inp-nombre').value = data.nombre || '';
+
+    // Entregables
+    const entregablesRaw = data.entregables || '';
+    const ul = document.getElementById('txt-entregables');
+    if (entregablesRaw.trim()) {
+      let items = [];
+      if (entregablesRaw.includes('·')) {
+        const partes = entregablesRaw.split('·').map(s => s.trim()).filter(Boolean);
+        if (partes.length > 0 && partes[0].includes(' — ')) {
+          const [, primerItem] = partes[0].split(' — ');
+          items = [primerItem, ...partes.slice(1)].filter(Boolean);
+        } else {
+          items = partes;
+        }
+      } else {
+        items = entregablesRaw.split('\n').map(s => s.replace(/^-\s*/, '').trim()).filter(Boolean);
+      }
+      ul.innerHTML = items.map(e => `<li>${e}</li>`).join('');
+    }
+
+    showState('state-form');
+
+  } catch (err) {
+    showState('state-invalid');
+  }
+}
+
+function seleccionarOrientacion(btn) {
+  document.querySelectorAll('.orientacion-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('inp-orientacion').value = btn.dataset.value;
+}
+
+async function submitForm() {
+  let valid = true;
+
+  // Validar campos requeridos
+  const required = [
+    { id: 'inp-correo',    fieldId: 'field-correo',    check: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+    { id: 'inp-telefono',  fieldId: 'field-telefono',  check: v => v.replace(/\D/g, '').length >= 8 },
+    { id: 'inp-direccion', fieldId: 'field-direccion', check: v => v.length > 4 },
+    { id: 'inp-mapas',     fieldId: 'field-mapas',     check: v => v.length > 4 },
+  ];
+  required.forEach(f => {
+    const val = document.getElementById(f.id).value.trim();
+    const ok  = f.check(val);
+    document.getElementById(f.fieldId).classList.toggle('has-error', !ok);
+    if (!ok) valid = false;
+  });
+
+  // Validar checkboxes
+  const chkInfo     = document.getElementById('chk-info');
+  const chkTerminos = document.getElementById('chk-terminos');
+  if (!chkInfo.checked) {
+    document.getElementById('chk-info-error').style.display = 'block';
+    valid = false;
+  } else {
+    document.getElementById('chk-info-error').style.display = 'none';
+  }
+  if (!chkTerminos.checked) {
+    document.getElementById('chk-terminos-error').style.display = 'block';
+    valid = false;
+  } else {
+    document.getElementById('chk-terminos-error').style.display = 'none';
+  }
+
+  if (!valid) {
+    const firstError = document.querySelector('.has-error');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled    = true;
+  btn.textContent = 'Generando contrato...';
+
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressBar  = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  progressWrap.style.display = 'block';
+
+  // Barra de progreso animada
+  const etapas = [
+    { pct: 12, texto: 'Procesando información...',  delay: 0     },
+    { pct: 40, texto: 'Procesando información...',  delay: 1500  },
+    { pct: 68, texto: 'Generando tu contrato...',   delay: 5000  },
+    { pct: 88, texto: 'Generando tu contrato...',   delay: 10000 },
+    { pct: 95, texto: 'Casi listo...',              delay: 16000 },
+  ];
+  let timers = [];
+  etapas.forEach(e => {
+    timers.push(setTimeout(() => {
+      progressBar.style.width  = e.pct + '%';
+      progressText.textContent = e.texto;
+    }, e.delay));
+  });
+
+  try {
+    const payload = {
+      token        : currentToken,
+      nombre       : document.getElementById('inp-nombre').value.trim(),
+      correo       : document.getElementById('inp-correo').value.trim(),
+      telefono     : document.getElementById('inp-telefono').value.trim(),
+      agencia      : document.getElementById('inp-agencia').value.trim(),
+      direccion    : document.getElementById('inp-direccion').value.trim(),
+      mapas        : document.getElementById('inp-mapas').value.trim(),
+      referencias  : document.getElementById('inp-referencias').value.trim(),
+      orientacion  : document.getElementById('inp-orientacion').value,
+      sobreSesion  : document.getElementById('inp-sobre-sesion').value.trim(),
+      presentes    : document.getElementById('inp-presentes').value.trim(),
+      comentarios  : document.getElementById('inp-comentarios').value.trim(),
+    };
+
+    const res  = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+
+    timers.forEach(t => clearTimeout(t));
+    progressBar.style.width  = '100%';
+    progressText.textContent = '¡Listo!';
+    await new Promise(r => setTimeout(r, 400));
+
+    if (data.ok) {
+      showState('state-success');
+    } else {
+      if (data.error && (data.error.includes('utilizado') || data.error.includes('expirado'))) {
+        showState('state-expired');
+      } else {
+        alert('Ocurrió un error: ' + (data.error || 'inténtalo de nuevo'));
+        progressWrap.style.display = 'none';
+        progressBar.style.width    = '0%';
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar y generar contrato →';
+      }
+    }
+  } catch (err) {
+    timers.forEach(t => clearTimeout(t));
+    alert('Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+    progressWrap.style.display = 'none';
+    progressBar.style.width    = '0%';
+    btn.disabled    = false;
+    btn.textContent = 'Confirmar y generar contrato →';
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>

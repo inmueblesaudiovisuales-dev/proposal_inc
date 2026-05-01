@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opciones de pago</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #C9A84C;
+    --gold-dim: rgba(201,168,76,0.10);
+    --charcoal: #1C1C1E;
+    --concrete: #9B9B9F;
+    --surface: #F9F7F4;
+    --white: #FAFAFA;
+    --bg-chip: #F1F0ED;
+    --border: rgba(28,28,30,0.1);
+  }
+
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background: var(--surface);
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--charcoal);
+    padding: 16px 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  header img { height: 36px; width: auto; }
+
+  #state-loading, #state-error, #state-main { display: none; }
+
+  .card { max-width: 480px; margin: 32px auto 48px; padding: 0 16px; }
+
+  .greeting { font-size: 22px; font-weight: 700; color: var(--charcoal); margin-bottom: 16px; }
+
+  /* ── Resumen de pagos ── */
+  .resumen {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 28px;
+  }
+  .resumen-fila {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .resumen-fila:last-child { border-bottom: none; }
+  .resumen-label { font-size: 12px; color: var(--concrete); font-weight: 500; flex: 1; }
+  .resumen-valor { font-size: 14px; font-weight: 700; color: var(--charcoal); white-space: nowrap; }
+  .resumen-valor.destacado { font-size: 20px; color: var(--gold); }
+
+  /* ── Sección de transferencia ── */
+  .opcion {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 16px;
+  }
+  .opcion-titulo {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--concrete); margin-bottom: 16px;
+  }
+
+  .dato-label { font-size: 11px; font-weight: 600; color: var(--concrete); margin-bottom: 6px; letter-spacing: .3px; }
+
+  .clabe-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-chip); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+  }
+  .clabe-num {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px; font-weight: 600; color: var(--charcoal);
+    flex: 1; letter-spacing: 1.5px;
+  }
+  .btn-copiar {
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--white); color: var(--charcoal);
+    font-family: 'Montserrat', sans-serif; font-size: 11px;
+    font-weight: 600; letter-spacing: .4px; padding: 6px 12px;
+    cursor: pointer; white-space: nowrap; transition: background .15s, color .15s;
+  }
+  .btn-copiar:hover { background: var(--bg-chip); }
+  .btn-copiar.copiado { background: var(--gold-dim); color: var(--gold); border-color: var(--gold); }
+
+  .datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .dato-chip { background: var(--bg-chip); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .dato-val { font-size: 13px; font-weight: 600; color: var(--charcoal); margin: 0; }
+  .dato-val.mono { font-family: 'Courier New', Courier, monospace; letter-spacing: .5px; }
+
+  .instruccion {
+    font-size: 12px; color: var(--concrete); line-height: 1.7; margin-top: 4px;
+  }
+  .instruccion a { color: var(--gold); font-weight: 600; text-decoration: none; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 200px; gap: 16px;
+    color: var(--concrete); font-size: 13px;
+  }
+  .spinner-ring {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error ── */
+  .error-card {
+    background: var(--white); border-radius: 12px;
+    padding: 40px 24px; text-align: center;
+    margin: 32px auto; max-width: 400px;
+  }
+  .error-icon { font-size: 40px; margin-bottom: 16px; }
+  .error-titulo { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .error-msg { font-size: 13px; color: var(--concrete); }
+
+  footer {
+    background: var(--white); border-top: 1px solid var(--border);
+    padding: 16px 24px; text-align: center;
+    font-size: 11px; color: var(--concrete); margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span id="header-nombre" style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em"></span>
+</header>
+
+<div id="state-loading">
+  <div class="spinner">
+    <div class="spinner-ring"></div>
+    <span>Cargando opciones de pago...</span>
+  </div>
+</div>
+
+<div id="state-error">
+  <div class="card">
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <div class="error-titulo">No se pudo cargar esta página</div>
+      <div class="error-msg" id="error-msg">El enlace puede haber expirado o ser inválido.</div>
+    </div>
+  </div>
+</div>
+
+<div id="state-main">
+  <div class="card">
+
+    <div class="greeting" id="greeting"></div>
+
+    <div class="resumen">
+      <div class="resumen-fila">
+        <span class="resumen-label">Total del paquete</span>
+        <span class="resumen-valor" id="precio-total"></span>
+      </div>
+      <div class="resumen-fila">
+        <span class="resumen-label">Anticipo a pagar ahora (50%)</span>
+        <span class="resumen-valor destacado" id="monto-anticipo"></span>
+      </div>
+      <div class="resumen-fila">
+        <span class="resumen-label">Saldo restante — se liquida al entregar el material</span>
+        <span class="resumen-valor" id="monto-saldo"></span>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-titulo">Transferencia bancaria</div>
+
+      <p class="dato-label">CLABE</p>
+      <div class="clabe-row">
+        <span class="clabe-num" id="txt-clabe"></span>
+        <button class="btn-copiar" id="btn-copiar" onclick="copiarClabe()">Copiar</button>
+      </div>
+
+      <div class="datos-grid">
+        <div class="dato-chip" style="margin-bottom:0">
+          <p class="dato-label">Banco</p>
+          <p class="dato-val" id="txt-banco"></p>
+        </div>
+        <div class="dato-chip" style="margin-bottom:0">
+          <p class="dato-label">Número de cuenta</p>
+          <p class="dato-val mono" id="txt-cuenta"></p>
+        </div>
+      </div>
+
+      <div class="dato-chip">
+        <p class="dato-label">Titular</p>
+        <p class="dato-val" id="txt-titular"></p>
+      </div>
+
+      <p class="instruccion">
+        Una vez realizada la transferencia, envíanos el comprobante por
+        <a id="link-whatsapp" href="#">WhatsApp</a>
+        con tu nombre para confirmar tu fecha.
+      </p>
+    </div>
+
+    <div class="opcion" id="opcion-tarjeta" style="display:none">
+      <div class="opcion-titulo">Depósito en OXXO</div>
+
+      <p class="dato-label">Tarjeta para depósito</p>
+      <div class="clabe-row">
+        <span class="clabe-num" id="txt-tarjeta"></span>
+        <button class="btn-copiar" id="btn-copiar-tarjeta" onclick="copiarTarjeta()">Copiar</button>
+      </div>
+
+      <div class="dato-chip">
+        <p class="dato-label">Titular</p>
+        <p class="dato-val" id="txt-titular-tarjeta"></p>
+      </div>
+
+      <p class="instruccion">
+        Dirígete a cualquier tienda OXXO y realiza un depósito a esta tarjeta. Envíanos el comprobante por
+        <a id="link-whatsapp-tarjeta" href="#">WhatsApp</a>
+        para confirmar tu fecha.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<footer id="footer-txt"></footer>
+
+<script>
+// ─── CONFIGURACIÓN — edita aquí durante la instalación ───────────────────────
+const CONFIG = {
+  SCRIPT_URL     : 'PENDIENTE',
+  WHATSAPP       : '8118642478',
+  NOMBRE_NEGOCIO : 'Proposal Inc',
+  BANCO          : 'BBVA',
+  CLABE          : '111111111111111111',
+  CUENTA         : '2131231321',
+  TITULAR        : 'BRUNO GUTIERREZ SALAAR',
+  TARJETA        : '3423029332323232',
+  OTRO_COBRO     : '',
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Aplicar CONFIG al HTML estático
+document.getElementById('header-nombre').textContent = CONFIG.NOMBRE_NEGOCIO;
+document.getElementById('txt-clabe').textContent   = CONFIG.CLABE.replace(/(\d{4})(?=\d)/g, '$1 ');
+document.getElementById('txt-banco').textContent   = CONFIG.BANCO;
+document.getElementById('txt-cuenta').textContent  = CONFIG.CUENTA;
+document.getElementById('txt-titular').textContent = CONFIG.TITULAR;
+document.getElementById('link-whatsapp').href      = 'https://wa.me/' + CONFIG.WHATSAPP;
+document.getElementById('footer-txt').textContent  = '© ' + new Date().getFullYear() + ' ' + CONFIG.NOMBRE_NEGOCIO;
+
+if (CONFIG.TARJETA) {
+  document.getElementById('opcion-tarjeta').style.display = 'block';
+  document.getElementById('txt-tarjeta').textContent = CONFIG.TARJETA.replace(/(\d{4})(?=\d)/g, '$1 ');
+  document.getElementById('txt-titular-tarjeta').textContent = CONFIG.TITULAR;
+  document.getElementById('link-whatsapp-tarjeta').href = 'https://wa.me/' + CONFIG.WHATSAPP;
+}
+
+function mostrar(id) {
+  ['state-loading','state-error','state-main'].forEach(function(s) {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function formatMXN(val) {
+  var num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+  if (isNaN(num)) return String(val);
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: 0
+  }).format(num);
+}
+
+function copiarClabe() {
+  var clabe = CONFIG.CLABE;
+  var btn   = document.getElementById('btn-copiar');
+  function marcarCopiado() {
+    btn.textContent = 'Copiado';
+    btn.classList.add('copiado');
+    setTimeout(function() {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copiado');
+    }, 2500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(clabe).then(marcarCopiado).catch(function() {
+      fallbackCopy(clabe, marcarCopiado);
+    });
+  } else {
+    fallbackCopy(clabe, marcarCopiado);
+  }
+}
+
+function copiarTarjeta() {
+  var tarjeta = CONFIG.TARJETA;
+  var btn     = document.getElementById('btn-copiar-tarjeta');
+  function marcarCopiado() {
+    btn.textContent = 'Copiado';
+    btn.classList.add('copiado');
+    setTimeout(function() {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copiado');
+    }, 2500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tarjeta).then(marcarCopiado).catch(function() {
+      fallbackCopy(tarjeta, marcarCopiado);
+    });
+  } else {
+    fallbackCopy(tarjeta, marcarCopiado);
+  }
+}
+
+function fallbackCopy(texto, cb) {
+  var ta = document.createElement('textarea');
+  ta.value = texto;
+  ta.style.position = 'fixed';
+  ta.style.opacity  = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  cb();
+}
+
+(function init() {
+  mostrar('state-loading');
+
+  var params = new URLSearchParams(window.location.search);
+  var token  = params.get('token');
+
+  if (!token) {
+    document.getElementById('error-msg').textContent = 'No se encontró el token en el enlace.';
+    mostrar('state-error');
+    return;
+  }
+
+  fetch(CONFIG.SCRIPT_URL + '?action=datoPago&token=' + encodeURIComponent(token))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok) {
+        document.getElementById('error-msg').textContent = data.error || 'Enlace inválido o expirado.';
+        mostrar('state-error');
+        return;
+      }
+
+      document.getElementById('greeting').textContent       = 'Hola, ' + data.nombre + '.';
+      document.getElementById('precio-total').textContent   = formatMXN(data.precio);
+      document.getElementById('monto-anticipo').textContent = formatMXN(data.anticipo);
+      document.getElementById('monto-saldo').textContent    = formatMXN(data.anticipo);
+
+      mostrar('state-main');
+    })
+    .catch(function() {
+      document.getElementById('error-msg').textContent = 'Hubo un problema de conexión. Intenta de nuevo.';
+      mostrar('state-error');
+    });
+})();
+</script>
+
+</body>
+</html>
