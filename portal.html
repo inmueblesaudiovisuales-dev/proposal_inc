@@ -708,7 +708,7 @@ function htmlComprobante(total, abonado, saldo) {
         '<tr><td class="ct-et">Cliente</td><td class="ct-vl">' + esc(d.nombre || '') + '</td></tr>' +
         '<tr><td class="ct-et">Folio</td><td class="ct-vl">' + esc(d.folio || '') + '</td></tr>' +
         '<tr><td class="ct-et">Fecha del evento</td><td class="ct-vl">' + fmxnFechaLarga(d.fechaEvento) + '</td></tr>' +
-        (d.locacion ? '<tr><td class="ct-et">Locación</td><td class="ct-vl">' + esc(d.locacion) + (d.espacioLocacion ? ' · ' + esc(d.espacioLocacion) : '') + '</td></tr>' : '') +
+        (d.locacion ? '<tr><td class="ct-et">Locación</td><td class="ct-vl">' + esc(d.locacion) + '</td></tr>' : '') +
         '<tr><td class="ct-et">Servicio</td><td class="ct-vl">' + esc(d.paqueteNombre || 'Servicio personalizado') + '</td></tr>' +
       '</table>' +
       '<div class="comprobante-montos">' +
@@ -870,7 +870,7 @@ function fmxnHora(val) {
   if (s.indexOf('T') !== -1) {
     const d = new Date(s);
     if (!isNaN(d)) {
-      const h = d.getUTCHours(), m = d.getUTCMinutes();
+      const h = d.getHours(), m = d.getMinutes();
       const ampm = h >= 12 ? 'p.m.' : 'a.m.';
       const h12 = h % 12 || 12;
       return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
