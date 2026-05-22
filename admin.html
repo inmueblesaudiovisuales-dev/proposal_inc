@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Panel Admin — Proposal Inc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Montserrat', system-ui, sans-serif;
+      font-size: 14px; line-height: 1.5;
+      color: #1C1C1E; background: #F5F5F0;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { font-family: inherit; font-size: inherit; }
+
+    :root {
+      --onyx:        #1C1C1E;
+      --gold:        #C9A84C;
+      --gold-pale:   #FAF6EC;
+      --gold-border: #E8D5A3;
+      --page:        #F5F5F0;
+      --card:        #FFFFFF;
+      --ink-1:       #1C1C1E;
+      --ink-2:       #6B6B70;
+      --ink-3:       #9B9B9F;
+      --border:      #E8E8EA;
+      --border2:     #D5D5D8;
+      --success:     #2D7A4F;
+      --warn:        #B45309;
+      --danger:      #C0392B;
+      --r:           8px;
+      --r-lg:        12px;
+      --shadow:      0 2px 12px rgba(28,28,30,0.08);
+      --shadow-lg:   0 8px 32px rgba(28,28,30,0.16);
+    }
+
+    /* LOGIN */
+    #pantalla-login {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--onyx);
+    }
+    .login-box {
+      background: var(--card); border-radius: var(--r-lg);
+      padding: 40px 36px; width: 100%; max-width: 360px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-marca { margin-bottom: 20px; }
+    .login-marca svg { width: 100px; height: auto; display: block; }
+    .login-marca svg path { fill: var(--onyx); }
+    .login-box h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .login-box .login-sub { color: var(--ink-3); font-size: 13px; margin-bottom: 22px; }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 46px; }
+    .pw-toggle {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 44px;
+      background: none; border: none; cursor: pointer;
+      color: var(--ink-3); display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .pw-toggle:hover { color: var(--ink-1); }
+    .error-login { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: 6px; }
+
+    /* ADMIN */
+    #pantalla-admin { display: none; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      height: 54px; padding: 0 24px;
+      background: var(--onyx);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .topbar-marca { display: flex; align-items: center; }
+    .topbar-marca svg { width: 80px; height: auto; display: block; }
+    .topbar-marca svg path { fill: white; }
+    .topbar-sep { color: rgba(255,255,255,0.2); font-size: 16px; margin: 0 2px; }
+    .topbar-titulo { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); flex: 1; }
+    .btn-logout {
+      background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6);
+      border-radius: var(--r); padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 120ms;
+    }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.4); color: white; }
+
+    .contenido { max-width: 1140px; margin: 0 auto; padding: 24px 24px 80px; }
+
+    .tabs { display: flex; gap: 2px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab-btn {
+      padding: 10px 18px; border: none; background: none;
+      font-size: 13px; font-weight: 600; color: var(--ink-3);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: color 120ms;
+    }
+    .tab-btn:hover { color: var(--ink-1); }
+    .tab-btn.activo { color: var(--ink-1); border-bottom-color: var(--onyx); }
+    .seccion { display: none; }
+    .seccion.activa { display: block; }
+
+    /* TABLA */
+    .barra { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .barra-fila-principal { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .barra-fila-principal .campo-busqueda { flex: 1; min-width: 200px; }
+    .barra-filtros { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .filtro-fecha-label { font-size: 11px; font-weight: 700; color: var(--ink-3); white-space: nowrap; letter-spacing: 0.04em; }
+    .btn-filtros-mobile { display: none; }
+    .tabla-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+    .tabla-card table { width: 100%; border-collapse: collapse; }
+    .tabla-card th {
+      padding: 10px 16px; text-align: left;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--ink-3); background: var(--page); border-bottom: 1px solid var(--border);
+    }
+    .tabla-card td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink-1); vertical-align: middle; }
+    .tabla-card tr:last-child td { border-bottom: none; }
+    .tabla-card tbody tr:hover td { background: var(--gold-pale); cursor: pointer; }
+    .tabla-card tbody tr.activo td { background: #FEF9ED; }
+    .td-folio { font-size: 11px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.04em; font-family: 'Courier New', monospace; }
+    .td-nombre { font-weight: 600; }
+    .td-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .td-monto { font-family: 'Courier New', monospace; text-align: right; }
+    .td-saldo { font-family: 'Courier New', monospace; text-align: right; color: var(--warn); }
+    .td-saldo.pagado { color: var(--success); }
+    .td-fecha { font-size: 11px; color: var(--ink-3); }
+    .tabla-vacio { text-align: center; color: var(--ink-3); padding: 40px; font-style: italic; font-size: 13px; }
+
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-pendiente-firma  { background: #FEF3C7; color: #92400E; }
+    .badge-firmado          { background: #DBEAFE; color: #1E40AF; }
+    .badge-anticipo         { background: #D1FAE5; color: #065F46; }
+    .badge-en-produccion    { background: #EDE9FE; color: #5B21B6; }
+    .badge-entregado        { background: #E0F2FE; color: #0369A1; }
+    .badge-liquidado        { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+
+    /* FORM */
+    .form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 28px; max-width: 640px; }
+    .form-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .form-desc { font-size: 13px; color: var(--ink-3); margin-bottom: 22px; }
+
+    .sub-tabs { display: flex; margin-bottom: 24px; border: 1.5px solid var(--border2); border-radius: var(--r); overflow: hidden; }
+    .sub-tab-btn {
+      flex: 1; padding: 10px 0; border: none; background: var(--page);
+      font-size: 13px; font-weight: 600; color: var(--ink-3); cursor: pointer; transition: all 120ms;
+    }
+    .sub-tab-btn.activo { background: var(--onyx); color: white; }
+
+    .campo { margin-bottom: 14px; }
+    .campo label {
+      display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--ink-3); margin-bottom: 5px;
+    }
+    input[type="text"], input[type="email"], input[type="number"],
+    input[type="password"], input[type="date"], input[type="time"],
+    input[type="url"], select, textarea {
+      width: 100%; padding: 10px 13px;
+      background: var(--page); border: 1.5px solid var(--border2);
+      border-radius: var(--r); color: var(--ink-1); font-size: 14px;
+      outline: none; transition: border-color 120ms, box-shadow 120ms;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type="checkbox"] {
+      width: auto; padding: 0; background: initial; border: initial;
+      border-radius: 0; -webkit-appearance: auto; appearance: auto;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold); background: var(--card);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.14);
+    }
+    textarea { min-height: 70px; resize: vertical; }
+    .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .add-lista { display: flex; flex-direction: column; gap: 7px; }
+    .add-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border: 1.5px solid var(--border2);
+      border-radius: var(--r); cursor: pointer; transition: all 120ms;
+    }
+    .add-item:hover { border-color: var(--gold-border); background: var(--gold-pale); }
+    .add-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--gold); }
+    .add-item-nombre { font-size: 13px; font-weight: 600; flex: 1; }
+    .add-item-precio { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+
+    .aviso-restriccion {
+      display: none; background: #FEF3C7; border: 1px solid #FCD34D;
+      border-radius: var(--r); padding: 10px 13px; font-size: 12px;
+      color: #92400E; margin-bottom: 14px; line-height: 1.5;
+    }
+    .aviso-restriccion.visible { display: block; }
+
+    .btn-primario {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px 22px; min-height: 42px;
+      background: var(--onyx); color: white;
+      border: none; border-radius: var(--r);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: background 120ms, transform 80ms;
+    }
+    .btn-primario:hover { background: #333336; }
+    .btn-primario:active { transform: scale(0.98); }
+    .btn-primario:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-primario.gold { background: var(--gold); color: var(--onyx); }
+    .btn-primario.gold:hover { background: #B89238; }
+    .btn-secundario {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 18px; min-height: 40px;
+      background: transparent; color: var(--ink-1);
+      border: 1.5px solid var(--border2); border-radius: var(--r);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 120ms;
+    }
+    .btn-secundario:hover { border-color: var(--ink-2); background: var(--page); }
+    .btn-secundario:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sm { padding: 7px 14px; min-height: 34px; font-size: 12px; }
+
+    .resultado-box {
+      background: var(--gold-pale); border: 1.5px solid var(--gold-border);
+      border-radius: var(--r); padding: 16px; margin-top: 20px;
+    }
+    .resultado-titulo { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .resultado-url { font-size: 12px; word-break: break-all; color: var(--ink-2); line-height: 1.6; margin-bottom: 10px; }
+    .resultado-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-copiar {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--r);
+      background: var(--onyx); color: white;
+      border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 120ms;
+    }
+    .btn-copiar:hover { background: #333336; }
+    .btn-wa {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--r);
+      background: #25D366; color: white;
+      border: none; font-size: 12px; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: background 120ms;
+    }
+    .btn-wa:hover { background: #1dba58; }
+
+    .form-msg { font-size: 12px; min-height: 18px; margin-top: 8px; }
+    .form-msg.error { color: var(--danger); }
+    .form-msg.ok    { color: var(--success); }
+    .form-hint { font-size: 11px; color: var(--ink-3); margin-top: 4px; line-height: 1.5; }
+
+    /* PANEL LATERAL */
+    .panel-lateral {
+      position: fixed; right: 0; top: 0; width: 440px;
+      height: 100vh; height: 100dvh;
+      background: var(--card); border-left: 1px solid var(--border);
+      z-index: 200;
+      transform: translateX(100%); transition: transform 280ms cubic-bezier(0.16,1,0.3,1);
+      overflow-y: auto; overflow-anchor: none;
+      display: flex; flex-direction: column;
+    }
+    .panel-lateral.visible { transform: translateX(0); box-shadow: var(--shadow-lg); }
+    .panel-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 18px 20px 14px;
+      position: sticky; top: 0; background: var(--card); z-index: 1;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-header-info { flex: 1; min-width: 0; padding-right: 10px; }
+    .panel-folio { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px; }
+    .panel-nombre { font-size: 17px; font-weight: 800; color: var(--ink-1); line-height: 1.2; margin-bottom: 6px; }
+    .btn-cerrar {
+      width: 34px; height: 34px; flex-shrink: 0;
+      background: var(--page); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; color: var(--ink-3);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .btn-cerrar:hover { background: var(--border); color: var(--ink-1); }
+    .panel-tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      padding: 0 20px; background: var(--card);
+      position: sticky; top: 80px; z-index: 1;
+    }
+    .panel-tab-btn {
+      flex: 1; padding: 10px 0;
+      background: none; border: none; border-bottom: 2px solid transparent;
+      font-size: 11px; font-weight: 700; color: var(--ink-3);
+      cursor: pointer; margin-bottom: -1px; transition: color 120ms;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .panel-tab-btn.activo { color: var(--gold); border-bottom-color: var(--gold); }
+    .panel-tab-pane { display: none; padding: 18px 20px; }
+    .panel-tab-pane.activo { display: block; }
+
+    .info-fila {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; gap: 12px;
+    }
+    .info-fila:last-child { border-bottom: none; }
+    .info-fila .etiq { color: var(--ink-3); flex-shrink: 0; }
+    .info-fila .val  { font-weight: 600; text-align: right; word-break: break-word; }
+
+    .link-portal-box {
+      background: var(--gold-pale); border: 1.5px solid var(--gold-border);
+      border-radius: var(--r); padding: 12px 14px; margin-top: 14px;
+    }
+    .link-portal-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-bottom: 5px; }
+    .link-portal-url { font-size: 11px; word-break: break-all; color: var(--ink-2); margin-bottom: 8px; line-height: 1.5; }
+    .link-portal-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .abono-fila { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .abono-fila:last-child { border-bottom: none; }
+    .abono-metodo { font-size: 13px; font-weight: 600; }
+    .abono-fecha  { font-size: 11px; color: var(--ink-3); }
+    .abono-monto  { font-size: 14px; font-weight: 700; color: var(--success); font-family: 'Courier New', monospace; }
+
+    .pago-barra-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 6px 0 14px; }
+    .pago-barra-fill  { height: 100%; background: var(--gold); border-radius: 3px; transition: width 400ms; }
+    .pago-resumen { background: var(--page); border-radius: var(--r); padding: 11px 13px; margin-bottom: 14px; }
+    .pago-fila { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+    .pago-fila.total { font-weight: 700; font-size: 14px; border-top: 1px solid var(--border); margin-top: 5px; padding-top: 7px; }
+
+    .sec-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin: 18px 0 9px; }
+    .sec-label:first-child { margin-top: 0; }
+    .campo-sm input, .campo-sm select, .campo-sm textarea { padding: 8px 11px; font-size: 13px; }
+    .estatus-fila { display: flex; gap: 8px; align-items: flex-end; }
+    .estatus-fila select { flex: 1; }
+
+    /* CRM */
+    .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+    .crm-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; }
+    .crm-nombre { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .crm-correo { font-size: 12px; color: var(--ink-3); margin-bottom: 10px; }
+    .crm-proyectos-hdr { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+    .crm-proyecto { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-top: 1px solid var(--border); font-size: 12px; }
+    .crm-folio { font-family: 'Courier New', monospace; color: var(--ink-2); font-size: 11px; }
+
+    #overlay { display: none; position: fixed; inset: 0; background: rgba(28,28,30,0.4); z-index: 190; }
+    #overlay.visible { display: block; }
+
+    .met-cards-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .met-bottom-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 14px; }
+
+    .bottom-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: 6px 0 env(safe-area-inset-bottom, 6px);
+    }
+    .bnav-inner { display: flex; }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 2px; background: none; border: none; padding: 6px 2px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--ink-3); cursor: pointer;
+      transition: color 120ms;
+    }
+    .bnav-btn i { font-size: 20px; }
+    .bnav-btn.activo { color: var(--gold); }
+
+    .ciclo-toggle { display: flex; gap: 4px; }
+    .ciclo-btn {
+      padding: 7px 14px; font-family: inherit; font-size: 12px; font-weight: 700;
+      border: 1.5px solid var(--border2); border-radius: var(--r);
+      background: var(--page); color: var(--ink-3);
+      cursor: pointer; transition: all 120ms;
+    }
+    .activo-ciclo { background: var(--onyx) !important; color: white !important; border-color: var(--onyx) !important; }
+
+    .paq-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .paq-tabla th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--border); }
+    .paq-tabla td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .paq-tabla tr:last-child td { border-bottom: none; }
+    .paq-inactivo { opacity: .45; }
+    .badge-addon { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; background:var(--gold-pale); color:var(--gold); letter-spacing:.4px; }
+
+    @media (max-width: 640px) {
+      .contenido { padding: 12px 12px 100px; }
+      .fila-2 { grid-template-columns: 1fr; }
+      .form-card { padding: 20px 14px; }
+      .topbar-sep, .topbar-titulo { display: none; }
+      .tabs { display: none; }
+      .bottom-nav { display: block; }
+      .barra-fila-principal .campo-busqueda { min-width: 0; }
+      .barra-filtros { display: none; flex-wrap: wrap; }
+      .barra-filtros.visible { display: flex; }
+      .btn-filtros-mobile {
+        display: flex; align-items: center; justify-content: center;
+        background: none; border: 1.5px solid var(--border2);
+        border-radius: var(--r); padding: 7px 10px;
+        font-size: 13px; color: var(--ink-2); cursor: pointer;
+      }
+      .btn-filtros-mobile.activo { border-color: var(--gold); color: var(--gold); }
+      #filtro-estatus, #filtro-fecha-desde, #filtro-fecha-hasta { flex: 1; min-width: 0; }
+      .tabla-card table, .tabla-card thead { display: block; }
+      .tabla-card thead { display: none; }
+      .tabla-card tbody { display: flex; flex-direction: column; }
+      .tabla-card tr { display: flex; flex-wrap: wrap; align-items: center; padding: 12px 14px; gap: 6px; border-bottom: 1px solid var(--border); }
+      .tabla-card tr:last-child { border-bottom: none; }
+      .tabla-card td { display: block; padding: 0 !important; border: none !important; }
+      .td-folio { font-size: 10px; width: 100%; }
+      .td-nombre { font-size: 14px; font-weight: 700; flex: 1; }
+      .td-sub { display: block !important; width: 100%; }
+      .td-monto { display: none !important; }
+      .td-saldo { font-size: 12px; font-weight: 700; margin-left: auto; }
+      .td-fecha { font-size: 11px; width: 100%; margin-top: 4px; }
+      #stats-bar { grid-template-columns: repeat(2,1fr) !important; }
+      #stats-bar > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+      .panel-lateral {
+        top: auto; bottom: 0; left: 0; right: 0; width: 100%;
+        height: 88dvh; border-left: none; border-top: 1px solid var(--border);
+        border-radius: 16px 16px 0 0; transform: translateY(100%);
+      }
+      .panel-lateral.visible { transform: translateY(0); box-shadow: 0 -8px 40px rgba(0,0,0,0.18); }
+      .panel-tabs { top: 0; }
+      .met-cards-grid { grid-template-columns: repeat(2,1fr); }
+      .met-bottom-grid { grid-template-columns: 1fr; }
+      .crm-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="pantalla-login">
+  <div class="login-box">
+    <div class="login-marca">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 944 512">
+        <path fill="#000000" d="M475.531342,1.000000 C478.232574,4.001772 481.820892,2.872762 484.686707,3.515778 C507.726318,8.685297 528.724182,18.132751 547.338928,32.661728 C570.119385,50.442139 586.832336,72.766136 597.292908,99.788071 C605.591003,121.223808 608.784607,143.497223 607.187622,166.232391 C604.895447,198.864319 593.611267,228.187408 572.603943,253.614532 C548.982300,282.206055 519.127197,300.689575 482.839111,307.811737 C457.822144,312.721741 432.709106,311.820618 407.953064,304.613525 C386.893311,298.482452 367.800781,288.590454 351.336945,274.319153 C322.919800,249.686462 304.526825,219.039093 298.589172,181.470367 C294.364166,154.737808 296.101654,128.480728 305.406982,102.978111 C319.288391,64.934052 344.338226,36.564861 380.200806,17.739222 C394.882080,10.032459 410.370270,4.819451 426.806030,2.468354 C427.414246,2.381352 427.961517,1.868235 428.768585,1.276848 C444.354218,1.000000 459.708466,1.000000 475.531342,1.000000 M518.764526,277.185944 C534.572083,268.560944 548.279968,257.378571 559.445679,243.233887 C584.379517,211.647812 595.742676,176.145645 589.732971,135.846512 C584.345947,99.723335 567.246155,69.917122 538.800476,47.368145 C509.757080,24.345394 476.533569,13.337419 439.005768,17.286388 C420.979553,19.183249 403.773407,23.495718 387.763092,32.231262 C370.697327,41.542675 355.530823,53.030788 343.560638,68.585403 C333.960815,81.059830 326.193756,94.402885 320.861908,109.280991 C312.441650,132.776978 310.087982,156.602554 314.994781,181.170624 C319.335083,202.902420 328.278748,222.496231 341.685150,240.035172 C345.539154,245.077179 349.372528,250.351379 355.084534,253.549896 C356.820648,252.182129 357.123444,250.506714 357.566467,248.929703 C361.149200,236.176422 365.815521,224.221390 375.796661,214.630157 C382.368622,208.314926 386.977295,200.246567 389.350952,191.146698 C390.857819,185.369888 392.504395,179.613922 394.430664,173.965378 C398.186127,162.953354 400.535553,161.618652 412.137085,163.110428 C412.410828,163.145645 412.724945,162.867096 413.565613,162.490723 C413.565613,158.287323 414.779785,153.349869 413.244232,149.512817 C411.503937,145.164093 410.293610,139.936569 405.257233,137.207916 C398.403107,133.494431 391.838806,129.244141 385.167969,125.194748 C377.707825,120.666183 376.175842,114.089462 380.752045,106.750069 C384.006561,101.530434 387.151459,96.242569 390.367645,90.998863 C402.358429,71.448837 414.334503,51.889713 426.371155,32.367958 C429.516266,27.266966 437.170258,25.064831 442.036865,27.987289 C451.148407,33.458878 460.086151,39.219765 469.196289,44.693695 C472.392883,46.614407 472.581055,48.667351 470.750763,51.638565 C459.772308,69.460281 448.884644,87.337898 437.930908,105.174858 C432.021515,114.797630 425.951538,124.322914 420.132568,133.999573 C417.426697,138.499252 418.606689,140.497055 423.693329,140.627487 C427.189972,140.717163 430.695770,140.760880 434.188782,140.615417 C441.141205,140.325897 446.944733,135.770966 448.152679,129.206146 C449.575867,121.471634 453.398773,115.717125 460.448151,112.132187 C461.711975,111.489487 463.122559,111.078018 463.277649,109.080330 C463.684723,103.836258 465.491364,102.871262 472.073639,103.647217 C476.803284,104.204765 476.363678,107.162292 475.212830,110.290955 C488.063324,117.491394 489.411072,119.311028 491.313904,132.904099 C491.595306,134.914154 492.828369,135.576279 494.197815,136.567841 C501.426056,141.801636 509.712769,140.632202 517.807556,140.653458 C525.339355,140.673248 525.343018,140.657211 525.349243,148.305374 C525.354614,154.872635 525.350403,161.439911 525.350403,168.822922 C529.481079,167.154449 532.541443,165.955276 535.572754,164.686569 C543.147278,161.516403 550.904602,160.260101 558.840820,163.002914 C561.202759,163.819214 564.152893,164.511993 564.314514,168.014175 C564.460571,171.178391 563.719971,173.685699 560.892395,175.750000 C552.667786,181.754593 543.240051,185.649078 534.708008,191.116745 C526.571472,196.330963 519.316956,202.209869 515.811401,211.559067 C514.976929,213.784439 513.963013,215.832870 512.478271,217.617508 C502.584503,229.509476 494.162323,242.431595 486.277740,255.683640 C482.666656,261.753052 477.546082,265.562042 471.324860,268.214844 C460.355621,272.892181 448.974670,276.456024 437.783295,280.531464 C431.731476,282.735260 425.734589,285.481628 421.005310,290.428650 C455.177277,298.809509 487.443970,294.057922 518.764526,277.185944 M449.500061,187.366730 C438.919250,187.366730 428.338409,187.366730 417.803558,187.366730 C416.826080,191.733353 415.880035,196.075623 414.878967,200.405167 C413.266693,207.378220 410.256195,213.866898 407.857056,220.567810 C407.295074,222.137405 406.822296,223.781372 408.155304,225.260269 C409.639313,226.906677 411.342712,225.888306 412.775208,225.369995 C415.886383,224.244339 419.071045,223.116882 421.894501,221.434387 C439.119720,211.169907 455.850922,200.078171 473.580505,190.654480 C474.749176,190.033264 475.648376,188.905075 477.414856,187.366531 C467.746094,187.366531 459.123047,187.366531 449.500061,187.366730 M462.465942,119.845772 C459.486786,121.881676 457.629578,124.797760 456.150024,127.988014 C454.753510,130.999237 455.313263,132.715546 459.079956,132.674026 C467.153076,132.585052 475.227875,132.646759 483.286407,132.646759 C484.244812,121.743507 473.467255,114.807114 462.465942,119.845772 z"/>
+        <path fill="#000000" d="M274.467957,513.000000 C274.810516,511.269226 274.645172,509.417389 274.645782,507.593414 C274.655365,478.118317 274.563782,448.642578 274.755737,419.168701 C274.785919,414.532227 273.381561,412.668091 268.791077,413.324524 C267.814758,413.464111 266.796173,413.325989 265.797974,413.290405 C264.169983,413.232361 262.767395,412.895142 262.883881,410.790802 C262.984772,408.968018 264.303101,408.814728 265.691742,408.693420 C273.109955,408.045319 280.530182,407.417114 287.942352,406.704926 C291.159515,406.395782 292.600464,407.664062 292.356812,410.940796 C292.222168,412.751770 292.332703,414.580963 292.332703,416.286163 C293.726288,417.056305 294.020142,415.923828 294.413239,415.409332 C301.897858,405.613922 312.156708,404.498932 322.676483,407.864868 C334.534363,411.658936 341.161591,420.784729 343.358032,433.055756 C345.940735,447.484802 341.318146,459.118469 330.906952,469.385529 C323.141785,477.043182 302.485016,480.559937 294.238098,468.943237 C293.999298,468.606903 293.469727,468.477081 292.240753,467.771820 C292.240753,482.935028 292.240753,497.511719 292.120361,512.544189 C286.311951,513.000000 280.623932,513.000000 274.467957,513.000000 M292.618500,444.203400 C293.653687,446.413574 293.333038,448.776459 293.333435,451.086273 C293.334320,455.891174 294.564606,460.367767 297.615417,464.039001 C302.076508,469.407318 308.041473,471.926208 314.898071,470.425293 C320.165955,469.272156 321.674347,464.435638 322.537903,459.759857 C324.575562,448.726776 323.863098,437.544495 323.397186,426.466919 C323.166626,420.985657 322.754242,414.329102 315.355255,412.568542 C308.474152,410.931305 301.615326,414.651520 297.272247,421.296204 C292.811157,428.121521 293.541290,435.880798 292.618500,444.203400 z"/>
+        <path fill="#000000" d="M18.045155,362.650543 C37.203964,362.651031 55.871033,362.438782 74.530006,362.735413 C85.094742,362.903351 94.646881,366.527466 101.053902,375.302734 C112.774361,391.355438 106.295738,418.352051 80.188385,422.421204 C71.038269,423.847382 61.928768,423.195496 52.803638,423.260834 C48.769299,423.289703 47.193329,424.452667 47.272476,428.682892 C47.496883,440.676758 47.502293,452.680573 47.266468,464.674011 C47.185917,468.770721 48.707985,469.993347 52.530849,469.706909 C55.677841,469.471100 58.859886,469.645935 62.024281,469.724365 C63.544712,469.762024 65.169785,469.876190 65.086838,472.070587 C65.005852,474.213348 63.369183,474.286041 61.871353,474.297455 C53.873158,474.358459 45.874516,474.371277 37.876007,474.377930 C29.544052,474.384888 21.211788,474.399994 12.880335,474.330505 C11.146930,474.316071 8.827154,474.658630 8.956964,471.819031 C9.069501,469.357391 11.175016,469.857941 12.741887,469.683289 C13.236127,469.628204 13.740838,469.669006 14.240699,469.662048 C25.649679,469.503296 25.650637,469.503235 25.650845,458.300842 C25.651363,430.305328 25.652712,402.309784 25.649616,374.314270 C25.648846,367.359955 25.641649,367.364319 18.459627,367.341461 C16.127357,367.334045 13.794249,367.329407 11.463301,367.261993 C10.001972,367.219696 8.849399,366.763580 8.882000,364.953918 C8.914682,363.139771 10.121720,362.775482 11.552793,362.729675 C13.550665,362.665771 15.550836,362.673645 18.045155,362.650543 M80.664085,375.849548 C78.743042,371.764893 75.431534,369.226044 71.087822,368.733185 C64.516373,367.987488 57.882278,367.793182 51.274578,367.368134 C48.146454,367.166931 47.316883,368.894501 47.329033,371.709900 C47.390800,386.021942 47.411274,400.334778 47.314789,414.646454 C47.294079,417.718292 48.530632,418.891083 51.477371,418.661072 C56.924019,418.235962 62.413166,418.132660 67.808762,417.363373 C70.833054,416.932190 73.786110,415.950806 76.284676,413.584564 C84.388161,405.910248 86.839340,388.208130 80.664085,375.849548 z"/>
+        <path fill="#000000" d="M831.962769,471.124084 C832.339233,473.959381 830.769897,474.319855 828.948181,474.321472 C817.452515,474.331635 805.956787,474.346802 794.461243,474.302338 C792.842224,474.296082 790.834412,474.401306 790.940369,471.892090 C791.045288,469.405762 793.085754,469.810455 794.667480,469.697601 C801.632080,469.200623 801.642273,469.213379 801.646912,462.380249 C801.654846,450.551086 801.647217,438.721924 801.652466,426.892761 C801.653625,424.234222 801.448181,421.644775 800.845703,419.003448 C799.363037,412.502991 795.980835,410.407806 789.873352,413.156158 C780.591064,417.333099 776.774231,425.361267 775.372498,434.895233 C773.914246,444.812897 774.511230,454.802002 774.277771,464.764954 C774.192444,468.406372 775.310303,470.141205 779.097046,469.670746 C779.915771,469.568970 780.764465,469.632233 781.592896,469.699310 C783.227295,469.831604 785.180847,469.644562 785.060120,472.167877 C784.958130,474.301849 783.240234,474.301666 781.766541,474.307068 C770.937561,474.346588 760.108337,474.341431 749.279236,474.323029 C747.539001,474.320068 745.769775,474.129242 745.924011,471.721802 C746.064331,469.532318 747.856812,469.835388 749.297180,469.707214 C756.648376,469.053192 756.653992,469.057861 756.657410,461.772766 C756.664062,447.444489 756.550720,433.114716 756.739197,418.788879 C756.793091,414.691559 755.460571,412.858704 751.302551,413.329376 C750.319641,413.440674 749.306885,413.305237 748.308777,413.261139 C746.723511,413.191132 745.834717,412.429993 745.892883,410.762848 C745.945190,409.263184 746.915833,408.824646 748.211975,408.732727 C752.177734,408.451447 756.050659,407.215729 760.089417,407.629578 C761.243225,407.747833 762.437134,407.511108 763.583008,407.662018 C766.972290,408.108368 770.961121,404.696136 773.522644,407.735718 C775.715637,410.337891 774.044495,414.492462 774.368652,417.942078 C774.411621,418.399567 774.559692,418.847137 774.763794,419.775238 C777.489929,416.080261 780.175293,412.874817 783.626404,410.378326 C792.201660,404.175140 807.088623,405.391754 814.229126,412.999695 C818.533752,417.586121 819.088318,423.512207 819.248108,429.258575 C819.572327,440.912170 819.484497,452.583466 819.274353,464.242218 C819.201721,468.271606 820.308044,470.073090 824.595703,469.745148 C826.976562,469.563019 829.607788,468.944550 831.962769,471.124084 z"/>
+        <path fill="#000000" d="M716.340332,442.000061 C716.339783,449.828064 716.505310,457.161407 716.270142,464.481842 C716.147278,468.306641 717.228943,470.095184 721.323486,469.715302 C724.295410,469.439575 727.316162,469.599640 730.310913,469.696503 C731.866882,469.746796 733.969666,469.315735 734.066528,471.815796 C734.176270,474.648834 731.907532,474.325867 730.153320,474.331085 C715.497498,474.374878 700.841492,474.365570 686.185547,474.367676 C684.187256,474.367950 682.187134,474.390198 680.191284,474.313812 C678.690002,474.256409 677.029114,474.221985 676.932129,472.114532 C676.814575,469.559814 678.775085,469.747559 680.403015,469.702057 C683.065735,469.627625 685.766479,469.395721 688.389099,469.725037 C693.639526,470.384247 694.796875,468.054138 694.757141,463.164520 C694.546082,437.185181 694.658630,411.203217 694.658264,385.222168 C694.658203,380.725464 694.529175,376.224182 694.693420,371.733582 C694.810364,368.536804 693.644104,367.123566 690.357239,367.308868 C687.369141,367.477295 684.358093,367.447571 681.368042,367.293488 C679.581909,367.201447 676.858704,368.084229 676.950317,364.853577 C677.030029,362.044281 679.494629,362.705322 681.148438,362.699188 C697.303101,362.639496 713.458130,362.632202 729.612671,362.707123 C731.367188,362.715271 734.194336,361.846466 734.009766,365.106842 C733.837341,368.154541 731.127625,367.196472 729.324402,367.297791 C726.667969,367.447021 723.980103,367.531769 721.336365,367.297211 C717.294006,366.938538 716.251282,368.738739 716.273682,372.550629 C716.408508,395.533112 716.340332,418.516785 716.340332,442.000061 z"/>
+        <path fill="#000000" d="M517.116943,475.508057 C509.089996,472.274261 505.254242,466.698883 505.660248,458.363892 C506.127441,448.772430 512.024292,443.264038 520.217163,440.025146 C527.320374,437.217041 534.865845,435.699341 542.544495,435.742523 C546.495667,435.764771 547.902100,434.383820 547.704468,430.495300 C547.485901,426.193573 547.733093,421.887512 546.676819,417.632721 C545.843811,414.277649 544.017334,412.302734 540.472778,412.405762 C536.666443,412.516388 532.851196,411.987030 529.050598,412.997833 C525.710083,413.886353 524.461304,415.668793 526.016296,418.801727 C527.633362,422.059570 528.138733,425.294159 525.602478,428.109375 C522.802856,431.216858 518.809631,430.809662 515.277222,430.115906 C510.102966,429.099670 508.727509,419.761230 513.015747,414.847382 C517.904785,409.245056 524.553589,407.158325 531.671143,406.731964 C537.479919,406.384003 543.327332,406.571075 549.154907,406.674438 C559.432190,406.856720 565.210266,412.579254 565.315918,422.855652 C565.439148,434.846436 565.337036,446.839478 565.355042,458.831482 C565.367065,466.857361 566.037170,467.297546 573.098999,464.132904 C574.202698,463.638275 575.343079,463.561981 576.416809,464.268066 C576.103577,470.230682 572.668030,475.756927 567.897400,476.056854 C557.431152,476.714813 553.851379,478.161133 547.352905,465.976776 C539.362244,475.458282 529.273499,478.433899 517.116943,475.508057 M524.357178,454.755035 C523.720337,459.677582 525.189758,464.080505 529.705139,466.051727 C534.377930,468.091736 538.695557,465.917755 542.322510,462.506531 C546.499512,458.577972 549.345459,448.187164 547.526672,443.229156 C547.146240,442.192047 546.482666,441.703094 545.416870,441.415619 C536.867493,439.110046 526.252502,445.395599 524.357178,454.755035 z"/>
+        <path fill="#000000" d="M401.954834,475.511963 C386.826752,479.036102 372.405914,473.775696 364.564575,463.247559 C355.061066,450.487732 355.816193,430.603210 363.617218,420.750183 C370.549316,411.994659 378.986877,406.608368 390.752838,406.497864 C401.023376,406.401428 410.279449,408.248901 417.783691,415.563599 C423.825134,421.452423 427.222321,428.557739 427.418701,437.241852 C427.629883,446.581146 426.840454,455.358276 420.509918,463.021362 C415.578918,468.990356 409.867462,473.398773 401.954834,475.511963 M405.680817,420.007050 C401.643219,413.006683 396.753235,410.868286 388.514008,412.500031 C382.782928,413.635010 378.638672,418.378357 378.455811,425.124847 C378.167725,435.753418 378.147034,446.401703 378.445740,457.029510 C378.659149,464.623535 383.538483,470.053070 389.778778,470.629608 C398.669739,471.451050 404.202087,468.403870 406.149658,461.216614 C406.830566,458.704010 406.563293,455.949188 406.912933,453.329529 C408.370422,442.410645 407.976868,431.560913 405.680817,420.007050 z"/>
+        <path fill="#000000" d="M192.907913,415.903381 C207.968475,400.273254 242.394760,403.522217 250.260727,426.907501 C257.562042,448.614075 248.709290,470.107391 225.283081,476.030182 C209.707825,479.968048 193.982666,472.705505 186.493027,458.411346 C180.089828,446.190674 180.473602,427.113220 192.907913,415.903381 M231.556564,459.798676 C232.528366,448.410645 233.227875,437.076416 231.793900,425.609192 C230.664886,416.580780 226.883392,412.349731 217.901215,412.380157 C208.655289,412.411469 203.562714,416.909363 203.403214,425.674866 C203.215714,435.978210 203.102661,446.296844 203.471008,456.590424 C203.649323,461.573120 205.089584,466.460297 210.196655,469.078003 C218.945602,473.562347 227.599106,470.114899 231.556564,459.798676 z"/>
+        <path fill="#000000" d="M584.533569,363.315491 C593.126892,362.262695 601.366272,361.504517 609.605652,360.747131 C612.059021,360.521576 613.362488,361.475006 613.330750,364.105927 C613.276428,368.603638 613.347412,373.102753 613.347900,377.601257 C613.351135,406.259308 613.452881,434.918121 613.248047,463.574707 C613.213745,468.379608 614.585693,470.404663 619.425964,469.682983 C620.399658,469.537811 621.423584,469.668335 622.418884,469.743896 C623.820557,469.850311 625.091309,470.151886 625.087463,471.983917 C625.083618,473.790344 623.858948,474.224030 622.435059,474.248993 C617.771362,474.330902 613.106506,474.361053 608.441956,474.370453 C601.943970,474.383484 595.443848,474.448425 588.949158,474.296753 C587.051025,474.252411 583.889771,475.301849 584.027405,471.865601 C584.162720,468.489258 587.307739,470.134857 589.168884,469.703949 C589.802063,469.557434 590.504211,469.608673 591.161743,469.683899 C594.758240,470.095245 595.694214,468.313751 595.685608,464.972656 C595.605530,433.982178 595.563232,402.990997 595.732849,372.001221 C595.757385,367.508453 593.508240,367.424225 590.156189,367.215759 C587.841736,367.071777 583.325989,369.404816 584.533569,363.315491 z"/>
+        <path fill="#000000" d="M488.129333,466.901123 C482.598206,477.611176 465.275635,478.695068 456.257111,473.976562 C452.849396,472.193634 450.199219,470.866394 446.341705,473.434937 C442.807587,475.788177 440.769836,474.291107 440.694885,470.076385 C440.591278,464.250977 440.645081,458.421906 440.701202,452.595062 C440.716675,450.988770 440.487610,449.179565 442.902191,448.802826 C445.219482,448.441254 446.298035,449.589172 446.841400,451.588287 C448.277435,456.871796 451.313904,461.128510 455.134827,464.959045 C462.735931,472.579285 472.753998,472.938965 480.989502,465.845917 C483.569153,463.624115 485.169342,460.979767 484.419128,457.555023 C483.683533,454.196777 481.338257,452.348663 478.029083,451.261536 C470.760376,448.873535 462.990631,448.912354 455.764160,446.292999 C447.228333,443.199097 442.111664,437.534180 441.668304,430.080200 C440.973999,418.406982 444.197540,411.820984 453.999084,408.078796 C461.441681,405.237213 469.331879,405.365845 476.542664,409.570465 C478.382538,410.643341 479.505737,411.730103 481.672546,409.866425 C484.336700,407.574951 486.291656,408.407135 486.313049,412.197510 C486.336517,416.359680 486.359802,420.522552 486.302826,424.684052 C486.283142,426.122437 486.503998,427.857513 484.384155,428.157043 C482.418152,428.434875 481.226379,427.477203 480.672913,425.630310 C479.905731,423.070282 478.761444,420.689880 477.151031,418.557983 C471.712006,411.357666 460.389526,409.902252 453.582794,415.523407 C451.467560,417.270264 449.434052,419.441345 449.991333,422.225952 C450.556549,425.050018 452.756287,426.886169 455.714844,427.914368 C461.556671,429.944611 467.710571,430.294037 473.695587,431.436981 C491.228088,434.785065 496.459625,452.693176 488.129333,466.901123 z"/>
+        <path fill="#000000" d="M151.418793,411.353058 C156.108490,405.432404 162.308899,406.203339 168.214005,406.976776 C172.602066,407.551514 174.315872,411.448120 175.129181,415.245758 C175.885101,418.775482 175.142319,422.386871 172.040619,424.694122 C168.711334,427.170654 164.726776,426.994354 161.084991,425.641541 C158.907959,424.832825 157.634033,422.705261 157.610916,420.026550 C157.596191,418.318268 158.342285,416.317230 156.218597,414.694427 C150.281799,419.268616 148.496582,425.920990 147.425980,432.762543 C145.800034,443.152832 146.563080,453.663849 146.253006,464.122955 C146.118805,468.649475 147.843918,470.141632 152.088974,469.691498 C153.897202,469.499756 155.749634,469.678955 157.579514,469.751770 C159.062775,469.810791 160.172318,470.328857 160.113220,472.114868 C160.053223,473.928162 158.803040,474.278198 157.393723,474.295441 C152.397110,474.356537 147.399811,474.377045 142.402756,474.381287 C134.906677,474.387665 127.410172,474.405487 119.914749,474.329498 C118.201027,474.312134 115.886658,474.756348 115.928741,471.894501 C115.965981,469.361969 118.055908,469.814880 119.619850,469.706329 C128.652054,469.079559 128.654892,469.092499 128.656891,459.945679 C128.659851,446.286072 128.512543,432.623962 128.745636,418.968292 C128.821014,414.552582 127.328064,413.087494 122.981232,413.227051 C120.597404,413.303589 116.141891,414.998138 116.214867,410.918610 C116.286194,406.931030 120.657211,409.015778 123.109528,408.728027 C129.353531,407.995270 135.672897,407.858734 141.893753,406.992737 C145.378815,406.507599 146.491470,407.601013 146.345963,410.852203 C146.242844,413.156525 146.326004,415.469177 146.326004,419.001953 C148.100739,415.745270 148.978638,413.187439 151.418793,411.353058 z"/>
+        <path fill="#000000" d="M846.934753,463.940796 C838.420959,453.011536 837.433594,441.054565 841.621094,428.815033 C845.932251,416.213654 858.935974,405.824677 872.194946,406.598846 C877.967468,406.935883 883.934326,405.896667 889.211853,409.110962 C895.139221,412.721008 899.617371,417.340546 899.354980,424.998840 C899.228333,428.694733 897.652710,431.869019 894.323792,432.875916 C890.768066,433.951385 886.491760,434.432526 883.570007,431.147339 C880.927002,428.175476 880.896240,424.315643 882.357666,420.799408 C885.024475,414.383087 883.958618,412.599365 876.773804,412.383942 C864.390015,412.012604 859.249268,416.761200 859.418884,429.167999 C859.552612,438.949493 858.509338,448.750854 860.230347,458.523743 C862.426270,470.993042 871.835938,472.832855 882.148071,469.402008 C888.773376,467.197754 891.839783,461.230682 894.655273,455.322113 C895.222351,454.132080 895.681946,452.853394 896.451477,451.807098 C897.346924,450.589722 898.771362,450.538208 900.086487,451.070221 C901.461853,451.626648 901.376038,452.967957 901.166748,454.078735 C898.829346,466.482635 886.727966,476.509521 876.647583,476.630920 C864.618713,476.775787 854.799072,473.597382 846.934753,463.940796 z"/>
+        <path fill="#000000" d="M936.538208,457.483398 C938.767761,460.989471 940.170349,464.450409 939.125305,468.170959 C937.963867,472.305542 935.819458,475.792664 930.868652,476.320160 C923.415710,477.114227 920.225525,475.648743 917.742004,470.155945 C915.716553,465.676270 916.728943,459.828278 920.055481,456.792358 C923.493958,453.654236 931.294922,453.838379 936.538208,457.483398 z"/>
+      </svg>
+    </div>
+    <h1>Panel de control</h1>
+    <p class="login-sub">Acceso para Bruno, Fernanda y Danna</p>
+    <div class="campo">
+      <label>Contraseña</label>
+      <div class="pw-wrap">
+        <input type="password" id="input-pw" placeholder="Contraseña" autocomplete="current-password">
+        <button type="button" class="pw-toggle" id="btn-pw-toggle" onclick="togglePw()">
+          <i class="ti ti-eye"></i>
+        </button>
+      </div>
+      <div class="error-login" id="error-login"></div>
+    </div>
+    <button class="btn-primario gold" style="width:100%" onclick="intentarLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="pantalla-admin">
+  <div class="topbar">
+    <span class="topbar-marca">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 944 512">
+        <path fill="#ffffff" d="M475.531342,1.000000 C478.232574,4.001772 481.820892,2.872762 484.686707,3.515778 C507.726318,8.685297 528.724182,18.132751 547.338928,32.661728 C570.119385,50.442139 586.832336,72.766136 597.292908,99.788071 C605.591003,121.223808 608.784607,143.497223 607.187622,166.232391 C604.895447,198.864319 593.611267,228.187408 572.603943,253.614532 C548.982300,282.206055 519.127197,300.689575 482.839111,307.811737 C457.822144,312.721741 432.709106,311.820618 407.953064,304.613525 C386.893311,298.482452 367.800781,288.590454 351.336945,274.319153 C322.919800,249.686462 304.526825,219.039093 298.589172,181.470367 C294.364166,154.737808 296.101654,128.480728 305.406982,102.978111 C319.288391,64.934052 344.338226,36.564861 380.200806,17.739222 C394.882080,10.032459 410.370270,4.819451 426.806030,2.468354 C427.414246,2.381352 427.961517,1.868235 428.768585,1.276848 C444.354218,1.000000 459.708466,1.000000 475.531342,1.000000 M518.764526,277.185944 C534.572083,268.560944 548.279968,257.378571 559.445679,243.233887 C584.379517,211.647812 595.742676,176.145645 589.732971,135.846512 C584.345947,99.723335 567.246155,69.917122 538.800476,47.368145 C509.757080,24.345394 476.533569,13.337419 439.005768,17.286388 C420.979553,19.183249 403.773407,23.495718 387.763092,32.231262 C370.697327,41.542675 355.530823,53.030788 343.560638,68.585403 C333.960815,81.059830 326.193756,94.402885 320.861908,109.280991 C312.441650,132.776978 310.087982,156.602554 314.994781,181.170624 C319.335083,202.902420 328.278748,222.496231 341.685150,240.035172 C345.539154,245.077179 349.372528,250.351379 355.084534,253.549896 C356.820648,252.182129 357.123444,250.506714 357.566467,248.929703 C361.149200,236.176422 365.815521,224.221390 375.796661,214.630157 C382.368622,208.314926 386.977295,200.246567 389.350952,191.146698 C390.857819,185.369888 392.504395,179.613922 394.430664,173.965378 C398.186127,162.953354 400.535553,161.618652 412.137085,163.110428 C412.410828,163.145645 412.724945,162.867096 413.565613,162.490723 C413.565613,158.287323 414.779785,153.349869 413.244232,149.512817 C411.503937,145.164093 410.293610,139.936569 405.257233,137.207916 C398.403107,133.494431 391.838806,129.244141 385.167969,125.194748 C377.707825,120.666183 376.175842,114.089462 380.752045,106.750069 C384.006561,101.530434 387.151459,96.242569 390.367645,90.998863 C402.358429,71.448837 414.334503,51.889713 426.371155,32.367958 C429.516266,27.266966 437.170258,25.064831 442.036865,27.987289 C451.148407,33.458878 460.086151,39.219765 469.196289,44.693695 C472.392883,46.614407 472.581055,48.667351 470.750763,51.638565 C459.772308,69.460281 448.884644,87.337898 437.930908,105.174858 C432.021515,114.797630 425.951538,124.322914 420.132568,133.999573 C417.426697,138.499252 418.606689,140.497055 423.693329,140.627487 C427.189972,140.717163 430.695770,140.760880 434.188782,140.615417 C441.141205,140.325897 446.944733,135.770966 448.152679,129.206146 C449.575867,121.471634 453.398773,115.717125 460.448151,112.132187 C461.711975,111.489487 463.122559,111.078018 463.277649,109.080330 C463.684723,103.836258 465.491364,102.871262 472.073639,103.647217 C476.803284,104.204765 476.363678,107.162292 475.212830,110.290955 C488.063324,117.491394 489.411072,119.311028 491.313904,132.904099 C491.595306,134.914154 492.828369,135.576279 494.197815,136.567841 C501.426056,141.801636 509.712769,140.632202 517.807556,140.653458 C525.339355,140.673248 525.343018,140.657211 525.349243,148.305374 C525.354614,154.872635 525.350403,161.439911 525.350403,168.822922 C529.481079,167.154449 532.541443,165.955276 535.572754,164.686569 C543.147278,161.516403 550.904602,160.260101 558.840820,163.002914 C561.202759,163.819214 564.152893,164.511993 564.314514,168.014175 C564.460571,171.178391 563.719971,173.685699 560.892395,175.750000 C552.667786,181.754593 543.240051,185.649078 534.708008,191.116745 C526.571472,196.330963 519.316956,202.209869 515.811401,211.559067 C514.976929,213.784439 513.963013,215.832870 512.478271,217.617508 C502.584503,229.509476 494.162323,242.431595 486.277740,255.683640 C482.666656,261.753052 477.546082,265.562042 471.324860,268.214844 C460.355621,272.892181 448.974670,276.456024 437.783295,280.531464 C431.731476,282.735260 425.734589,285.481628 421.005310,290.428650 C455.177277,298.809509 487.443970,294.057922 518.764526,277.185944 M449.500061,187.366730 C438.919250,187.366730 428.338409,187.366730 417.803558,187.366730 C416.826080,191.733353 415.880035,196.075623 414.878967,200.405167 C413.266693,207.378220 410.256195,213.866898 407.857056,220.567810 C407.295074,222.137405 406.822296,223.781372 408.155304,225.260269 C409.639313,226.906677 411.342712,225.888306 412.775208,225.369995 C415.886383,224.244339 419.071045,223.116882 421.894501,221.434387 C439.119720,211.169907 455.850922,200.078171 473.580505,190.654480 C474.749176,190.033264 475.648376,188.905075 477.414856,187.366531 C467.746094,187.366531 459.123047,187.366531 449.500061,187.366730 M462.465942,119.845772 C459.486786,121.881676 457.629578,124.797760 456.150024,127.988014 C454.753510,130.999237 455.313263,132.715546 459.079956,132.674026 C467.153076,132.585052 475.227875,132.646759 483.286407,132.646759 C484.244812,121.743507 473.467255,114.807114 462.465942,119.845772 z"/>
+        <path fill="#ffffff" d="M274.467957,513.000000 C274.810516,511.269226 274.645172,509.417389 274.645782,507.593414 C274.655365,478.118317 274.563782,448.642578 274.755737,419.168701 C274.785919,414.532227 273.381561,412.668091 268.791077,413.324524 C267.814758,413.464111 266.796173,413.325989 265.797974,413.290405 C264.169983,413.232361 262.767395,412.895142 262.883881,410.790802 C262.984772,408.968018 264.303101,408.814728 265.691742,408.693420 C273.109955,408.045319 280.530182,407.417114 287.942352,406.704926 C291.159515,406.395782 292.600464,407.664062 292.356812,410.940796 C292.222168,412.751770 292.332703,414.580963 292.332703,416.286163 C293.726288,417.056305 294.020142,415.923828 294.413239,415.409332 C301.897858,405.613922 312.156708,404.498932 322.676483,407.864868 C334.534363,411.658936 341.161591,420.784729 343.358032,433.055756 C345.940735,447.484802 341.318146,459.118469 330.906952,469.385529 C323.141785,477.043182 302.485016,480.559937 294.238098,468.943237 C293.999298,468.606903 293.469727,468.477081 292.240753,467.771820 C292.240753,482.935028 292.240753,497.511719 292.120361,512.544189 C286.311951,513.000000 280.623932,513.000000 274.467957,513.000000 M292.618500,444.203400 C293.653687,446.413574 293.333038,448.776459 293.333435,451.086273 C293.334320,455.891174 294.564606,460.367767 297.615417,464.039001 C302.076508,469.407318 308.041473,471.926208 314.898071,470.425293 C320.165955,469.272156 321.674347,464.435638 322.537903,459.759857 C324.575562,448.726776 323.863098,437.544495 323.397186,426.466919 C323.166626,420.985657 322.754242,414.329102 315.355255,412.568542 C308.474152,410.931305 301.615326,414.651520 297.272247,421.296204 C292.811157,428.121521 293.541290,435.880798 292.618500,444.203400 z"/>
+        <path fill="#ffffff" d="M18.045155,362.650543 C37.203964,362.651031 55.871033,362.438782 74.530006,362.735413 C85.094742,362.903351 94.646881,366.527466 101.053902,375.302734 C112.774361,391.355438 106.295738,418.352051 80.188385,422.421204 C71.038269,423.847382 61.928768,423.195496 52.803638,423.260834 C48.769299,423.289703 47.193329,424.452667 47.272476,428.682892 C47.496883,440.676758 47.502293,452.680573 47.266468,464.674011 C47.185917,468.770721 48.707985,469.993347 52.530849,469.706909 C55.677841,469.471100 58.859886,469.645935 62.024281,469.724365 C63.544712,469.762024 65.169785,469.876190 65.086838,472.070587 C65.005852,474.213348 63.369183,474.286041 61.871353,474.297455 C53.873158,474.358459 45.874516,474.371277 37.876007,474.377930 C29.544052,474.384888 21.211788,474.399994 12.880335,474.330505 C11.146930,474.316071 8.827154,474.658630 8.956964,471.819031 C9.069501,469.357391 11.175016,469.857941 12.741887,469.683289 C13.236127,469.628204 13.740838,469.669006 14.240699,469.662048 C25.649679,469.503296 25.650637,469.503235 25.650845,458.300842 C25.651363,430.305328 25.652712,402.309784 25.649616,374.314270 C25.648846,367.359955 25.641649,367.364319 18.459627,367.341461 C16.127357,367.334045 13.794249,367.329407 11.463301,367.261993 C10.001972,367.219696 8.849399,366.763580 8.882000,364.953918 C8.914682,363.139771 10.121720,362.775482 11.552793,362.729675 C13.550665,362.665771 15.550836,362.673645 18.045155,362.650543 M80.664085,375.849548 C78.743042,371.764893 75.431534,369.226044 71.087822,368.733185 C64.516373,367.987488 57.882278,367.793182 51.274578,367.368134 C48.146454,367.166931 47.316883,368.894501 47.329033,371.709900 C47.390800,386.021942 47.411274,400.334778 47.314789,414.646454 C47.294079,417.718292 48.530632,418.891083 51.477371,418.661072 C56.924019,418.235962 62.413166,418.132660 67.808762,417.363373 C70.833054,416.932190 73.786110,415.950806 76.284676,413.584564 C84.388161,405.910248 86.839340,388.208130 80.664085,375.849548 z"/>
+        <path fill="#ffffff" d="M831.962769,471.124084 C832.339233,473.959381 830.769897,474.319855 828.948181,474.321472 C817.452515,474.331635 805.956787,474.346802 794.461243,474.302338 C792.842224,474.296082 790.834412,474.401306 790.940369,471.892090 C791.045288,469.405762 793.085754,469.810455 794.667480,469.697601 C801.632080,469.200623 801.642273,469.213379 801.646912,462.380249 C801.654846,450.551086 801.647217,438.721924 801.652466,426.892761 C801.653625,424.234222 801.448181,421.644775 800.845703,419.003448 C799.363037,412.502991 795.980835,410.407806 789.873352,413.156158 C780.591064,417.333099 776.774231,425.361267 775.372498,434.895233 C773.914246,444.812897 774.511230,454.802002 774.277771,464.764954 C774.192444,468.406372 775.310303,470.141205 779.097046,469.670746 C779.915771,469.568970 780.764465,469.632233 781.592896,469.699310 C783.227295,469.831604 785.180847,469.644562 785.060120,472.167877 C784.958130,474.301849 783.240234,474.301666 781.766541,474.307068 C770.937561,474.346588 760.108337,474.341431 749.279236,474.323029 C747.539001,474.320068 745.769775,474.129242 745.924011,471.721802 C746.064331,469.532318 747.856812,469.835388 749.297180,469.707214 C756.648376,469.053192 756.653992,469.057861 756.657410,461.772766 C756.664062,447.444489 756.550720,433.114716 756.739197,418.788879 C756.793091,414.691559 755.460571,412.858704 751.302551,413.329376 C750.319641,413.440674 749.306885,413.305237 748.308777,413.261139 C746.723511,413.191132 745.834717,412.429993 745.892883,410.762848 C745.945190,409.263184 746.915833,408.824646 748.211975,408.732727 C752.177734,408.451447 756.050659,407.215729 760.089417,407.629578 C761.243225,407.747833 762.437134,407.511108 763.583008,407.662018 C766.972290,408.108368 770.961121,404.696136 773.522644,407.735718 C775.715637,410.337891 774.044495,414.492462 774.368652,417.942078 C774.411621,418.399567 774.559692,418.847137 774.763794,419.775238 C777.489929,416.080261 780.175293,412.874817 783.626404,410.378326 C792.201660,404.175140 807.088623,405.391754 814.229126,412.999695 C818.533752,417.586121 819.088318,423.512207 819.248108,429.258575 C819.572327,440.912170 819.484497,452.583466 819.274353,464.242218 C819.201721,468.271606 820.308044,470.073090 824.595703,469.745148 C826.976562,469.563019 829.607788,468.944550 831.962769,471.124084 z"/>
+        <path fill="#ffffff" d="M716.340332,442.000061 C716.339783,449.828064 716.505310,457.161407 716.270142,464.481842 C716.147278,468.306641 717.228943,470.095184 721.323486,469.715302 C724.295410,469.439575 727.316162,469.599640 730.310913,469.696503 C731.866882,469.746796 733.969666,469.315735 734.066528,471.815796 C734.176270,474.648834 731.907532,474.325867 730.153320,474.331085 C715.497498,474.374878 700.841492,474.365570 686.185547,474.367676 C684.187256,474.367950 682.187134,474.390198 680.191284,474.313812 C678.690002,474.256409 677.029114,474.221985 676.932129,472.114532 C676.814575,469.559814 678.775085,469.747559 680.403015,469.702057 C683.065735,469.627625 685.766479,469.395721 688.389099,469.725037 C693.639526,470.384247 694.796875,468.054138 694.757141,463.164520 C694.546082,437.185181 694.658630,411.203217 694.658264,385.222168 C694.658203,380.725464 694.529175,376.224182 694.693420,371.733582 C694.810364,368.536804 693.644104,367.123566 690.357239,367.308868 C687.369141,367.477295 684.358093,367.447571 681.368042,367.293488 C679.581909,367.201447 676.858704,368.084229 676.950317,364.853577 C677.030029,362.044281 679.494629,362.705322 681.148438,362.699188 C697.303101,362.639496 713.458130,362.632202 729.612671,362.707123 C731.367188,362.715271 734.194336,361.846466 734.009766,365.106842 C733.837341,368.154541 731.127625,367.196472 729.324402,367.297791 C726.667969,367.447021 723.980103,367.531769 721.336365,367.297211 C717.294006,366.938538 716.251282,368.738739 716.273682,372.550629 C716.408508,395.533112 716.340332,418.516785 716.340332,442.000061 z"/>
+        <path fill="#ffffff" d="M517.116943,475.508057 C509.089996,472.274261 505.254242,466.698883 505.660248,458.363892 C506.127441,448.772430 512.024292,443.264038 520.217163,440.025146 C527.320374,437.217041 534.865845,435.699341 542.544495,435.742523 C546.495667,435.764771 547.902100,434.383820 547.704468,430.495300 C547.485901,426.193573 547.733093,421.887512 546.676819,417.632721 C545.843811,414.277649 544.017334,412.302734 540.472778,412.405762 C536.666443,412.516388 532.851196,411.987030 529.050598,412.997833 C525.710083,413.886353 524.461304,415.668793 526.016296,418.801727 C527.633362,422.059570 528.138733,425.294159 525.602478,428.109375 C522.802856,431.216858 518.809631,430.809662 515.277222,430.115906 C510.102966,429.099670 508.727509,419.761230 513.015747,414.847382 C517.904785,409.245056 524.553589,407.158325 531.671143,406.731964 C537.479919,406.384003 543.327332,406.571075 549.154907,406.674438 C559.432190,406.856720 565.210266,412.579254 565.315918,422.855652 C565.439148,434.846436 565.337036,446.839478 565.355042,458.831482 C565.367065,466.857361 566.037170,467.297546 573.098999,464.132904 C574.202698,463.638275 575.343079,463.561981 576.416809,464.268066 C576.103577,470.230682 572.668030,475.756927 567.897400,476.056854 C557.431152,476.714813 553.851379,478.161133 547.352905,465.976776 C539.362244,475.458282 529.273499,478.433899 517.116943,475.508057 M524.357178,454.755035 C523.720337,459.677582 525.189758,464.080505 529.705139,466.051727 C534.377930,468.091736 538.695557,465.917755 542.322510,462.506531 C546.499512,458.577972 549.345459,448.187164 547.526672,443.229156 C547.146240,442.192047 546.482666,441.703094 545.416870,441.415619 C536.867493,439.110046 526.252502,445.395599 524.357178,454.755035 z"/>
+        <path fill="#ffffff" d="M401.954834,475.511963 C386.826752,479.036102 372.405914,473.775696 364.564575,463.247559 C355.061066,450.487732 355.816193,430.603210 363.617218,420.750183 C370.549316,411.994659 378.986877,406.608368 390.752838,406.497864 C401.023376,406.401428 410.279449,408.248901 417.783691,415.563599 C423.825134,421.452423 427.222321,428.557739 427.418701,437.241852 C427.629883,446.581146 426.840454,455.358276 420.509918,463.021362 C415.578918,468.990356 409.867462,473.398773 401.954834,475.511963 M405.680817,420.007050 C401.643219,413.006683 396.753235,410.868286 388.514008,412.500031 C382.782928,413.635010 378.638672,418.378357 378.455811,425.124847 C378.167725,435.753418 378.147034,446.401703 378.445740,457.029510 C378.659149,464.623535 383.538483,470.053070 389.778778,470.629608 C398.669739,471.451050 404.202087,468.403870 406.149658,461.216614 C406.830566,458.704010 406.563293,455.949188 406.912933,453.329529 C408.370422,442.410645 407.976868,431.560913 405.680817,420.007050 z"/>
+        <path fill="#ffffff" d="M192.907913,415.903381 C207.968475,400.273254 242.394760,403.522217 250.260727,426.907501 C257.562042,448.614075 248.709290,470.107391 225.283081,476.030182 C209.707825,479.968048 193.982666,472.705505 186.493027,458.411346 C180.089828,446.190674 180.473602,427.113220 192.907913,415.903381 M231.556564,459.798676 C232.528366,448.410645 233.227875,437.076416 231.793900,425.609192 C230.664886,416.580780 226.883392,412.349731 217.901215,412.380157 C208.655289,412.411469 203.562714,416.909363 203.403214,425.674866 C203.215714,435.978210 203.102661,446.296844 203.471008,456.590424 C203.649323,461.573120 205.089584,466.460297 210.196655,469.078003 C218.945602,473.562347 227.599106,470.114899 231.556564,459.798676 z"/>
+        <path fill="#ffffff" d="M584.533569,363.315491 C593.126892,362.262695 601.366272,361.504517 609.605652,360.747131 C612.059021,360.521576 613.362488,361.475006 613.330750,364.105927 C613.276428,368.603638 613.347412,373.102753 613.347900,377.601257 C613.351135,406.259308 613.452881,434.918121 613.248047,463.574707 C613.213745,468.379608 614.585693,470.404663 619.425964,469.682983 C620.399658,469.537811 621.423584,469.668335 622.418884,469.743896 C623.820557,469.850311 625.091309,470.151886 625.087463,471.983917 C625.083618,473.790344 623.858948,474.224030 622.435059,474.248993 C617.771362,474.330902 613.106506,474.361053 608.441956,474.370453 C601.943970,474.383484 595.443848,474.448425 588.949158,474.296753 C587.051025,474.252411 583.889771,475.301849 584.027405,471.865601 C584.162720,468.489258 587.307739,470.134857 589.168884,469.703949 C589.802063,469.557434 590.504211,469.608673 591.161743,469.683899 C594.758240,470.095245 595.694214,468.313751 595.685608,464.972656 C595.605530,433.982178 595.563232,402.990997 595.732849,372.001221 C595.757385,367.508453 593.508240,367.424225 590.156189,367.215759 C587.841736,367.071777 583.325989,369.404816 584.533569,363.315491 z"/>
+        <path fill="#ffffff" d="M488.129333,466.901123 C482.598206,477.611176 465.275635,478.695068 456.257111,473.976562 C452.849396,472.193634 450.199219,470.866394 446.341705,473.434937 C442.807587,475.788177 440.769836,474.291107 440.694885,470.076385 C440.591278,464.250977 440.645081,458.421906 440.701202,452.595062 C440.716675,450.988770 440.487610,449.179565 442.902191,448.802826 C445.219482,448.441254 446.298035,449.589172 446.841400,451.588287 C448.277435,456.871796 451.313904,461.128510 455.134827,464.959045 C462.735931,472.579285 472.753998,472.938965 480.989502,465.845917 C483.569153,463.624115 485.169342,460.979767 484.419128,457.555023 C483.683533,454.196777 481.338257,452.348663 478.029083,451.261536 C470.760376,448.873535 462.990631,448.912354 455.764160,446.292999 C447.228333,443.199097 442.111664,437.534180 441.668304,430.080200 C440.973999,418.406982 444.197540,411.820984 453.999084,408.078796 C461.441681,405.237213 469.331879,405.365845 476.542664,409.570465 C478.382538,410.643341 479.505737,411.730103 481.672546,409.866425 C484.336700,407.574951 486.291656,408.407135 486.313049,412.197510 C486.336517,416.359680 486.359802,420.522552 486.302826,424.684052 C486.283142,426.122437 486.503998,427.857513 484.384155,428.157043 C482.418152,428.434875 481.226379,427.477203 480.672913,425.630310 C479.905731,423.070282 478.761444,420.689880 477.151031,418.557983 C471.712006,411.357666 460.389526,409.902252 453.582794,415.523407 C451.467560,417.270264 449.434052,419.441345 449.991333,422.225952 C450.556549,425.050018 452.756287,426.886169 455.714844,427.914368 C461.556671,429.944611 467.710571,430.294037 473.695587,431.436981 C491.228088,434.785065 496.459625,452.693176 488.129333,466.901123 z"/>
+        <path fill="#ffffff" d="M151.418793,411.353058 C156.108490,405.432404 162.308899,406.203339 168.214005,406.976776 C172.602066,407.551514 174.315872,411.448120 175.129181,415.245758 C175.885101,418.775482 175.142319,422.386871 172.040619,424.694122 C168.711334,427.170654 164.726776,426.994354 161.084991,425.641541 C158.907959,424.832825 157.634033,422.705261 157.610916,420.026550 C157.596191,418.318268 158.342285,416.317230 156.218597,414.694427 C150.281799,419.268616 148.496582,425.920990 147.425980,432.762543 C145.800034,443.152832 146.563080,453.663849 146.253006,464.122955 C146.118805,468.649475 147.843918,470.141632 152.088974,469.691498 C153.897202,469.499756 155.749634,469.678955 157.579514,469.751770 C159.062775,469.810791 160.172318,470.328857 160.113220,472.114868 C160.053223,473.928162 158.803040,474.278198 157.393723,474.295441 C152.397110,474.356537 147.399811,474.377045 142.402756,474.381287 C134.906677,474.387665 127.410172,474.405487 119.914749,474.329498 C118.201027,474.312134 115.886658,474.756348 115.928741,471.894501 C115.965981,469.361969 118.055908,469.814880 119.619850,469.706329 C128.652054,469.079559 128.654892,469.092499 128.656891,459.945679 C128.659851,446.286072 128.512543,432.623962 128.745636,418.968292 C128.821014,414.552582 127.328064,413.087494 122.981232,413.227051 C120.597404,413.303589 116.141891,414.998138 116.214867,410.918610 C116.286194,406.931030 120.657211,409.015778 123.109528,408.728027 C129.353531,407.995270 135.672897,407.858734 141.893753,406.992737 C145.378815,406.507599 146.491470,407.601013 146.345963,410.852203 C146.242844,413.156525 146.326004,415.469177 146.326004,419.001953 C148.100739,415.745270 148.978638,413.187439 151.418793,411.353058 z"/>
+        <path fill="#ffffff" d="M846.934753,463.940796 C838.420959,453.011536 837.433594,441.054565 841.621094,428.815033 C845.932251,416.213654 858.935974,405.824677 872.194946,406.598846 C877.967468,406.935883 883.934326,405.896667 889.211853,409.110962 C895.139221,412.721008 899.617371,417.340546 899.354980,424.998840 C899.228333,428.694733 897.652710,431.869019 894.323792,432.875916 C890.768066,433.951385 886.491760,434.432526 883.570007,431.147339 C880.927002,428.175476 880.896240,424.315643 882.357666,420.799408 C885.024475,414.383087 883.958618,412.599365 876.773804,412.383942 C864.390015,412.012604 859.249268,416.761200 859.418884,429.167999 C859.552612,438.949493 858.509338,448.750854 860.230347,458.523743 C862.426270,470.993042 871.835938,472.832855 882.148071,469.402008 C888.773376,467.197754 891.839783,461.230682 894.655273,455.322113 C895.222351,454.132080 895.681946,452.853394 896.451477,451.807098 C897.346924,450.589722 898.771362,450.538208 900.086487,451.070221 C901.461853,451.626648 901.376038,452.967957 901.166748,454.078735 C898.829346,466.482635 886.727966,476.509521 876.647583,476.630920 C864.618713,476.775787 854.799072,473.597382 846.934753,463.940796 z"/>
+        <path fill="#ffffff" d="M936.538208,457.483398 C938.767761,460.989471 940.170349,464.450409 939.125305,468.170959 C937.963867,472.305542 935.819458,475.792664 930.868652,476.320160 C923.415710,477.114227 920.225525,475.648743 917.742004,470.155945 C915.716553,465.676270 916.728943,459.828278 920.055481,456.792358 C923.493958,453.654236 931.294922,453.838379 936.538208,457.483398 z"/>
+      </svg>
+    </span>
+    <span class="topbar-sep">/</span>
+    <span class="topbar-titulo">Contratos v1</span>
+    <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="bnav-inner">
+      <button class="bnav-btn activo" data-tab="contratos" onclick="mostrarTabMobile('contratos',this)"><i class="ti ti-file-text"></i>Contratos</button>
+      <button class="bnav-btn" data-tab="nuevo"    onclick="mostrarTabMobile('nuevo',this)"><i class="ti ti-plus"></i>Nuevo</button>
+      <button class="bnav-btn" data-tab="crm"      onclick="mostrarTabMobile('crm',this)"><i class="ti ti-users"></i>Clientes</button>
+      <button class="bnav-btn" data-tab="sesiones" onclick="mostrarTabMobile('sesiones',this)"><i class="ti ti-calendar-event"></i>Eventos</button>
+      <button class="bnav-btn" data-tab="metricas" onclick="mostrarTabMobile('metricas',this)"><i class="ti ti-chart-bar"></i>Métricas</button>
+      <button class="bnav-btn" data-tab="paquetes" onclick="mostrarTabMobile('paquetes',this)"><i class="ti ti-package"></i>Paquetes</button>
+    </div>
+  </nav>
+
+  <div class="contenido">
+    <div class="tabs">
+      <button class="tab-btn activo" data-tab="contratos" onclick="mostrarTab('contratos', this)">Contratos</button>
+      <button class="tab-btn" data-tab="nuevo"    onclick="mostrarTab('nuevo', this)">Nuevo contrato</button>
+      <button class="tab-btn" data-tab="crm"      onclick="mostrarTab('crm', this)">Clientes</button>
+      <button class="tab-btn" data-tab="sesiones" onclick="mostrarTab('sesiones', this)">Eventos</button>
+      <button class="tab-btn" data-tab="metricas" onclick="mostrarTab('metricas', this)">Métricas</button>
+      <button class="tab-btn" data-tab="paquetes" onclick="mostrarTab('paquetes', this)">Paquetes</button>
+    </div>
+
+    <!-- CONTRATOS -->
+    <div id="sec-contratos" class="seccion activa">
+      <div id="alerta-evento-hoy" style="display:none;background:#FEF9ED;border:1.5px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--onyx);align-items:center;gap:10px"></div>
+      <div id="stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px"></div>
+      <div class="barra">
+        <div class="barra-fila-principal">
+          <div class="campo-busqueda">
+            <input type="text" id="busqueda" placeholder="Buscar por nombre, correo o folio..." oninput="filtrarContratos()">
+          </div>
+          <button class="btn-filtros-mobile" id="btn-filtros-mobile" onclick="toggleFiltrosMobile()" title="Filtros">
+            <i class="ti ti-adjustments-horizontal"></i>
+          </button>
+          <button class="btn-primario gold" onclick="irANuevo()"><i class="ti ti-plus"></i> Nuevo</button>
+          <button class="btn-secundario btn-sm" onclick="cargarContratos()" title="Actualizar"><i class="ti ti-refresh"></i></button>
+          <button class="btn-secundario btn-sm" onclick="descargarCSV()" title="Exportar CSV"><i class="ti ti-table-export"></i></button>
+        </div>
+        <div class="barra-filtros" id="barra-filtros">
+          <div class="ciclo-toggle">
+            <button id="ciclo-btn-abiertos" class="ciclo-btn activo-ciclo" onclick="setCiclo('abiertos')">Abiertos</button>
+            <button id="ciclo-btn-todos"    class="ciclo-btn"              onclick="setCiclo('todos')">Todos</button>
+          </div>
+          <select id="filtro-estatus" onchange="filtrarContratos()" style="width:auto">
+            <option value="">Todos los estatus</option>
+            <option value="Pendiente firma">Pendiente firma</option>
+            <option value="Firmado">Firmado</option>
+            <option value="Anticipo recibido">Anticipo recibido</option>
+            <option value="En produccion">En producción</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Liquidado">Liquidado</option>
+          </select>
+          <span class="filtro-fecha-label">Creado:</span>
+          <input type="date" id="filtro-fecha-desde" onchange="filtrarContratos()" style="width:auto" title="Creado desde">
+          <input type="date" id="filtro-fecha-hasta" onchange="filtrarContratos()" style="width:auto" title="Creado hasta">
+        </div>
+      </div>
+      <div class="tabla-card">
+        <table>
+          <thead>
+            <tr><th>Folio</th><th>Cliente</th><th>Paquete</th><th>Evento</th><th>Estatus</th><th>Total</th><th>Saldo</th></tr>
+          </thead>
+          <tbody id="tabla-body">
+            <tr><td colspan="7" class="tabla-vacio">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- NUEVO CONTRATO -->
+    <div id="sec-nuevo" class="seccion">
+      <div class="form-card">
+        <h2>Nuevo contrato</h2>
+        <p class="form-desc">Elige el tipo de contrato para este cliente.</p>
+        <div class="sub-tabs">
+          <button class="sub-tab-btn activo" onclick="mostrarSubTab('estandar', this)">Estándar</button>
+          <button class="sub-tab-btn" onclick="mostrarSubTab('personalizado', this)">Personalizado</button>
+        </div>
+
+        <!-- ESTANDAR -->
+        <div id="form-estandar">
+          <div class="campo">
+            <label>Paquete</label>
+            <select id="est-paquete" onchange="onPaqueteSelect()"><option value="">Cargando...</option></select>
+          </div>
+          <div class="campo" id="campo-adicionales">
+            <label>Add-ons a ofrecer al cliente</label>
+            <p class="form-hint" style="margin-bottom:8px">Los marcados aparecerán como opciones en el portal. El cliente decide cuáles acepta al firmar.</p>
+            <div class="add-lista" id="lista-adicionales"></div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+          <div class="campo">
+            <label>Nombre del cliente</label>
+            <input type="text" id="est-nombre" placeholder="Nombre completo">
+          </div>
+          <div class="fila-2">
+            <div class="campo"><label>Correo</label><input type="email" id="est-correo" placeholder="correo@ejemplo.com"></div>
+            <div class="campo"><label>Teléfono</label><input type="text" id="est-telefono" placeholder="811 508 0778"></div>
+          </div>
+          <div class="fila-2">
+            <div class="campo">
+              <label>Locación</label>
+              <select id="est-locacion" onchange="onLocacionChange('est')">
+                <option value="Safi Metropolitan">Safi Metropolitan</option>
+                <option value="Rincón de Santiago">Rincón de Santiago</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label>Espacio</label>
+              <select id="est-espacio" onchange="verificarRestriccion()"></select>
+            </div>
+          </div>
+          <div class="fila-2">
+            <div class="campo"><label>Fecha del evento</label><input type="date" id="est-fecha" onchange="verificarRestriccion()"></div>
+            <div class="campo"><label>Hora del evento</label><input type="time" id="est-hora" value="18:00"></div>
+          </div>
+          <div class="aviso-restriccion" id="aviso-restriccion"></div>
+          <div class="fila-2">
+            <div class="campo"><label>Precio total (editable)</label><input type="number" id="est-precio" placeholder="0" oninput="precioManual=true;actualizarAnticipo('est')"></div>
+            <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="est-anticipo" placeholder="0" oninput="anticipoManual=true"></div>
+          </div>
+          <div class="campo">
+            <label>Notas del contrato <span style="font-weight:400;color:var(--ink-3)">(opcional, visible al cliente)</span></label>
+            <textarea id="est-notas" placeholder="Indicaciones o aclaraciones para el cliente..."></textarea>
+          </div>
+          <div class="form-msg" id="msg-estandar"></div>
+          <button class="btn-primario gold" style="width:100%;margin-top:6px" id="btn-crear-estandar" onclick="crearContrato('estandar')">
+            Crear contrato y generar enlace
+          </button>
+          <div id="resultado-estandar"></div>
+        </div>
+
+        <!-- PERSONALIZADO -->
+        <div id="form-personalizado" style="display:none">
+          <div class="campo">
+            <label>Nombre del cliente</label>
+            <input type="text" id="per-nombre" placeholder="Nombre completo">
+          </div>
+          <div class="fila-2">
+            <div class="campo"><label>Correo</label><input type="email" id="per-correo" placeholder="correo@ejemplo.com"></div>
+            <div class="campo"><label>Teléfono</label><input type="text" id="per-telefono" placeholder="811 508 0778"></div>
+          </div>
+          <div class="campo">
+            <label>Locación o dirección</label>
+            <input type="text" id="per-locacion" placeholder="Dirección del evento">
+          </div>
+          <div class="campo">
+            <label>Espacio <span style="font-weight:400;color:var(--ink-3)">(opcional)</span></label>
+            <input type="text" id="per-espacio" placeholder="Terraza, jardín, salón...">
+          </div>
+          <div class="campo">
+            <label>Descripción del servicio</label>
+            <textarea id="per-descripcion" placeholder="Describe qué incluye el evento y la producción..."></textarea>
+          </div>
+          <div class="fila-2">
+            <div class="campo"><label>Fecha del evento</label><input type="date" id="per-fecha"></div>
+            <div class="campo"><label>Hora del evento</label><input type="time" id="per-hora" value="18:00"></div>
+          </div>
+          <div class="fila-2">
+            <div class="campo"><label>Precio total</label><input type="number" id="per-precio" placeholder="0" oninput="actualizarAnticipo('per')"></div>
+            <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="per-anticipo" placeholder="0"></div>
+          </div>
+          <div class="campo">
+            <label>Notas del contrato <span style="font-weight:400;color:var(--ink-3)">(opcional, visible al cliente)</span></label>
+            <textarea id="per-notas" placeholder="Indicaciones o aclaraciones para el cliente..."></textarea>
+          </div>
+          <div class="form-msg" id="msg-personalizado"></div>
+          <button class="btn-primario gold" style="width:100%;margin-top:6px" id="btn-crear-personalizado" onclick="crearContrato('personalizado')">
+            Crear contrato y generar enlace
+          </button>
+          <div id="resultado-personalizado"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVENTOS -->
+    <div id="sec-sesiones" class="seccion">
+      <div class="barra" style="margin-bottom:14px">
+        <p style="font-size:13px;color:var(--ink-3);flex:1">Eventos próximos ordenados por fecha.</p>
+        <button class="btn-secundario btn-sm" onclick="renderSesionesFuturas()"><i class="ti ti-refresh"></i> Actualizar</button>
+      </div>
+      <div id="sesiones-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+    </div>
+
+    <!-- METRICAS -->
+    <div id="sec-metricas" class="seccion">
+      <div class="barra" style="margin-bottom:14px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="ciclo-btn activo-ciclo" id="met-btn-mes"       onclick="setMetPeriodo('mes',this)">Este mes</button>
+          <button class="ciclo-btn" id="met-btn-trimestre" onclick="setMetPeriodo('trimestre',this)">Trimestre</button>
+          <button class="ciclo-btn" id="met-btn-anio"      onclick="setMetPeriodo('anio',this)">Este año</button>
+          <button class="ciclo-btn" id="met-btn-todo"      onclick="setMetPeriodo('todo',this)">Todo</button>
+        </div>
+        <button class="btn-secundario btn-sm" onclick="cargarMetricas()"><i class="ti ti-refresh"></i></button>
+      </div>
+      <div id="metricas-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+    </div>
+
+    <!-- CRM -->
+    <div id="sec-crm" class="seccion">
+      <div class="barra">
+        <p style="font-size:13px;color:var(--ink-3);flex:1">Clientes únicos con su historial de eventos.</p>
+        <button class="btn-secundario btn-sm" onclick="cargarCRM()"><i class="ti ti-refresh"></i> Actualizar</button>
+      </div>
+      <div class="crm-grid" id="crm-grid">
+        <p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>
+      </div>
+    </div>
+
+    <!-- PAQUETES -->
+    <div id="sec-paquetes" class="seccion">
+      <div class="barra">
+        <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes y add-ons del catálogo.</p>
+        <button class="btn-secundario btn-sm" onclick="cargarPaquetesAdmin()"><i class="ti ti-refresh"></i> Actualizar</button>
+        <button class="btn-primario gold btn-sm" onclick="abrirModalNuevoPaquete()"><i class="ti ti-plus"></i> Nuevo</button>
+      </div>
+      <div id="lista-paquetes-admin">
+        <p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>
+      </div>
+
+      <div id="modal-paquete" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
+        <div style="background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+          <p style="font-size:15px;font-weight:700;margin-bottom:16px" id="modal-paq-titulo">Nuevo paquete</p>
+          <input type="hidden" id="mp-clave-original">
+          <div class="campo"><label>Clave</label><input type="text" id="mp-clave" placeholder="SAFI-LETRAS-ESENCIAL" style="text-transform:uppercase"></div>
+          <div class="campo"><label>Nombre</label><input type="text" id="mp-nombre" placeholder="Letras Esencial"></div>
+          <div class="campo">
+            <label>Locación</label>
+            <select id="mp-locacion">
+              <option value="Safi Metropolitan">Safi Metropolitan</option>
+              <option value="Rincón de Santiago">Rincón de Santiago</option>
+              <option value="Todas">Todas</option>
+            </select>
+          </div>
+          <div class="campo"><label>Precio (MXN)</label><input type="number" id="mp-precio" placeholder="0" min="0" step="100"></div>
+          <div class="campo"><label>Entregables</label><textarea id="mp-entregables" placeholder="Terraza privada · Cena · Fotografía · Video"></textarea></div>
+          <div class="campo" style="display:flex;align-items:center;gap:10px">
+            <input type="checkbox" id="mp-es-adicional" style="width:auto;margin:0">
+            <label for="mp-es-adicional" style="margin:0;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink-1)">Es add-on (servicio adicional)</label>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn-primario gold" style="flex:1" onclick="guardarPaqueteAdmin()">Guardar</button>
+            <button class="btn-secundario" style="flex:1" onclick="cerrarModalPaquete()">Cancelar</button>
+          </div>
+          <div id="modal-paq-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL LATERAL -->
+<div id="panel-lateral" class="panel-lateral">
+  <div class="panel-header">
+    <div class="panel-header-info">
+      <div class="panel-folio" id="panel-folio">—</div>
+      <div class="panel-nombre" id="panel-nombre">—</div>
+      <div id="panel-badge"></div>
+    </div>
+    <button class="btn-cerrar" onclick="cerrarPanel()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="panel-tabs">
+    <button class="panel-tab-btn activo" onclick="mostrarPanelTab('general', this)">General</button>
+    <button class="panel-tab-btn" onclick="mostrarPanelTab('produccion', this)">Producción</button>
+    <button class="panel-tab-btn" onclick="mostrarPanelTab('entrega', this)">Entrega</button>
+  </div>
+  <div id="pane-general" class="panel-tab-pane activo"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
+  <div id="pane-produccion" class="panel-tab-pane"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
+  <div id="pane-entrega" class="panel-tab-pane"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
+</div>
+<div id="overlay" onclick="cerrarPanel()"></div>
+
+<script>
+// URL del backend desplegado en Apps Script. Pegar despues de desplegar ScriptContratos1_v1.js.
+const API      = 'https://script.google.com/macros/s/AKfycbzBGRjR4O59P-gP3F53TFWO65TcWO9bsfbu91dhvRwPLWv1e2FcM7nun6KkuDYDVG8MTw/exec';
+// La contrasena es solo una barrera de interfaz; tambien es la clave que valida el backend.
+const PASSWORD = 'framedock';
+
+const ESPACIOS_LOCACION = {
+  'Safi Metropolitan' : ['Terraza Principal', 'Terraza Condominios'],
+  'Rincón de Santiago': ['Auditorio', 'Isla', 'Terraza', 'Área de yoga'],
+};
+const ESTATUS_ABIERTOS = ['Pendiente firma', 'Firmado', 'Anticipo recibido', 'En produccion'];
+
+let paquetes       = [];
+let todosContratos = [];
+let tokenActivo    = null;
+let precioManual   = false;
+let anticipoManual = false;
+let filtroCiclo    = 'abiertos';
+
+// ── LOGIN ──
+function intentarLogin() {
+  if (document.getElementById('input-pw').value === PASSWORD) {
+    try { localStorage.setItem('pi_admin_ok', '1'); } catch (e) {}
+    abrirAdmin();
+  } else {
+    document.getElementById('error-login').textContent = 'Contraseña incorrecta.';
+  }
+}
+function abrirAdmin() {
+  document.getElementById('pantalla-login').style.display = 'none';
+  document.getElementById('pantalla-admin').style.display = 'block';
+  cargarPaquetes();
+  cargarContratos();
+}
+function cerrarSesion() {
+  try { localStorage.removeItem('pi_admin_ok'); } catch (e) {}
+  document.getElementById('pantalla-admin').style.display = 'none';
+  document.getElementById('pantalla-login').style.display = 'flex';
+  document.getElementById('input-pw').value = '';
+  document.getElementById('error-login').textContent = '';
+}
+function togglePw() {
+  const inp = document.getElementById('input-pw');
+  const ico = document.querySelector('#btn-pw-toggle i');
+  if (inp.type === 'password') { inp.type = 'text'; ico.className = 'ti ti-eye-off'; }
+  else                         { inp.type = 'password'; ico.className = 'ti ti-eye'; }
+}
+document.getElementById('input-pw').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') intentarLogin();
+});
+
+// ── NAVEGACION ──
+function mostrarTab(id, btn) {
+  document.querySelectorAll('.seccion').forEach(function(s) { s.classList.remove('activa'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  document.querySelectorAll('.bnav-btn').forEach(function(b) { b.classList.remove('activo'); });
+  document.getElementById('sec-' + id).classList.add('activa');
+  if (btn) btn.classList.add('activo');
+  const bnav = document.querySelector('.bnav-btn[data-tab="' + id + '"]');
+  if (bnav) bnav.classList.add('activo');
+  if (id === 'contratos') cargarContratos();
+  if (id === 'crm')       cargarCRM();
+  if (id === 'paquetes')  cargarPaquetesAdmin();
+  if (id === 'metricas')  cargarMetricas();
+  if (id === 'sesiones') {
+    if (!todosContratos.length) cargarContratos().then(renderSesionesFuturas);
+    else renderSesionesFuturas();
+  }
+}
+function mostrarTabMobile(id, btn) {
+  const topBtn = document.querySelector('.tab-btn[data-tab="' + id + '"]');
+  mostrarTab(id, topBtn || btn);
+}
+function mostrarSubTab(tipo, btn) {
+  document.querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  document.getElementById('form-estandar').style.display      = tipo === 'estandar'      ? 'block' : 'none';
+  document.getElementById('form-personalizado').style.display = tipo === 'personalizado' ? 'block' : 'none';
+}
+function mostrarPanelTab(id, btn) {
+  document.querySelectorAll('.panel-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  document.querySelectorAll('.panel-tab-pane').forEach(function(p) { p.classList.remove('activo'); });
+  btn.classList.add('activo');
+  document.getElementById('pane-' + id).classList.add('activo');
+}
+function irANuevo() {
+  mostrarTab('nuevo', document.querySelector('.tab-btn[data-tab="nuevo"]'));
+}
+function toggleFiltrosMobile() {
+  const div = document.getElementById('barra-filtros');
+  const btn = document.getElementById('btn-filtros-mobile');
+  btn.classList.toggle('activo', div.classList.toggle('visible'));
+}
+
+// ── API ──
+async function apiGet(params) {
+  const merged = Object.assign({ adminKey: PASSWORD }, params);
+  const res = await fetch(API + '?' + new URLSearchParams(merged).toString(), { redirect: 'follow' });
+  return res.json();
+}
+async function apiPost(body) {
+  const res = await fetch(API, {
+    method  : 'POST',
+    headers : { 'Content-Type': 'text/plain' },
+    body    : JSON.stringify(Object.assign({ adminKey: PASSWORD }, body)),
+    redirect: 'follow',
+  });
+  return res.json();
+}
+
+// ── PAQUETES (catalogo para el formulario) ──
+async function cargarPaquetes() {
+  try {
+    const data = await apiGet({ action: 'listarPaquetes' });
+    if (data.ok) { paquetes = data.paquetes || []; renderFormEstandar(); }
+  } catch (e) { console.error('Error cargando paquetes:', e); }
+}
+function renderFormEstandar() {
+  const bases = paquetes.filter(function(p) { return !p.EsAdicional; });
+  const adds  = paquetes.filter(function(p) { return  p.EsAdicional; });
+
+  const sel = document.getElementById('est-paquete');
+  sel.innerHTML = bases.length
+    ? '<option value="">— Seleccionar paquete —</option>' + bases.map(function(p) {
+        return '<option value="' + esc(p.Clave) + '" data-precio="' + p.Precio +
+          '" data-locacion="' + esc(p.Locacion) + '">' + esc(p.Nombre) + ' — ' + fmxn(p.Precio) + '</option>';
+      }).join('')
+    : '<option value="">Sin paquetes disponibles</option>';
+
+  const lista    = document.getElementById('lista-adicionales');
+  const campoAdd = document.getElementById('campo-adicionales');
+  if (!adds.length) {
+    campoAdd.style.display = 'none';
+    lista.innerHTML = '';
+  } else {
+    campoAdd.style.display = 'block';
+    lista.innerHTML = adds.map(function(p) {
+      return '<label class="add-item">' +
+        '<input type="checkbox" value="' + esc(p.Clave) + '" checked>' +
+        '<span class="add-item-nombre">' + esc(p.Nombre) + '</span>' +
+        '<span class="add-item-precio">+' + fmxn(p.Precio) + '</span></label>';
+    }).join('');
+  }
+  onLocacionChange('est');
+}
+function onPaqueteSelect() {
+  const sel = document.getElementById('est-paquete');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const base = parseFloat(opt.dataset.precio) || 0;
+  if (!precioManual) {
+    document.getElementById('est-precio').value = base;
+    actualizarAnticipo('est');
+  }
+  const loc = opt.dataset.locacion;
+  if (loc && ESPACIOS_LOCACION[loc]) {
+    document.getElementById('est-locacion').value = loc;
+    onLocacionChange('est');
+  }
+}
+function onLocacionChange(pref) {
+  const loc = document.getElementById(pref + '-locacion').value;
+  const sel = document.getElementById(pref + '-espacio');
+  const espacios = ESPACIOS_LOCACION[loc] || [];
+  sel.innerHTML = espacios.map(function(e) {
+    return '<option value="' + esc(e) + '">' + esc(e) + '</option>';
+  }).join('');
+  verificarRestriccion();
+}
+function actualizarAnticipo(pref) {
+  if (pref === 'est' && anticipoManual) return;
+  const total = parseFloat(document.getElementById(pref + '-precio').value) || 0;
+  document.getElementById(pref + '-anticipo').value = Math.round(total * 0.5);
+}
+// Avisa de las restricciones operativas conocidas de las locaciones.
+function verificarRestriccion() {
+  const aviso   = document.getElementById('aviso-restriccion');
+  const loc     = document.getElementById('est-locacion').value;
+  const espacio = document.getElementById('est-espacio').value;
+  const fecha   = document.getElementById('est-fecha').value;
+  const avisos  = [];
+  if (fecha) {
+    const dia = new Date(fecha + 'T12:00:00').getDay(); // 0 domingo, 6 sabado
+    if (loc === 'Rincón de Santiago' && espacio === 'Isla' && dia === 6) {
+      avisos.push('La Isla en Rincón de Santiago no está disponible los sábados. El hotel la reserva ese día.');
+    }
+    if (loc === 'Safi Metropolitan' && dia === 0) {
+      avisos.push('Los domingos Safi no sirve alcohol; el vino y los welcome drinks se reemplazan por bebidas sin alcohol.');
+    }
+  }
+  if (avisos.length) {
+    aviso.innerHTML = avisos.map(function(a) { return '<div><i class="ti ti-alert-triangle"></i> ' + esc(a) + '</div>'; }).join('');
+    aviso.classList.add('visible');
+  } else {
+    aviso.classList.remove('visible');
+    aviso.innerHTML = '';
+  }
+}
+
+// ── CONTRATOS ──
+async function cargarContratos() {
+  document.getElementById('tabla-body').innerHTML = '<tr><td colspan="7" class="tabla-vacio">Cargando...</td></tr>';
+  try {
+    const dataC = await apiGet({ action: 'listarContratos' });
+    if (!dataC.ok) throw new Error(dataC.error || 'Error desconocido');
+    todosContratos = dataC.contratos || [];
+    filtrarContratos();
+  } catch (e) {
+    document.getElementById('tabla-body').innerHTML =
+      '<tr><td colspan="6" style="color:var(--danger);padding:24px;text-align:center">Error: ' + esc(e.message) + '</td></tr>';
+    return;
+  }
+  try {
+    const dataS = await apiGet({ action: 'listarStats', periodo: 'mes' });
+    if (dataS.ok) renderStatsBar(dataS);
+  } catch (e) { console.warn('Stats no disponibles:', e.message); }
+}
+function renderStatsBar(s) {
+  const bar = document.getElementById('stats-bar');
+  if (!bar) return;
+  const hoy = new Date().toISOString().substring(0, 10);
+  const en7 = new Date(Date.now() + 7 * 86400000).toISOString().substring(0, 10);
+  const eventosSemana = todosContratos.filter(function(c) {
+    const fe = String(c.fechaEvento || '').substring(0, 10);
+    return fe >= hoy && fe <= en7;
+  }).length;
+  const tarjetas = [
+    { label: 'Contratos del mes',   valor: s.numContratos,    sub: '',                   color: 'var(--ink-1)' },
+    { label: 'Facturado este mes',  valor: fmxn(s.facturado), sub: '',                   color: 'var(--gold)' },
+    { label: 'Cobrado este mes',    valor: fmxn(s.cobrado),   sub: '',                   color: 'var(--success)' },
+    { label: 'Por cobrar (total)',  valor: fmxn(s.porCobrar), sub: 'contratos abiertos', color: 'var(--warn)' },
+    { label: 'Eventos esta semana', valor: eventosSemana,     sub: 'próximos 7 días',    color: 'var(--ink-1)' },
+  ];
+  bar.innerHTML = tarjetas.map(function(t) {
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px">' +
+      '<p style="font-size:11px;color:var(--ink-3);margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em">' + t.label + '</p>' +
+      '<p style="font-size:20px;font-weight:700;color:' + t.color + ';margin:0 0 2px">' + t.valor + '</p>' +
+      (t.sub ? '<p style="font-size:11px;color:var(--ink-3);margin:0">' + t.sub + '</p>' : '') + '</div>';
+  }).join('');
+  actualizarAlertaHoy();
+}
+function actualizarAlertaHoy() {
+  const el = document.getElementById('alerta-evento-hoy');
+  if (!el) return;
+  const hoy = new Date().toISOString().substring(0, 10);
+  const eventosHoy = todosContratos.filter(function(c) {
+    return String(c.fechaEvento || '').substring(0, 10) === hoy;
+  });
+  if (!eventosHoy.length) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '<i class="ti ti-camera" style="color:var(--gold);font-size:18px;flex-shrink:0"></i>' +
+    '<span>Hoy hay ' + (eventosHoy.length === 1 ? 'un evento' : eventosHoy.length + ' eventos') + ': <strong>' +
+    eventosHoy.map(function(c) { return esc(c.nombreCliente); }).join(', ') + '</strong></span>';
+}
+function setCiclo(ciclo) {
+  filtroCiclo = ciclo;
+  document.getElementById('ciclo-btn-abiertos').classList.toggle('activo-ciclo', ciclo === 'abiertos');
+  document.getElementById('ciclo-btn-todos').classList.toggle('activo-ciclo',    ciclo === 'todos');
+  filtrarContratos();
+}
+function filtrarContratos() {
+  const q     = document.getElementById('busqueda').value.toLowerCase();
+  const st    = document.getElementById('filtro-estatus').value;
+  const desde = document.getElementById('filtro-fecha-desde').value;
+  const hasta = document.getElementById('filtro-fecha-hasta').value;
+  const lista = todosContratos.filter(function(c) {
+    if (filtroCiclo === 'abiertos' && ESTATUS_ABIERTOS.indexOf(c.estatus) === -1) return false;
+    if (st && c.estatus !== st) return false;
+    if (q) {
+      const texto = ((c.nombreCliente || '') + (c.correoCliente || '') + (c.folio || '')).toLowerCase();
+      if (texto.indexOf(q) === -1) return false;
+    }
+    if (desde || hasta) {
+      const fecha = String(c.fechaCreacion || '').substring(0, 10);
+      if (desde && fecha < desde) return false;
+      if (hasta && fecha > hasta) return false;
+    }
+    return true;
+  });
+  renderTabla(lista);
+}
+function diasEnEstatus(c) {
+  let desde = c.fechaCreacion;
+  if      (c.estatus === 'Firmado')                                            desde = c.fechaFirma       || c.fechaCreacion;
+  else if (c.estatus === 'Anticipo recibido' || c.estatus === 'En produccion') desde = c.fechaUltimoAbono || c.fechaFirma || c.fechaCreacion;
+  else if (c.estatus === 'Entregado' || c.estatus === 'Liquidado')             desde = c.fechaEntrega     || c.fechaUltimoAbono || c.fechaCreacion;
+  if (!desde) return 0;
+  const d = new Date(desde);
+  if (isNaN(d)) return 0;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+function renderTabla(lista) {
+  const tbody = document.getElementById('tabla-body');
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="tabla-vacio">Sin contratos que mostrar.</td></tr>';
+    return;
+  }
+  const ahora = Date.now();
+  tbody.innerHTML = lista.map(function(c) {
+    const activo = tokenActivo === c.token ? 'activo' : '';
+    const dias   = diasEnEstatus(c);
+    const horas  = c.fechaCreacion ? (ahora - new Date(c.fechaCreacion).getTime()) / 3600000 : 0;
+    const alerta = c.estatus === 'Pendiente firma' && horas > 60;
+    const eventoTxt = c.fechaEvento ? fmxnFechaCorta(c.fechaEvento) + (c.horaEvento ? ' · ' + esc(c.horaEvento) : '') : '—';
+    return '<tr class="' + activo + '" onclick="abrirPanel(\'' + c.token + '\')">' +
+      '<td class="td-folio">' + (esc(c.folio) || '—') + '</td>' +
+      '<td><div class="td-nombre">' + esc(c.nombreCliente) + '</div><div class="td-sub">' + esc(c.correoCliente) + '</div></td>' +
+      '<td><div style="font-size:12px;font-weight:600">' + esc(c.paqueteNombre || '—') + '</div></td>' +
+      '<td><div class="td-fecha" style="margin:0">' + eventoTxt + '</div>' +
+        '<div class="td-sub">' + esc(c.locacion || '') + (c.espacioLocacion ? ' · ' + esc(c.espacioLocacion) : '') + '</div></td>' +
+      '<td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + badgeEstatus(c.estatus) +
+        (alerta ? '<i class="ti ti-alert-triangle" style="color:var(--warn);font-size:13px" title="Más de 60 h en Pendiente firma"></i>' : '') +
+        '</div>' + (dias > 0 ? '<div class="td-sub" style="margin-top:3px">' + dias + ' día' + (dias !== 1 ? 's' : '') + ' en este estatus</div>' : '') + '</td>' +
+      '<td class="td-monto">' + fmxn(c.precio) + '</td>' +
+      '<td class="td-saldo' + (c.saldoPendiente <= 0 ? ' pagado' : '') + '">' +
+        (c.saldoPendiente > 0 ? fmxn(c.saldoPendiente) : '<i class="ti ti-check" style="color:var(--success)"></i>') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function descargarCSV() {
+  try {
+    const data = await apiGet({ action: 'exportarCSV' });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'contratos-proposal-inc-' + new Date().toISOString().substring(0, 10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Error al exportar: ' + e.message);
+  }
+}
+
+// ── PANEL LATERAL ──
+async function abrirPanel(token) {
+  tokenActivo = token;
+  filtrarContratos();
+  document.getElementById('panel-folio').textContent  = '...';
+  document.getElementById('panel-nombre').textContent = 'Cargando...';
+  document.getElementById('panel-badge').innerHTML    = '';
+  ['general','produccion','entrega'].forEach(function(id) {
+    document.getElementById('pane-' + id).innerHTML =
+      '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>';
+  });
+  document.getElementById('panel-lateral').classList.add('visible');
+  document.getElementById('overlay').classList.add('visible');
+  document.querySelectorAll('.panel-tab-btn').forEach(function(b, i) { b.classList.toggle('activo', i === 0); });
+  document.querySelectorAll('.panel-tab-pane').forEach(function(p, i) { p.classList.toggle('activo', i === 0); });
+  try {
+    const data = await apiGet({ action: 'obtenerContrato', token: token });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    renderPanel(data);
+  } catch (e) {
+    document.getElementById('pane-general').innerHTML =
+      '<p style="color:var(--danger);font-size:13px">Error: ' + esc(e.message) + '</p>';
+  }
+}
+function cerrarPanel() {
+  tokenActivo = null;
+  document.getElementById('panel-lateral').classList.remove('visible');
+  document.getElementById('overlay').classList.remove('visible');
+  document.querySelectorAll('#tabla-body tr').forEach(function(tr) { tr.classList.remove('activo'); });
+}
+function renderPanel(data) {
+  const c   = data.contrato;
+  const url = data.urlPortal;
+
+  document.getElementById('panel-folio').textContent  = c.Folio || 'Sin folio';
+  document.getElementById('panel-nombre').textContent = c.NombreCliente;
+  document.getElementById('panel-badge').innerHTML    = badgeEstatus(c.Estatus);
+
+  const addHtml = (data.adicionales && data.adicionales.length)
+    ? data.adicionales.map(function(a) {
+        return '<span style="display:inline-block;background:var(--page);border:1px solid var(--border);border-radius:20px;font-size:11px;padding:2px 9px;margin:2px">' +
+          esc(a.nombre) + '</span>';
+      }).join('')
+    : '<span style="font-size:12px;color:var(--ink-3)">Sin add-ons</span>';
+
+  const tel = normalizarTelWA(c.TelefonoCliente);
+  const nombre1 = String(c.NombreCliente || '').split(' ')[0];
+  const waTexto = (function() {
+    const st = c.Estatus || '';
+    if (st === 'Pendiente firma') return 'Hola ' + nombre1 + ', aquí está tu enlace para revisar y firmar tu contrato con Proposal Inc: ' + url;
+    if (st === 'Firmado')         return 'Hola ' + nombre1 + ', te recuerdo el anticipo de tu evento. Puedes ver los datos de pago aquí: ' + url;
+    if (st === 'Anticipo recibido' || st === 'En produccion') return 'Hola ' + nombre1 + ', estamos preparando todo para tu evento. Cualquier duda con gusto te ayudo.';
+    if (st === 'Entregado' || st === 'Liquidado') return 'Hola ' + nombre1 + ', tu material ya está listo. Aquí está tu enlace: ' + url;
+    return 'Hola ' + nombre1 + ', te comparto el enlace de tu portal: ' + url;
+  })();
+  const waUrl = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(waTexto);
+
+  const precio       = parseFloat(c.Precio) || 0;
+  const totalAbonado = parseFloat(data.totalAbonado) || 0;
+  const saldo        = parseFloat(c.SaldoPendiente) || 0;
+  const pct          = precio > 0 ? Math.min(100, Math.round(totalAbonado / precio * 100)) : 0;
+
+  const abonosHtml = (data.abonos && data.abonos.length)
+    ? data.abonos.map(function(a) {
+        return '<div class="abono-fila"><div>' +
+          '<div class="abono-metodo">' + esc(a.metodo || 'Transferencia') + '</div>' +
+          '<div class="abono-fecha">' + fmxnFecha(a.fecha) + (a.notas ? ' · ' + esc(a.notas) : '') + '</div></div>' +
+          '<div class="abono-monto">+' + fmxn(a.monto) + '</div></div>';
+      }).join('')
+    : '<p style="font-size:12px;color:var(--ink-3);padding:6px 0">Sin abonos registrados.</p>';
+
+  // PANE GENERAL
+  document.getElementById('pane-general').innerHTML =
+    '<div class="info-fila"><span class="etiq">Cliente</span><span class="val">' + esc(c.NombreCliente) + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Correo</span><span class="val">' +
+      (c.CorreoCliente ? '<a href="mailto:' + esc(c.CorreoCliente) + '" style="color:var(--gold);text-decoration:none">' + esc(c.CorreoCliente) + '</a>' : '—') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Teléfono</span><span class="val">' + (esc(c.TelefonoCliente) || '—') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Tipo</span><span class="val">' + (c.TipoContrato === 'personalizado' ? 'Personalizado' : 'Estándar') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Paquete</span><span class="val">' + (esc(c.PaqueteNombre) || '—') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Locación</span><span class="val">' + (esc(c.Locacion) || '—') + '</span></div>' +
+    '<div class="info-fila" style="align-items:center">' +
+      '<span class="etiq">Espacio</span>' +
+      '<span class="val" style="display:flex;align-items:center;gap:6px">' +
+        '<input type="text" id="espacio-locacion-inp" value="' + esc(c.EspacioLocacion || '') + '" placeholder="Pendiente de confirmar" style="flex:1;border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;font-size:13px">' +
+        '<button class="btn-secundario btn-sm" onclick="guardarEspacio()">Guardar</button>' +
+      '</span>' +
+    '</div>' +
+    '<div class="form-msg" id="msg-espacio" style="font-size:12px;margin-bottom:4px"></div>' +
+    '<div class="info-fila"><span class="etiq">Evento</span><span class="val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Add-ons</span><span class="val">' + addHtml + '</span></div>' +
+    (c.DescripcionServicio ? '<div style="font-size:12px;color:var(--ink-2);padding:9px 0;border-bottom:1px solid var(--border)">' + esc(c.DescripcionServicio) + '</div>' : '') +
+    (c.NotasContrato ? '<div class="info-fila"><span class="etiq">Notas</span><span class="val">' + esc(c.NotasContrato) + '</span></div>' : '') +
+    (function() {
+      const tieneQ = c.NombrePareja || c.CancionEvento || c.FamiliaAsiste || c.AlergiasAlimentarias;
+      if (!tieneQ) return '';
+      const familiaTexto = c.FamiliaAsiste === 'Sí'
+        ? 'Sí, aprox. ' + (parseInt(c.FamiliaNumero, 10) || 0) + ' personas'
+        : (c.FamiliaAsiste || '—');
+      return '<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">' +
+        '<p class="sec-label" style="margin-bottom:6px">Cuestionario del cliente</p>' +
+        (c.NombrePareja ? '<div class="info-fila"><span class="etiq">Pareja</span><span class="val">' + esc(c.NombrePareja) + '</span></div>' : '') +
+        (c.CancionEvento ? '<div class="info-fila"><span class="etiq">Canción</span><span class="val">' + esc(c.CancionEvento) + '</span></div>' : '') +
+        (c.FamiliaAsiste ? '<div class="info-fila"><span class="etiq">Familia/amigos</span><span class="val">' + esc(familiaTexto) + '</span></div>' : '') +
+        (c.AlergiasAlimentarias ? '<div class="info-fila"><span class="etiq">Alergias</span><span class="val">' + esc(c.AlergiasAlimentarias) + '</span></div>' : '') +
+      '</div>';
+    })() +
+    '<div class="link-portal-box">' +
+      '<div class="link-portal-label">Enlace del portal (cliente)</div>' +
+      '<div class="link-portal-url">' + esc(url) + '</div>' +
+      '<div class="link-portal-btns">' +
+        '<button class="btn-copiar" data-url="' + esc(url) + '" onclick="copiarDesdeBtn(this)"><i class="ti ti-copy"></i> Copiar</button>' +
+        '<a class="btn-wa" href="' + esc(waUrl) + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' +
+      '</div></div>' +
+    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">' +
+      '<p class="sec-label" style="margin-bottom:6px">Pagos</p>' +
+      '<div class="pago-resumen">' +
+        '<div class="pago-fila"><span>Total del contrato</span><span>' + fmxn(precio) + '</span></div>' +
+        '<div class="pago-fila"><span>Total abonado</span><span style="color:var(--success)">' + fmxn(totalAbonado) + '</span></div>' +
+        '<div class="pago-fila total"><span>Saldo pendiente</span><span style="color:' + (saldo > 0 ? 'var(--warn)' : 'var(--success)') + '">' + fmxn(saldo) + '</span></div>' +
+      '</div>' +
+      '<div class="pago-barra-track"><div class="pago-barra-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="sec-label">Historial de abonos</div><div>' + abonosHtml + '</div>' +
+      '<div class="sec-label">Registrar abono</div>' +
+      '<div class="fila-2">' +
+        '<div class="campo campo-sm"><label>Monto</label><input type="number" id="abono-monto" placeholder="0"></div>' +
+        '<div class="campo campo-sm"><label>Método</label><select id="abono-metodo">' +
+          '<option value="Transferencia">Transferencia</option>' +
+          '<option value="Depósito">Depósito</option>' +
+          '<option value="Efectivo">Efectivo</option></select></div>' +
+      '</div>' +
+      '<div class="campo campo-sm"><label>Notas (opcional)</label><input type="text" id="abono-notas" placeholder="Referencia..."></div>' +
+      '<button class="btn-primario gold" style="width:100%" id="btn-abono" onclick="registrarAbono()"><i class="ti ti-check"></i> Registrar abono</button>' +
+      '<div class="form-msg" id="msg-abono"></div>' +
+      '<div class="sec-label" style="margin-top:22px">Cambiar estatus</div>' +
+      '<div class="estatus-fila"><select id="panel-estatus">' +
+        ['Pendiente firma','Firmado','Anticipo recibido','En produccion','Entregado','Liquidado'].map(function(s) {
+          return '<option value="' + s + '"' + (c.Estatus === s ? ' selected' : '') + '>' + (s === 'En produccion' ? 'En producción' : s) + '</option>';
+        }).join('') +
+      '</select><button class="btn-secundario btn-sm" onclick="cambiarEstatus()">Guardar</button></div>' +
+      '<div class="form-msg" id="msg-estatus"></div>' +
+    '</div>' +
+    (['Firmado', 'Anticipo recibido', 'En produccion'].indexOf(c.Estatus) !== -1
+      ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+        '<p class="sec-label" style="margin-bottom:6px">Producción</p>' +
+        '<button class="btn-primario gold" style="width:100%" id="btn-sesion-completada" onclick="marcarSesionCompletada()">' +
+        '<i class="ti ti-camera-check"></i> Evento completado, iniciar edición</button>' +
+        '<div class="form-msg" id="msg-sesion"></div></div>'
+      : '') +
+    '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+      '<p class="sec-label" style="margin-bottom:6px">Notas internas</p>' +
+      '<textarea id="notas-internas-txt" rows="3" placeholder="Notas solo para el equipo...">' + esc(c.NotasInternas || '') + '</textarea>' +
+      '<div style="margin-top:6px"><button class="btn-primario gold btn-sm" onclick="guardarNotasInternas()">Guardar notas</button></div>' +
+      '<div class="form-msg" id="msg-notas-internas"></div>' +
+    '</div>' +
+    '<div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">' +
+      '<p class="sec-label" style="margin-bottom:10px">Zona de riesgo</p>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button class="btn-secundario btn-sm" style="flex:1;color:var(--warn);border-color:var(--warn)" onclick="archivarContrato()"><i class="ti ti-archive"></i> Archivar</button>' +
+        '<button class="btn-secundario btn-sm" style="flex:1;color:var(--danger);border-color:var(--danger)" onclick="eliminarContrato()"><i class="ti ti-trash"></i> Eliminar</button>' +
+      '</div><div class="form-msg" id="msg-borrar"></div>' +
+    '</div>';
+
+  // PANE PRODUCCION
+  const prodFila = function(hecho, etiqueta, fechaVal) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">' +
+      '<i class="ti ' + (hecho ? 'ti-circle-check' : 'ti-circle') + '" style="font-size:20px;color:' + (hecho ? 'var(--success)' : 'var(--ink-3)') + '"></i>' +
+      '<div style="flex:1"><div style="font-size:13px;font-weight:' + (hecho ? '600' : '400') + '">' + esc(etiqueta) + '</div>' +
+      (hecho && fechaVal ? '<div style="font-size:11px;color:var(--ink-3)">' + fmxnFecha(fechaVal) + '</div>' : '') + '</div></div>';
+  };
+  const estadoAnticipo  = totalAbonado > 0 || ['Anticipo recibido','En produccion','Entregado','Liquidado'].indexOf(c.Estatus) !== -1;
+  const estadoEntregado = ['Entregado','Liquidado'].indexOf(c.Estatus) !== -1;
+  const fotoHecho  = !!(c.FotografiaLista && String(c.FotografiaLista).trim());
+  const videoHecho = !!(c.VideoListo && String(c.VideoListo).trim());
+
+  document.getElementById('pane-produccion').innerHTML =
+    '<p class="sec-label" style="margin-bottom:2px">Estado del contrato</p>' +
+    '<p style="font-size:12px;color:var(--ink-3);margin-bottom:8px">Avanza solo conforme avanza el contrato.</p>' +
+    prodFila(true, 'Contrato creado', c.FechaCreacion) +
+    prodFila(!!c.FechaFirma, 'Contrato firmado', c.FechaFirma) +
+    prodFila(estadoAnticipo, 'Anticipo recibido', c.FechaUltimoAbono) +
+    prodFila(estadoEntregado, 'Material entregado', c.FechaEntrega) +
+    '<p class="sec-label" style="margin-top:22px;margin-bottom:2px">Producción del material</p>' +
+    '<p style="font-size:12px;color:var(--ink-3);margin-bottom:8px">Marca cada entregable conforme lo terminen.</p>' +
+    '<label style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:13px">' +
+      '<input type="checkbox" id="prod-foto" ' + (fotoHecho ? 'checked' : '') + ' style="width:18px;height:18px;accent-color:var(--gold)">' +
+      '<span>Fotografía lista' + (fotoHecho ? ' <span style="font-size:11px;color:var(--ink-3)">· ' + fmxnFecha(c.FotografiaLista) + '</span>' : '') + '</span></label>' +
+    '<label style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:13px">' +
+      '<input type="checkbox" id="prod-video" ' + (videoHecho ? 'checked' : '') + ' style="width:18px;height:18px;accent-color:var(--gold)">' +
+      '<span>Video listo' + (videoHecho ? ' <span style="font-size:11px;color:var(--ink-3)">· ' + fmxnFecha(c.VideoListo) + '</span>' : '') + '</span></label>' +
+    '<button class="btn-primario gold" style="width:100%;margin-top:10px" id="btn-produccion" onclick="guardarProduccion()"><i class="ti ti-check"></i> Guardar producción</button>' +
+    '<div class="form-msg" id="msg-produccion"></div>';
+
+  // PANE ENTREGA
+  const entregaRevocada = !!(c.EntregaRevocada && String(c.EntregaRevocada).trim());
+  document.getElementById('pane-entrega').innerHTML =
+    (entregaRevocada
+      ? '<div style="background:rgba(192,57,43,.1);border:1px solid var(--danger);border-radius:8px;padding:12px;margin-bottom:16px">' +
+        '<div style="font-size:13px;color:var(--danger);font-weight:600"><i class="ti ti-eye-off"></i> Acceso revocado</div>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin-top:2px">El cliente no ve los enlaces de descarga en su portal.</div></div>'
+      : '') +
+    '<p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:18px">Ingresa el enlace de Drive con el material terminado. Se enviará un correo al cliente.</p>' +
+    '<div class="campo"><label>Enlace de Google Drive</label>' +
+      '<input type="url" id="entrega-drive" value="' + esc(c.EntregaDriveLink || '') + '" placeholder="https://drive.google.com/..."></div>' +
+    '<div class="campo"><label>Enlaces adicionales (uno por línea)</label>' +
+      '<textarea id="entrega-links-extra" rows="3" placeholder="Etiqueta|URL">' + esc(c.EntregaLinksExtra || '') + '</textarea>' +
+      '<p class="form-hint">Formato opcional: Etiqueta|URL, uno por línea.</p></div>' +
+    '<button class="btn-primario gold" style="width:100%" id="btn-entrega" onclick="guardarEntrega()"><i class="ti ti-send"></i> Enviar al cliente</button>' +
+    '<div class="form-msg" id="msg-entrega"></div>' +
+    (c.FechaEntrega ? '<p style="font-size:12px;color:var(--ink-3);margin-top:12px">Entregado el ' + fmxnFecha(c.FechaEntrega) + '</p>' : '') +
+    '<div class="link-portal-box" style="margin-top:18px">' +
+      '<div class="link-portal-label">Enlace del portal</div>' +
+      '<div class="link-portal-url">' + esc(url) + '</div>' +
+      '<div class="link-portal-btns">' +
+        '<button class="btn-copiar" data-url="' + esc(url) + '" onclick="copiarDesdeBtn(this)"><i class="ti ti-copy"></i> Copiar</button>' +
+        '<a class="btn-wa" href="' + esc(waUrl) + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' +
+      '</div></div>' +
+    '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+      '<p class="sec-label" style="margin-bottom:6px">Acceso del cliente</p>' +
+      (entregaRevocada
+        ? '<button class="btn-primario gold" style="width:100%" onclick="revocarEntrega(false)"><i class="ti ti-eye"></i> Reactivar acceso</button>'
+        : '<button class="btn-secundario btn-sm" style="width:100%;color:var(--danger);border-color:var(--danger)" onclick="revocarEntrega(true)"><i class="ti ti-eye-off"></i> Revocar acceso al material</button>') +
+      '<div class="form-msg" id="msg-revocar"></div>' +
+    '</div>';
+}
+
+// ── ACCIONES DEL PANEL ──
+async function registrarAbono() {
+  const monto = parseFloat(document.getElementById('abono-monto').value);
+  if (!monto || monto <= 0) { setMsg('msg-abono', 'Ingresa un monto válido.', 'error'); return; }
+  const btn = document.getElementById('btn-abono');
+  if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
+  setMsg('msg-abono', '', '');
+  const t = tokenActivo;
+  try {
+    const data = await apiPost({
+      action: 'registrarAbono', token: t, monto: monto,
+      metodo: document.getElementById('abono-metodo').value,
+      notas:  document.getElementById('abono-notas').value,
+    });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-abono', 'Abono registrado.', 'ok');
+    cargarContratos();
+    if (t === tokenActivo) { try { await abrirPanel(t); } catch (e) {} }
+  } catch (e) {
+    setMsg('msg-abono', 'Error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar abono'; }
+  }
+}
+async function cambiarEstatus() {
+  const estatus = document.getElementById('panel-estatus').value;
+  const t = tokenActivo;
+  setMsg('msg-estatus', '', '');
+  try {
+    const data = await apiPost({ action: 'actualizarEstatus', token: t, estatus: estatus });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    cargarContratos();
+    if (t === tokenActivo) { await abrirPanel(t); }
+  } catch (e) {
+    setMsg('msg-estatus', 'Error: ' + e.message, 'error');
+  }
+}
+async function guardarEntrega() {
+  const driveLink = document.getElementById('entrega-drive').value.trim();
+  if (!driveLink) { setMsg('msg-entrega', 'El enlace de Drive es obligatorio.', 'error'); return; }
+  const btn = document.getElementById('btn-entrega');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  setMsg('msg-entrega', '', '');
+  const t = tokenActivo;
+  try {
+    const data = await apiPost({
+      action: 'guardarEntrega', token: t, driveLink: driveLink,
+      linksExtra: document.getElementById('entrega-links-extra').value.trim(),
+    });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-entrega', 'Entrega guardada. Se envió correo al cliente.', 'ok');
+    cargarContratos();
+    if (t === tokenActivo) {
+      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[2]); } catch (e) {}
+    }
+  } catch (e) {
+    setMsg('msg-entrega', 'Error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar al cliente'; }
+  }
+}
+async function guardarProduccion() {
+  const t = tokenActivo;
+  const btn = document.getElementById('btn-produccion');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+  setMsg('msg-produccion', '', '');
+  try {
+    const data = await apiPost({
+      action: 'guardarProduccion', token: t,
+      fotografiaLista: document.getElementById('prod-foto').checked,
+      videoListo:      document.getElementById('prod-video').checked,
+    });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-produccion', 'Producción guardada.', 'ok');
+    if (t === tokenActivo) {
+      try { await abrirPanel(t); mostrarPanelTab('produccion', document.querySelectorAll('.panel-tab-btn')[1]); } catch (e) {}
+    }
+  } catch (e) {
+    setMsg('msg-produccion', 'Error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Guardar producción'; }
+  }
+}
+async function revocarEntrega(revocar) {
+  const t = tokenActivo;
+  if (!confirm(revocar ? '¿Revocar el acceso del cliente al material?' : '¿Reactivar el acceso del cliente?')) return;
+  setMsg('msg-revocar', '', '');
+  try {
+    const data = await apiPost({ action: 'revocarEntrega', token: t, revocar: revocar });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    if (t === tokenActivo) {
+      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[2]); } catch (e) {}
+    }
+  } catch (e) {
+    setMsg('msg-revocar', 'Error: ' + e.message, 'error');
+  }
+}
+async function guardarEspacio() {
+  const t = tokenActivo;
+  const inp = document.getElementById('espacio-locacion-inp');
+  if (!inp) return;
+  setMsg('msg-espacio', '', '');
+  try {
+    const data = await apiPost({ action: 'actualizarEspacio', token: t, espacio: inp.value.trim() });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-espacio', 'Espacio guardado.', 'ok');
+    cargarContratos();
+  } catch (e) {
+    setMsg('msg-espacio', 'Error: ' + e.message, 'error');
+  }
+}
+async function marcarSesionCompletada() {
+  const t = tokenActivo;
+  const btn = document.getElementById('btn-sesion-completada');
+  if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+  setMsg('msg-sesion', '', '');
+  try {
+    const data = await apiPost({ action: 'marcarSesionCompletada', token: t });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    cargarContratos();
+    if (t === tokenActivo) { try { await abrirPanel(t); } catch (e) {} }
+  } catch (e) {
+    setMsg('msg-sesion', 'Error: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-camera-check"></i> Evento completado, iniciar edición'; }
+  }
+}
+async function guardarNotasInternas() {
+  const t = tokenActivo;
+  setMsg('msg-notas-internas', '', '');
+  try {
+    const data = await apiPost({
+      action: 'guardarNotasInternas', token: t,
+      notas: (document.getElementById('notas-internas-txt') || {}).value || '',
+    });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-notas-internas', 'Notas guardadas.', 'ok');
+  } catch (e) {
+    setMsg('msg-notas-internas', 'Error: ' + e.message, 'error');
+  }
+}
+async function archivarContrato() {
+  if (!tokenActivo) return;
+  const c = todosContratos.filter(function(x) { return x.token === tokenActivo; })[0];
+  if (!confirm('¿Archivar el contrato de ' + (c ? c.nombreCliente : 'este cliente') + '? Desaparecerá de la lista pero se conserva en el Sheets.')) return;
+  setMsg('msg-borrar', 'Archivando...', '');
+  try {
+    const data = await apiPost({ action: 'ocultarContrato', token: tokenActivo });
+    if (!data.ok) throw new Error(data.error || 'Error');
+    cerrarPanel();
+    await cargarContratos();
+  } catch (e) {
+    setMsg('msg-borrar', 'Error: ' + e.message, 'error');
+  }
+}
+async function eliminarContrato() {
+  if (!tokenActivo) return;
+  const c = todosContratos.filter(function(x) { return x.token === tokenActivo; })[0];
+  const nombre = c ? c.nombreCliente : null;
+  const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\nEscribe el nombre del cliente para confirmar:');
+  if (conf === null) return;
+  if (nombre && conf.trim().toLowerCase() !== nombre.trim().toLowerCase()) {
+    alert('El nombre no coincide. No se eliminó nada.');
+    return;
+  }
+  setMsg('msg-borrar', 'Eliminando...', '');
+  try {
+    const data = await apiPost({ action: 'eliminarContrato', token: tokenActivo });
+    if (!data.ok) throw new Error(data.error || 'Error');
+    cerrarPanel();
+    await cargarContratos();
+  } catch (e) {
+    setMsg('msg-borrar', 'Error: ' + e.message, 'error');
+  }
+}
+
+// ── CREAR CONTRATO ──
+async function crearContrato(tipo) {
+  const isEst = tipo === 'estandar';
+  const pref  = isEst ? 'est' : 'per';
+  const msgId = isEst ? 'msg-estandar' : 'msg-personalizado';
+  const resId = isEst ? 'resultado-estandar' : 'resultado-personalizado';
+  const btn   = document.getElementById('btn-crear-' + tipo);
+
+  setMsg(msgId, '', '');
+  document.getElementById(resId).innerHTML = '';
+
+  const nombre   = document.getElementById(pref + '-nombre').value.trim();
+  const correo   = document.getElementById(pref + '-correo').value.trim();
+  const telefono = document.getElementById(pref + '-telefono').value.trim();
+  const fecha    = document.getElementById(pref + '-fecha').value;
+  const hora     = document.getElementById(pref + '-hora').value;
+  const precio   = parseFloat(document.getElementById(pref + '-precio').value) || 0;
+  const anticipo = parseFloat(document.getElementById(pref + '-anticipo').value) || 0;
+  const notas    = document.getElementById(pref + '-notas').value.trim();
+
+  if (!nombre) { setMsg(msgId, 'El nombre del cliente es obligatorio.', 'error'); return; }
+  if (!fecha)  { setMsg(msgId, 'La fecha del evento es obligatoria.', 'error'); return; }
+  if (!precio) { setMsg(msgId, 'El precio es obligatorio.', 'error'); return; }
+
+  let body;
+  if (isEst) {
+    const paqueteClave = document.getElementById('est-paquete').value;
+    if (!paqueteClave) { setMsg(msgId, 'Selecciona un paquete.', 'error'); return; }
+    const adicionales = Array.prototype.slice.call(
+      document.querySelectorAll('#lista-adicionales input[type="checkbox"]:checked')
+    ).map(function(cb) { return cb.value; });
+    body = {
+      action: 'crearContrato', tipoContrato: 'estandar',
+      nombreCliente: nombre, correoCliente: correo, telefonoCliente: telefono,
+      paqueteClave: paqueteClave, adicionales: adicionales,
+      locacion: document.getElementById('est-locacion').value,
+      espacioLocacion: document.getElementById('est-espacio').value,
+      fechaEvento: fecha, horaEvento: hora,
+      precio: precio, anticipo: anticipo, notasContrato: notas,
+    };
+  } else {
+    const descripcion = document.getElementById('per-descripcion').value.trim();
+    if (!descripcion) { setMsg(msgId, 'La descripción del servicio es obligatoria.', 'error'); return; }
+    body = {
+      action: 'crearContrato', tipoContrato: 'personalizado',
+      nombreCliente: nombre, correoCliente: correo, telefonoCliente: telefono,
+      locacion: document.getElementById('per-locacion').value.trim(),
+      espacioLocacion: document.getElementById('per-espacio').value.trim(),
+      descripcionServicio: descripcion,
+      fechaEvento: fecha, horaEvento: hora,
+      precio: precio, anticipo: anticipo, notasContrato: notas,
+    };
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creando...';
+  try {
+    const data = await apiPost(body);
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    const waTel = normalizarTelWA(telefono);
+    const waTxt = 'Hola, aquí está tu enlace para revisar y firmar tu contrato con Proposal Inc: ' + data.url;
+    const waUrl = 'https://wa.me/' + waTel + '?text=' + encodeURIComponent(waTxt);
+    document.getElementById(resId).innerHTML =
+      '<div class="resultado-box">' +
+        '<div class="resultado-titulo">Contrato creado · Folio ' + esc(data.folio) + '</div>' +
+        '<div class="resultado-url">' + esc(data.url) + '</div>' +
+        '<div class="resultado-acciones">' +
+          '<button class="btn-copiar" data-url="' + esc(data.url) + '" onclick="copiarDesdeBtn(this)"><i class="ti ti-copy"></i> Copiar enlace</button>' +
+          '<a class="btn-wa" href="' + esc(waUrl) + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' +
+        '</div></div>';
+    limpiarFormCrear(tipo);
+    cargarContratos();
+  } catch (e) {
+    setMsg(msgId, 'Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Crear contrato y generar enlace';
+  }
+}
+function limpiarFormCrear(tipo) {
+  const pref = tipo === 'estandar' ? 'est' : 'per';
+  [pref + '-nombre', pref + '-correo', pref + '-telefono', pref + '-fecha',
+   pref + '-precio', pref + '-anticipo', pref + '-notas'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById(pref + '-hora').value = '18:00';
+  precioManual = false;
+  anticipoManual = false;
+  if (tipo === 'estandar') {
+    document.getElementById('est-paquete').selectedIndex = 0;
+    document.getElementById('aviso-restriccion').classList.remove('visible');
+    renderFormEstandar();
+  } else {
+    ['per-locacion','per-espacio','per-descripcion'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+  }
+}
+
+// ── EVENTOS ──
+function renderSesionesFuturas() {
+  const el = document.getElementById('sesiones-body');
+  if (!el) return;
+  if (!todosContratos.length) {
+    el.innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Carga los contratos primero.</p>';
+    return;
+  }
+  const hoy = new Date().toISOString().substring(0, 10);
+  const futuros = todosContratos
+    .filter(function(c) { return c.fechaEvento && String(c.fechaEvento).substring(0, 10) >= hoy; })
+    .sort(function(a, b) { return String(a.fechaEvento).localeCompare(String(b.fechaEvento)); });
+  if (!futuros.length) {
+    el.innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">No hay eventos próximos.</p>';
+    return;
+  }
+  const grupos = {};
+  futuros.forEach(function(c) {
+    const f = String(c.fechaEvento).substring(0, 10);
+    if (!grupos[f]) grupos[f] = [];
+    grupos[f].push(c);
+  });
+  let html = '';
+  Object.keys(grupos).sort().forEach(function(fecha) {
+    const esHoy = fecha === hoy;
+    html += '<div style="margin-bottom:20px">' +
+      '<p style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:' +
+      (esHoy ? 'var(--gold)' : 'var(--ink-3)') + ';margin-bottom:8px">' +
+      (esHoy ? 'Hoy' : fmxnFechaLarga(fecha)) + '</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">';
+    grupos[fecha].forEach(function(c) {
+      html += '<div style="background:var(--card);border:1px solid ' + (esHoy ? 'var(--gold-border)' : 'var(--border)') +
+        ';border-radius:var(--r);padding:14px 16px;cursor:pointer" onclick="abrirDesdeSesiones(\'' + c.token + '\')">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div>' +
+        '<p style="font-size:14px;font-weight:700;margin:0 0 2px">' + esc(c.nombreCliente) + '</p>' +
+        '<p style="font-size:12px;color:var(--ink-3);margin:0">' + esc(c.paqueteNombre || '') + ' · ' +
+        esc(c.locacion || '') + (c.espacioLocacion ? ' · ' + esc(c.espacioLocacion) : '') + '</p>' +
+        (c.horaEvento ? '<p style="font-size:12px;color:var(--ink-2);margin:2px 0 0"><i class="ti ti-clock" style="font-size:11px"></i> ' + esc(c.horaEvento) + '</p>' : '') +
+        '</div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' + badgeEstatus(c.estatus) +
+        '<span style="font-size:11px;color:var(--ink-3);font-family:monospace">' + esc(c.folio || '') + '</span></div></div></div>';
+    });
+    html += '</div></div>';
+  });
+  el.innerHTML = html;
+}
+function abrirDesdeSesiones(token) {
+  mostrarTab('contratos', document.querySelector('.tab-btn[data-tab="contratos"]'));
+  setTimeout(function() { abrirPanel(token); }, 350);
+}
+
+// ── CRM ──
+async function cargarCRM() {
+  document.getElementById('crm-grid').innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>';
+  try {
+    const data = await apiGet({ action: 'listarClientes' });
+    if (!data.ok) throw new Error(data.error || 'Error');
+    const lista = data.clientes || [];
+    if (!lista.length) {
+      document.getElementById('crm-grid').innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Sin clientes registrados.</p>';
+      return;
+    }
+    document.getElementById('crm-grid').innerHTML = lista.map(function(cl) {
+      return '<div class="crm-card">' +
+        '<div class="crm-nombre">' + esc(cl.nombre) + '</div>' +
+        '<div class="crm-correo">' + esc(cl.correo || '') + (cl.telefono ? ' · ' + esc(cl.telefono) : '') + '</div>' +
+        '<div class="crm-proyectos-hdr">' + cl.eventos.length + ' evento' + (cl.eventos.length !== 1 ? 's' : '') + '</div>' +
+        cl.eventos.map(function(p) {
+          return '<div class="crm-proyecto"><span class="crm-folio">' + (esc(p.folio) || '—') + '</span>' + badgeEstatus(p.estatus) + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('crm-grid').innerHTML = '<p style="color:var(--danger);font-size:13px">Error: ' + esc(e.message) + '</p>';
+  }
+}
+
+// ── PAQUETES (administracion) ──
+let todosPaquetesAdmin = [];
+async function cargarPaquetesAdmin() {
+  const cont = document.getElementById('lista-paquetes-admin');
+  cont.innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>';
+  try {
+    const data = await apiGet({ action: 'listarPaquetesAdmin' });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    todosPaquetesAdmin = data.paquetes || [];
+    renderListaPaquetes();
+  } catch (e) {
+    cont.innerHTML = '<p style="color:var(--danger);font-size:13px">Error: ' + esc(e.message) + '</p>';
+  }
+}
+function renderListaPaquetes() {
+  const cont = document.getElementById('lista-paquetes-admin');
+  if (!todosPaquetesAdmin.length) {
+    cont.innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Sin paquetes configurados.</p>';
+    return;
+  }
+  let html = '<table class="paq-tabla"><thead><tr>' +
+    '<th>Clave</th><th>Nombre</th><th>Locación</th><th>Precio</th><th>Add-on</th><th>Activo</th><th></th>' +
+    '</tr></thead><tbody>';
+  todosPaquetesAdmin.forEach(function(p) {
+    const inactivo = p.Activo !== true;
+    html += '<tr class="' + (inactivo ? 'paq-inactivo' : '') + '">' +
+      '<td style="font-family:monospace;font-size:12px">' + esc(p.Clave || '') + '</td>' +
+      '<td style="font-weight:600">' + esc(p.Nombre || '') + '</td>' +
+      '<td>' + esc(p.Locacion || '') + '</td>' +
+      '<td>' + fmxn(p.Precio) + '</td>' +
+      '<td>' + (p.EsAdicional ? '<span class="badge-addon">ADD-ON</span>' : '') + '</td>' +
+      '<td>' + (inactivo ? '<span style="font-size:11px;color:var(--ink-3)">No</span>' : '<span style="font-size:11px;color:var(--success);font-weight:700">Sí</span>') + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn-secundario btn-sm" style="margin-right:4px" data-clave="' + esc(p.Clave) + '" onclick="editarPaquetePorClave(this.dataset.clave)">Editar</button>' +
+        '<button class="btn-secundario btn-sm" data-clave="' + esc(p.Clave) + '" data-activar="' + (inactivo ? '1' : '0') + '" onclick="togglePaqueteAdmin(this.dataset.clave, this.dataset.activar===\'1\')">' +
+          (inactivo ? 'Activar' : 'Desactivar') + '</button>' +
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  cont.innerHTML = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">' + html + '</div>';
+}
+function abrirModalNuevoPaquete() {
+  document.getElementById('modal-paq-titulo').textContent = 'Nuevo paquete';
+  document.getElementById('mp-clave-original').value = '';
+  document.getElementById('mp-clave').value = '';
+  document.getElementById('mp-nombre').value = '';
+  document.getElementById('mp-locacion').value = 'Safi Metropolitan';
+  document.getElementById('mp-precio').value = '';
+  document.getElementById('mp-entregables').value = '';
+  document.getElementById('mp-es-adicional').checked = false;
+  document.getElementById('modal-paq-error').style.display = 'none';
+  document.getElementById('modal-paquete').style.display = 'flex';
+}
+function editarPaquetePorClave(clave) {
+  const p = todosPaquetesAdmin.filter(function(x) { return x.Clave === clave; })[0];
+  if (!p) return;
+  document.getElementById('modal-paq-titulo').textContent = 'Editar paquete';
+  document.getElementById('mp-clave-original').value = p.Clave || '';
+  document.getElementById('mp-clave').value = p.Clave || '';
+  document.getElementById('mp-nombre').value = p.Nombre || '';
+  document.getElementById('mp-locacion').value = p.Locacion || 'Todas';
+  document.getElementById('mp-precio').value = p.Precio || '';
+  document.getElementById('mp-entregables').value = p.Entregables || '';
+  document.getElementById('mp-es-adicional').checked = !!p.EsAdicional;
+  document.getElementById('modal-paq-error').style.display = 'none';
+  document.getElementById('modal-paquete').style.display = 'flex';
+}
+function cerrarModalPaquete() {
+  document.getElementById('modal-paquete').style.display = 'none';
+}
+async function guardarPaqueteAdmin() {
+  const claveOrig = document.getElementById('mp-clave-original').value.trim();
+  const clave     = document.getElementById('mp-clave').value.trim().toUpperCase();
+  const nombre    = document.getElementById('mp-nombre').value.trim();
+  const errEl     = document.getElementById('modal-paq-error');
+  errEl.style.display = 'none';
+  if (!clave || !nombre) {
+    errEl.textContent = 'Clave y nombre son obligatorios.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const payload = {
+    action      : claveOrig ? 'actualizarPaquete' : 'crearPaquete',
+    claveOriginal: claveOrig,
+    clave       : clave,
+    nombre      : nombre,
+    locacion    : document.getElementById('mp-locacion').value,
+    precio      : parseFloat(document.getElementById('mp-precio').value) || 0,
+    entregables : document.getElementById('mp-entregables').value.trim(),
+    esAdicional : document.getElementById('mp-es-adicional').checked,
+    activo      : true,
+  };
+  try {
+    const data = await apiPost(payload);
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    cerrarModalPaquete();
+    await cargarPaquetesAdmin();
+    await cargarPaquetes();
+  } catch (e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+async function togglePaqueteAdmin(clave, activar) {
+  try {
+    const data = await apiPost({ action: 'togglePaquete', clave: clave, activo: activar });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    await cargarPaquetesAdmin();
+    await cargarPaquetes();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── METRICAS ──
+let metPeriodo = 'mes';
+function setMetPeriodo(periodo, btn) {
+  metPeriodo = periodo;
+  ['mes','trimestre','anio','todo'].forEach(function(p) {
+    document.getElementById('met-btn-' + p).classList.toggle('activo-ciclo', p === periodo);
+  });
+  cargarMetricas();
+}
+async function cargarMetricas() {
+  document.getElementById('metricas-body').innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>';
+  try {
+    const s = await apiGet({ action: 'listarStats', periodo: metPeriodo });
+    if (!s.ok) throw new Error(s.error || 'Error');
+    renderMetricas(s);
+  } catch (e) {
+    document.getElementById('metricas-body').innerHTML = '<p style="color:var(--danger)">Error: ' + esc(e.message) + '</p>';
+  }
+}
+function renderMetricas(s) {
+  const labelPeriodo = { mes: 'este mes', trimestre: 'este trimestre', anio: 'este año', todo: 'acumulado' }[s.periodo] || '';
+  const cards = [
+    { label: 'Facturado',       valor: fmxn(s.facturado),      sub: s.numContratos + ' contratos', color: 'var(--gold)' },
+    { label: 'Cobrado',         valor: fmxn(s.cobrado),        sub: labelPeriodo,                  color: 'var(--success)' },
+    { label: 'Por cobrar',      valor: fmxn(s.porCobrar),      sub: 'contratos abiertos',          color: 'var(--warn)' },
+    { label: 'Ticket promedio', valor: fmxn(s.ticketPromedio), sub: labelPeriodo,                  color: 'var(--ink-1)' },
+  ];
+  let html = '<div class="met-cards-grid">' + cards.map(function(c) {
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
+      '<p style="font-size:11px;color:var(--ink-3);margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">' + c.label + '</p>' +
+      '<p style="font-size:22px;font-weight:700;color:' + c.color + ';margin:0 0 3px">' + c.valor + '</p>' +
+      '<p style="font-size:11px;color:var(--ink-3);margin:0">' + c.sub + '</p></div>';
+  }).join('') + '</div><div class="met-bottom-grid">';
+
+  const ORDEN = ['Pendiente firma','Firmado','Anticipo recibido','En produccion','Entregado','Liquidado'];
+  const valoresEst = ORDEN.map(function(e) { return s.porEstatus[e] || 0; });
+  const maxEst = Math.max.apply(null, [1].concat(valoresEst));
+  html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
+    '<p style="font-size:12px;font-weight:700;margin:0 0 14px">Por estatus</p>';
+  let algoEst = false;
+  ORDEN.forEach(function(est) {
+    const n = s.porEstatus[est] || 0;
+    if (!n) return;
+    algoEst = true;
+    const pct = Math.round(n / maxEst * 100);
+    html += '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-2);margin-bottom:3px">' +
+      '<span>' + (est === 'En produccion' ? 'En producción' : est) + '</span><span style="font-weight:700">' + n + '</span></div>' +
+      '<div style="background:var(--border);border-radius:3px;height:5px"><div style="background:var(--gold);width:' + pct + '%;height:5px;border-radius:3px"></div></div></div>';
+  });
+  if (!algoEst) html += '<p style="font-size:12px;color:var(--ink-3)">Sin contratos en el período.</p>';
+  html += '</div>';
+
+  html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
+    '<p style="font-size:12px;font-weight:700;margin:0 0 14px">Top clientes</p>';
+  if (s.topClientes && s.topClientes.length) {
+    s.topClientes.forEach(function(c, i) {
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">' +
+        '<span style="font-size:12px;color:var(--ink-2)">' + (i + 1) + '. ' + esc(c.nombre) + '</span>' +
+        '<span style="font-size:12px;font-weight:700">' + fmxn(c.total) + '</span></div>';
+    });
+  } else {
+    html += '<p style="font-size:12px;color:var(--ink-3)">Sin datos.</p>';
+  }
+  html += '</div>';
+
+  const maxMes = Math.max.apply(null, [1].concat(s.porMes.map(function(m) { return m.facturado; })));
+  html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
+    '<p style="font-size:12px;font-weight:700;margin:0 0 14px">Facturación últimos 6 meses</p>' +
+    '<div style="display:flex;align-items:flex-end;gap:8px;height:100px">';
+  s.porMes.forEach(function(m) {
+    const h = m.facturado > 0 ? Math.max(6, Math.round(m.facturado / maxMes * 90)) : 2;
+    html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">' +
+      '<span style="font-size:9px;color:var(--ink-3)">' + (m.facturado > 0 ? fmxnCorto(m.facturado) : '') + '</span>' +
+      '<div style="width:100%;height:' + h + 'px;background:var(--gold);border-radius:3px 3px 0 0;opacity:' + (m.facturado > 0 ? 1 : 0.25) + '"></div>' +
+      '<span style="font-size:10px;color:var(--ink-3)">' + m.mes + '</span></div>';
+  });
+  html += '</div></div></div>';
+  document.getElementById('metricas-body').innerHTML = html;
+}
+
+// ── HELPERS ──
+function fmxn(val) {
+  const num = parseFloat(val) || 0;
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(num);
+}
+function fmxnCorto(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return '$' + Math.round(n / 1000) + 'k';
+  return fmxn(n);
+}
+function fmxnFecha(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  if (isNaN(d)) return String(val);
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function fmxnFechaCorta(val) {
+  if (!val) return '—';
+  const s = String(val).indexOf('T') !== -1 ? val : val + 'T12:00:00';
+  const d = new Date(s);
+  if (isNaN(d)) return String(val);
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+}
+function fmxnFechaLarga(val) {
+  if (!val) return '—';
+  const s = String(val).indexOf('T') !== -1 ? val : val + 'T12:00:00';
+  const d = new Date(s);
+  if (isNaN(d)) return String(val);
+  return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function badgeEstatus(estatus) {
+  const map = {
+    'Pendiente firma'  : 'badge-pendiente-firma',
+    'Firmado'          : 'badge-firmado',
+    'Anticipo recibido': 'badge-anticipo',
+    'En produccion'    : 'badge-en-produccion',
+    'Entregado'        : 'badge-entregado',
+    'Liquidado'        : 'badge-liquidado',
+  };
+  const cls = map[estatus] || 'badge-pendiente-firma';
+  const txt = estatus === 'En produccion' ? 'En producción' : (estatus || '—');
+  return '<span class="badge ' + cls + '">' + esc(txt) + '</span>';
+}
+function setMsg(id, text, tipo) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'form-msg' + (tipo ? ' ' + tipo : '');
+}
+async function copiarDesdeBtn(btn) {
+  const url = btn.dataset.url;
+  try {
+    await navigator.clipboard.writeText(url);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i> Copiado';
+    setTimeout(function() { btn.innerHTML = orig; }, 2000);
+  } catch (e) {
+    prompt('Copia este enlace:', url);
+  }
+}
+function normalizarTelWA(tel) {
+  if (!tel) return '';
+  let d = String(tel).replace(/\D/g, '');
+  if (d.indexOf('521') === 0 && d.length === 13) return d;
+  if (d.indexOf('52') === 0  && d.length === 12) return '521' + d.substring(2);
+  if (d.length === 10) return '521' + d;
+  return d;
+}
+
+// ── INICIO ──
+(function() {
+  let logueado = false;
+  try { logueado = localStorage.getItem('pi_admin_ok') === '1'; } catch (e) {}
+  if (logueado) abrirAdmin();
+})();
+</script>
+</body>
+</html>
