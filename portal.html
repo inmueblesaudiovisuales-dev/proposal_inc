@@ -270,7 +270,7 @@ async function init() {
     const d = await res.json();
     if (!d.ok) { mostrarError(d.error || 'Este enlace no está disponible.'); return; }
     // Limpia el token de la URL solo si el fetch fue exitoso.
-    if (history.replaceState) history.replaceState({}, '', location.pathname);
+    // Token se mantiene en la URL para que el cliente pueda guardar y regresar al enlace.
     datos = d;
     render();
   } catch (e) {
