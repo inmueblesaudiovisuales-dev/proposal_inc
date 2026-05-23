@@ -727,6 +727,23 @@
   </div>
 </div>
 
+<!-- MODAL: CONFIRMAR RESERVACIÓN -->
+<div id="modal-reservacion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <p style="font-size:15px;font-weight:700;margin-bottom:6px">Confirmar reservación</p>
+    <p style="font-size:13px;color:var(--ink-2);margin-bottom:16px">Selecciona el espacio asignado en la locación. El cliente recibirá un correo de confirmación y se creará un evento en el calendario.</p>
+    <div class="campo">
+      <label>Espacio</label>
+      <select id="modal-res-espacio"></select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-primario gold" style="flex:1" onclick="ejecutarConfirmarReservacion()">Confirmar</button>
+      <button class="btn-secundario" style="flex:1" onclick="cerrarModalReservacion()">Cancelar</button>
+    </div>
+    <div id="modal-res-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
+  </div>
+</div>
+
 <!-- PANEL LATERAL -->
 <div id="panel-lateral" class="panel-lateral">
   <div class="panel-header">
@@ -1225,6 +1242,19 @@ function renderPanel(data) {
       '</select><button class="btn-secundario btn-sm" onclick="cambiarEstatus()">Guardar</button></div>' +
       '<div class="form-msg" id="msg-estatus"></div>' +
     '</div>' +
+    (c.Estatus === 'Anticipo recibido' && !c.ReservacionConfirmada
+      ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
+        '<p class="sec-label" style="margin-bottom:6px">Reservación con locación</p>' +
+        '<button class="btn-primario gold" style="width:100%" onclick="abrirModalReservacion()">' +
+        '<i class="ti ti-calendar-check"></i> Confirmar reservación con hotel</button>' +
+        '<div class="form-msg" id="msg-reservacion"></div>' +
+        '</div>'
+      : (c.ReservacionConfirmada
+        ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">' +
+          '<i class="ti ti-circle-check" style="color:var(--success);font-size:18px"></i>' +
+          '<span style="font-size:13px;color:var(--ink-1)">Reservación confirmada · ' + esc(c.EspacioLocacion || '') + '</span>' +
+          '</div>'
+        : '')) +
     (['Firmado', 'Anticipo recibido', 'En produccion'].indexOf(c.Estatus) !== -1
       ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
         '<p class="sec-label" style="margin-bottom:6px">Producción</p>' +
@@ -1767,6 +1797,49 @@ async function togglePaqueteAdmin(clave, activar) {
     await cargarPaquetes();
   } catch (e) {
     alert('Error: ' + e.message);
+  }
+}
+
+// ── CONFIRMAR RESERVACIÓN ──
+function abrirModalReservacion() {
+  const c       = todosContratos.find(function(x) { return x.token === tokenActivo; }) || {};
+  const sel     = document.getElementById('modal-res-espacio');
+  const opciones = ESPACIOS_LOCACION[c.locacion] || [];
+  sel.innerHTML = opciones.map(function(e) {
+    return '<option value="' + esc(e) + '">' + esc(e) + '</option>';
+  }).join('');
+  if (!opciones.length) {
+    sel.innerHTML = '<option value="">Sin espacios definidos para esta locación</option>';
+  }
+  document.getElementById('modal-res-error').style.display = 'none';
+  document.getElementById('modal-reservacion').style.display = 'flex';
+}
+
+function cerrarModalReservacion() {
+  document.getElementById('modal-reservacion').style.display = 'none';
+}
+
+async function ejecutarConfirmarReservacion() {
+  const espacio = document.getElementById('modal-res-espacio').value.trim();
+  const errEl   = document.getElementById('modal-res-error');
+  errEl.style.display = 'none';
+  if (!espacio) {
+    errEl.textContent = 'Selecciona el espacio antes de confirmar.';
+    errEl.style.display = 'block';
+    return;
+  }
+  try {
+    const data = await apiPost({
+      action : 'confirmarReservacion',
+      token  : tokenActivo,
+      espacio: espacio,
+    });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    cerrarModalReservacion();
+    await abrirPanel(tokenActivo);
+  } catch (e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = 'block';
   }
 }
 
