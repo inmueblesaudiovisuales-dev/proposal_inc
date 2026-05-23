@@ -132,6 +132,7 @@
     .badge-pendiente-firma  { background: #FEF3C7; color: #92400E; }
     .badge-firmado          { background: #DBEAFE; color: #1E40AF; }
     .badge-anticipo         { background: #D1FAE5; color: #065F46; }
+    .badge-reservado        { background: #FEF9C3; color: #713F12; border: 1px solid #FDE047; }
     .badge-en-produccion    { background: #EDE9FE; color: #5B21B6; }
     .badge-entregado        { background: #E0F2FE; color: #0369A1; }
     .badge-liquidado        { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
@@ -524,9 +525,10 @@
             <option value="Pendiente firma">Pendiente firma</option>
             <option value="Firmado">Firmado</option>
             <option value="Anticipo recibido">Anticipo recibido</option>
+            <option value="Reservado">Reservado</option>
+            <option value="Liquidado">Liquidado</option>
             <option value="En produccion">En producción</option>
             <option value="Entregado">Entregado</option>
-            <option value="Liquidado">Liquidado</option>
           </select>
           <span class="filtro-fecha-label">Creado:</span>
           <input type="date" id="filtro-fecha-desde" onchange="filtrarContratos()" style="width:auto" title="Creado desde">
@@ -775,7 +777,7 @@ const ESPACIOS_LOCACION = {
   'Safi Metropolitan' : ['Terraza Principal', 'Terraza Condominios'],
   'Rincón de Santiago': ['Auditorio', 'Isla', 'Terraza', 'Área de yoga'],
 };
-const ESTATUS_ABIERTOS = ['Pendiente firma', 'Firmado', 'Anticipo recibido', 'En produccion'];
+const ESTATUS_ABIERTOS = ['Pendiente firma', 'Firmado', 'Anticipo recibido', 'Reservado', 'En produccion'];
 
 let paquetes       = [];
 let todosContratos = [];
@@ -1049,7 +1051,7 @@ function filtrarContratos() {
 function diasEnEstatus(c) {
   let desde = c.fechaCreacion;
   if      (c.estatus === 'Firmado')                                            desde = c.fechaFirma       || c.fechaCreacion;
-  else if (c.estatus === 'Anticipo recibido' || c.estatus === 'En produccion') desde = c.fechaUltimoAbono || c.fechaFirma || c.fechaCreacion;
+  else if (c.estatus === 'Anticipo recibido' || c.estatus === 'Reservado' || c.estatus === 'En produccion') desde = c.fechaUltimoAbono || c.fechaFirma || c.fechaCreacion;
   else if (c.estatus === 'Entregado' || c.estatus === 'Liquidado')             desde = c.fechaEntrega     || c.fechaUltimoAbono || c.fechaCreacion;
   if (!desde) return 0;
   const d = new Date(desde);
@@ -1152,7 +1154,7 @@ function renderPanel(data) {
     const st = c.Estatus || '';
     if (st === 'Pendiente firma') return 'Hola ' + nombre1 + ', aquí está tu enlace para revisar y firmar tu contrato con Proposal Inc: ' + url;
     if (st === 'Firmado')         return 'Hola ' + nombre1 + ', te recuerdo el anticipo de tu evento. Puedes ver los datos de pago aquí: ' + url;
-    if (st === 'Anticipo recibido' || st === 'En produccion') return 'Hola ' + nombre1 + ', estamos preparando todo para tu evento. Cualquier duda con gusto te ayudo.';
+    if (st === 'Anticipo recibido' || st === 'Reservado' || st === 'En produccion') return 'Hola ' + nombre1 + ', estamos preparando todo para tu evento. Cualquier duda con gusto te ayudo.';
     if (st === 'Entregado' || st === 'Liquidado') return 'Hola ' + nombre1 + ', tu material ya está listo. Aquí está tu enlace: ' + url;
     return 'Hola ' + nombre1 + ', te comparto el enlace de tu portal: ' + url;
   })();
@@ -1236,7 +1238,7 @@ function renderPanel(data) {
       '<div class="form-msg" id="msg-abono"></div>' +
       '<div class="sec-label" style="margin-top:22px">Cambiar estatus</div>' +
       '<div class="estatus-fila"><select id="panel-estatus">' +
-        ['Pendiente firma','Firmado','Anticipo recibido','En produccion','Entregado','Liquidado'].map(function(s) {
+        ['Pendiente firma','Firmado','Anticipo recibido','Reservado','Liquidado','En produccion','Entregado'].map(function(s) {
           return '<option value="' + s + '"' + (c.Estatus === s ? ' selected' : '') + '>' + (s === 'En produccion' ? 'En producción' : s) + '</option>';
         }).join('') +
       '</select><button class="btn-secundario btn-sm" onclick="cambiarEstatus()">Guardar</button></div>' +
@@ -1283,7 +1285,7 @@ function renderPanel(data) {
       '<div style="flex:1"><div style="font-size:13px;font-weight:' + (hecho ? '600' : '400') + '">' + esc(etiqueta) + '</div>' +
       (hecho && fechaVal ? '<div style="font-size:11px;color:var(--ink-3)">' + fmxnFecha(fechaVal) + '</div>' : '') + '</div></div>';
   };
-  const estadoAnticipo  = totalAbonado > 0 || ['Anticipo recibido','En produccion','Entregado','Liquidado'].indexOf(c.Estatus) !== -1;
+  const estadoAnticipo  = totalAbonado > 0 || ['Anticipo recibido','Reservado','Liquidado','En produccion','Entregado'].indexOf(c.Estatus) !== -1;
   const estadoEntregado = ['Entregado','Liquidado'].indexOf(c.Estatus) !== -1;
   const fotoHecho  = !!(c.FotografiaLista && String(c.FotografiaLista).trim());
   const videoHecho = !!(c.VideoListo && String(c.VideoListo).trim());
@@ -1877,7 +1879,7 @@ function renderMetricas(s) {
       '<p style="font-size:11px;color:var(--ink-3);margin:0">' + c.sub + '</p></div>';
   }).join('') + '</div><div class="met-bottom-grid">';
 
-  const ORDEN = ['Pendiente firma','Firmado','Anticipo recibido','En produccion','Entregado','Liquidado'];
+  const ORDEN = ['Pendiente firma','Firmado','Anticipo recibido','Reservado','Liquidado','En produccion','Entregado'];
   const valoresEst = ORDEN.map(function(e) { return s.porEstatus[e] || 0; });
   const maxEst = Math.max.apply(null, [1].concat(valoresEst));
   html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
@@ -1962,6 +1964,7 @@ function badgeEstatus(estatus) {
     'Pendiente firma'  : 'badge-pendiente-firma',
     'Firmado'          : 'badge-firmado',
     'Anticipo recibido': 'badge-anticipo',
+    'Reservado'        : 'badge-reservado',
     'En produccion'    : 'badge-en-produccion',
     'Entregado'        : 'badge-entregado',
     'Liquidado'        : 'badge-liquidado',
