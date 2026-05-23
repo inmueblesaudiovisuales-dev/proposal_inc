@@ -178,6 +178,22 @@
     .oculto { display:none; }
     .pie { text-align:center; font-size:11px; color:var(--ink-3); margin-top:24px; }
 
+    .addon-combo-badge {
+      font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+      background:var(--gold-pale); color:var(--gold); border:1px solid var(--gold-border);
+      border-radius:4px; padding:2px 6px; margin-left:6px; vertical-align:middle;
+    }
+    .addon-combo-msg {
+      display:none; background:var(--gold-pale); border:1px solid var(--gold-border);
+      border-radius:var(--r); padding:10px 14px; font-size:12px; color:var(--onyx);
+      margin-bottom:8px; line-height:1.5;
+    }
+    .addon-incluido { opacity:0.45; pointer-events:none; }
+    .addon-incluido .addon-precio { color:var(--ink-3); }
+    .addon-incluido-label {
+      font-size:11px; font-weight:600; color:var(--ink-3); flex:1; margin-left:0;
+    }
+
     @media print {
       .no-print { display:none !important; }
       body { background:#fff; padding:0; }
@@ -259,6 +275,7 @@ let enviando   = false;  // proteccion contra doble envio
 let firmaCtx   = null;
 let hayTrazo   = false;
 let familiaAsisteSeleccionado = false;
+let seleccionActual = new Set(); // claves de add-ons y combos seleccionados
 
 // ── INICIO ──
 async function init() {
@@ -326,10 +343,14 @@ function renderEtapa1() {
   if (addons.length) {
     addonsHtml = '<div class="card"><h2>Servicios adicionales</h2>' +
       '<p class="sub" style="margin-bottom:12px">Puedes agregar estos servicios a tu evento. El total se actualiza al seleccionarlos.</p>' +
+      '<div id="addon-combo-msg" class="addon-combo-msg"></div>' +
       addons.map(function(a) {
-        return '<label class="addon">' +
-          '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="recalcular()">' +
-          '<span class="addon-nombre">' + esc(a.nombre) + '</span>' +
+        const esCombo = a.componentes && a.componentes.length > 0;
+        return '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
+          '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
+          '<span class="addon-nombre">' + esc(a.nombre) +
+            (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
+          '</span>' +
           '<span class="addon-precio">+' + fmxn(a.precio) + '</span></label>';
       }).join('') + '</div>';
   }
@@ -404,7 +425,8 @@ function renderEtapa1() {
       '<div class="msg" id="msg-firma"></div>' +
     '</div>';
 
-  recalcular();
+  seleccionActual = new Set();
+  resolverYActualizar();
   initFirma();
 }
 
@@ -417,18 +439,123 @@ function listaEntregables(texto) {
   }).join('') + '</ul>';
 }
 
-// Recalcula el desglose de precios en la etapa 1 segun los add-ons marcados.
-function recalcular() {
+// Actualiza seleccionActual cuando el cliente marca o desmarca un add-on.
+function onAddonChange(clave) {
+  const el = document.querySelector('.addon-check[value="' + clave + '"]');
+  if (!el) return;
+  if (el.checked) {
+    seleccionActual.add(clave);
+  } else {
+    seleccionActual.delete(clave);
+  }
+  resolverYActualizar();
+}
+
+// Detecta upgrades a combo, actualiza el DOM y recalcula el precio.
+function resolverYActualizar() {
+  const addons   = datos.addonsDisponibles || [];
+  const addonMap = {};
+  addons.forEach(function(a) { addonMap[a.clave] = a; });
+
+  // Combos ordenados de mayor a menor componentes para que el mas grande tenga prioridad.
+  const combos = addons
+    .filter(function(a) { return a.componentes && a.componentes.length > 0; })
+    .slice()
+    .sort(function(a, b) { return b.componentes.length - a.componentes.length; });
+
+  // Itera hasta que no haya mas upgrades posibles.
+  let huboUpgrade = true;
+  let mensajesUpgrade = [];
+  while (huboUpgrade) {
+    huboUpgrade = false;
+
+    // Expande la seleccion actual: reemplaza combos por sus componentes individuales.
+    // Esto permite detectar que COMBO-CINEMATOGRAFICO + COMBO-VIP activan COMBO-TOTAL.
+    const expandida = new Set();
+    seleccionActual.forEach(function(clave) {
+      const a = addonMap[clave];
+      if (a && a.componentes && a.componentes.length > 0) {
+        a.componentes.forEach(function(c) { expandida.add(c); });
+      } else {
+        expandida.add(clave);
+      }
+    });
+
+    combos.forEach(function(combo) {
+      if (seleccionActual.has(combo.clave)) return;
+      const todosPresentes = combo.componentes.every(function(c) { return expandida.has(c); });
+      if (!todosPresentes) return;
+
+      // Quitar de seleccionActual cualquier item cubierto por este combo.
+      const aEliminar = [];
+      seleccionActual.forEach(function(clave) {
+        // Es un componente directo del combo.
+        if (combo.componentes.indexOf(clave) !== -1) { aEliminar.push(clave); return; }
+        // Es un sub-combo cuyos componentes estan todos dentro de este combo.
+        const sub = addonMap[clave];
+        if (sub && sub.componentes && sub.componentes.length > 0) {
+          const cubierto = sub.componentes.every(function(c) {
+            return combo.componentes.indexOf(c) !== -1;
+          });
+          if (cubierto) aEliminar.push(clave);
+        }
+      });
+      aEliminar.forEach(function(c) { seleccionActual.delete(c); });
+      seleccionActual.add(combo.clave);
+      mensajesUpgrade.push(combo.nombre);
+      huboUpgrade = true;
+    });
+  }
+
+  // Determina que add-ons individuales quedan cubiertos por los combos seleccionados.
+  const cubiertos = new Set();
+  seleccionActual.forEach(function(clave) {
+    const a = addonMap[clave];
+    if (a && a.componentes) {
+      a.componentes.forEach(function(c) { cubiertos.add(c); });
+    }
+  });
+
+  // Actualiza el estado visual de cada checkbox.
+  document.querySelectorAll('.addon-check').forEach(function(el) {
+    const clave = el.value;
+    const label = document.getElementById('addon-label-' + clave);
+    if (cubiertos.has(clave)) {
+      el.checked  = false;
+      el.disabled = true;
+      if (label) label.classList.add('addon-incluido');
+    } else {
+      el.checked  = seleccionActual.has(clave);
+      el.disabled = false;
+      if (label) label.classList.remove('addon-incluido');
+    }
+  });
+
+  // Muestra el mensaje de upgrade si ocurrio alguno.
+  const msgEl = document.getElementById('addon-combo-msg');
+  if (msgEl) {
+    if (mensajesUpgrade.length > 0) {
+      msgEl.textContent = 'Se seleccionó el ' + mensajesUpgrade.join(' y el ') +
+        ' porque incluye los mismos servicios a un precio menor.';
+      msgEl.style.display = 'block';
+    } else {
+      msgEl.style.display = 'none';
+    }
+  }
+
+  // Calcula el precio total con los add-ons y combos seleccionados.
   const base = parseFloat(datos.precio) || 0;
   let addTotal = 0;
-  const checks = document.querySelectorAll('.addon-check:checked');
-  checks.forEach(function(c) { addTotal += parseFloat(c.dataset.precio) || 0; });
-  const total = base + addTotal;
+  seleccionActual.forEach(function(clave) {
+    const a = addonMap[clave];
+    if (a) addTotal += a.precio;
+  });
+  const total    = base + addTotal;
   // Si el cliente agrega add-ons, el anticipo se recalcula al 50%. Si no, se
-  // conserva el anticipo que definió Proposal Inc al crear el contrato.
+  // conserva el anticipo que definio Proposal Inc al crear el contrato.
   const anticipo = addTotal > 0 ? Math.round(total * 0.5) : (parseFloat(datos.anticipo) || 0);
   const restante = Math.max(0, total - anticipo);
-  const pct = total > 0 ? Math.round(anticipo / total * 100) : 0;
+  const pct      = total > 0 ? Math.round(anticipo / total * 100) : 0;
 
   document.getElementById('precio-box').innerHTML =
     '<div class="precio-fila sub"><span>Precio base</span><span>' + fmxn(base) + '</span></div>' +
@@ -556,9 +683,8 @@ async function firmarContrato() {
   setMsg('msg-firma', '', '');
 
   const firmaBase64 = document.getElementById('firma-canvas').toDataURL('image/png');
-  const adicionales = Array.prototype.slice.call(
-    document.querySelectorAll('.addon-check:checked')
-  ).map(function(c) { return c.value; });
+  const adicionales = [];
+  seleccionActual.forEach(function(c) { adicionales.push(c); });
 
   try {
     const res = await fetch(API, {
