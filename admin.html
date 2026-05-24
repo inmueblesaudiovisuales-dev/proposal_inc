@@ -995,6 +995,9 @@ function onAddonChange(cb) {
     });
   }
 }
+// Add-ons que no aplican a pedidas de mano porque esos paquetes ya incluyen foto y video.
+const ADDONS_SOLO_NOVIAZGO = ['ADD-FOTO', 'ADD-VIDEO', 'COMBO-AUDIOVISUAL'];
+
 function onPaqueteSelect() {
   const sel = document.getElementById('est-paquete');
   const opt = sel.options[sel.selectedIndex];
@@ -1009,6 +1012,19 @@ function onPaqueteSelect() {
     document.getElementById('est-locacion').value = loc;
     onLocacionChange('est');
   }
+  const clave = opt.value;
+  const esPedida = /^(SAFI|RINCON)-/.test(clave);
+  ADDONS_SOLO_NOVIAZGO.forEach(function(addonClave) {
+    const input = document.querySelector('#lista-adicionales input[value="' + addonClave + '"]');
+    if (!input) return;
+    const label = input.closest('label');
+    if (esPedida) {
+      input.checked = false;
+      if (label) label.style.display = 'none';
+    } else {
+      if (label) label.style.display = '';
+    }
+  });
 }
 function onLocacionChange(pref) {
   const loc = document.getElementById(pref + '-locacion').value;
