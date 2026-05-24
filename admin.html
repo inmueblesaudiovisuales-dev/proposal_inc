@@ -713,7 +713,9 @@
             </select>
           </div>
           <div class="campo"><label>Precio (MXN)</label><input type="number" id="mp-precio" placeholder="0" min="0" step="100"></div>
+          <div class="campo"><label>Costo variable interno (MXN)</label><input type="number" id="mp-costo-variable" placeholder="0" min="0" step="50"></div>
           <div class="campo"><label>Entregables</label><textarea id="mp-entregables" placeholder="Terraza privada · Cena · Fotografía · Video"></textarea></div>
+          <div class="campo"><label>Componentes del combo (claves separadas por coma)</label><input type="text" id="mp-componentes-combo" placeholder="ADD-FOTO,ADD-VIDEO"></div>
           <div class="campo" style="display:flex;align-items:center;gap:10px">
             <input type="checkbox" id="mp-es-adicional" style="width:auto;margin:0">
             <label for="mp-es-adicional" style="margin:0;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink-1)">Es add-on (servicio adicional)</label>
@@ -1225,7 +1227,13 @@ function renderPanel(data) {
       '</div>' +
       '<div class="pago-barra-track"><div class="pago-barra-fill" style="width:' + pct + '%"></div></div>' +
       '<div class="sec-label">Historial de abonos</div><div>' + abonosHtml + '</div>' +
-      '<div class="sec-label">Registrar abono</div>' +
+      '<div class="sec-label" style="margin-top:16px">Gastos variables del evento</div>' +
+      '<div class="fila-2" style="margin-bottom:6px">' +
+        '<div class="campo campo-sm"><label>Monto extra (MXN)</label><input type="number" id="gastos-variables-monto" placeholder="0" min="0" value="' + (parseFloat(c.GastosVariablesExtra) || 0) + '"></div>' +
+        '<div class="campo campo-sm" style="display:flex;align-items:flex-end"><button class="btn-secundario btn-sm" onclick="guardarGastosVariables()">Guardar</button></div>' +
+      '</div>' +
+      '<div class="form-msg" id="msg-gastos-variables"></div>' +
+      '<div class="sec-label" style="margin-top:8px">Registrar abono</div>' +
       '<div class="fila-2">' +
         '<div class="campo campo-sm"><label>Monto</label><input type="number" id="abono-monto" placeholder="0"></div>' +
         '<div class="campo campo-sm"><label>Método</label><select id="abono-metodo">' +
@@ -1462,6 +1470,19 @@ async function marcarSesionCompletada() {
   } catch (e) {
     setMsg('msg-sesion', 'Error: ' + e.message, 'error');
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-camera-check"></i> Evento completado, iniciar edición'; }
+  }
+}
+async function guardarGastosVariables() {
+  const t = tokenActivo;
+  setMsg('msg-gastos-variables', '', '');
+  const el = document.getElementById('gastos-variables-monto');
+  const gastos = parseFloat(el ? el.value : '0') || 0;
+  try {
+    const data = await apiPost({ action: 'guardarGastosVariables', token: t, gastos: gastos });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-gastos-variables', 'Gastos guardados.', 'ok');
+  } catch (e) {
+    setMsg('msg-gastos-variables', 'Error: ' + e.message, 'error');
   }
 }
 async function guardarNotasInternas() {
@@ -1736,7 +1757,9 @@ function abrirModalNuevoPaquete() {
   document.getElementById('mp-nombre').value = '';
   document.getElementById('mp-locacion').value = 'Safi Metropolitan';
   document.getElementById('mp-precio').value = '';
+  document.getElementById('mp-costo-variable').value = '';
   document.getElementById('mp-entregables').value = '';
+  document.getElementById('mp-componentes-combo').value = '';
   document.getElementById('mp-es-adicional').checked = false;
   document.getElementById('modal-paq-error').style.display = 'none';
   document.getElementById('modal-paquete').style.display = 'flex';
@@ -1750,7 +1773,9 @@ function editarPaquetePorClave(clave) {
   document.getElementById('mp-nombre').value = p.Nombre || '';
   document.getElementById('mp-locacion').value = p.Locacion || 'Todas';
   document.getElementById('mp-precio').value = p.Precio || '';
+  document.getElementById('mp-costo-variable').value = p.CostoVariable || '';
   document.getElementById('mp-entregables').value = p.Entregables || '';
+  document.getElementById('mp-componentes-combo').value = p.ComponentesCombo || '';
   document.getElementById('mp-es-adicional').checked = !!p.EsAdicional;
   document.getElementById('modal-paq-error').style.display = 'none';
   document.getElementById('modal-paquete').style.display = 'flex';
@@ -1774,11 +1799,13 @@ async function guardarPaqueteAdmin() {
     claveOriginal: claveOrig,
     clave       : clave,
     nombre      : nombre,
-    locacion    : document.getElementById('mp-locacion').value,
-    precio      : parseFloat(document.getElementById('mp-precio').value) || 0,
-    entregables : document.getElementById('mp-entregables').value.trim(),
-    esAdicional : document.getElementById('mp-es-adicional').checked,
-    activo      : true,
+    locacion         : document.getElementById('mp-locacion').value,
+    precio           : parseFloat(document.getElementById('mp-precio').value) || 0,
+    costoVariable    : parseFloat(document.getElementById('mp-costo-variable').value) || 0,
+    entregables      : document.getElementById('mp-entregables').value.trim(),
+    componentesCombo : document.getElementById('mp-componentes-combo').value.trim(),
+    esAdicional      : document.getElementById('mp-es-adicional').checked,
+    activo           : true,
   };
   try {
     const data = await apiPost(payload);
