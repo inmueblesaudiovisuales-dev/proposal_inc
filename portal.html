@@ -498,56 +498,41 @@ function resolverYActualizar() {
     .slice()
     .sort(function(a, b) { return b.componentes.length - a.componentes.length; });
 
-  // Itera hasta que no haya mas upgrades posibles.
+  // Auto-upgrade: si todos los componentes de un combo estan en seleccionActual
+  // como add-ons INDIVIDUALES DIRECTOS (no como partes expandidas de otro combo),
+  // reemplazarlos por el combo. Esto evita que seleccionar un combo mayor
+  // active automaticamente los sub-combos que cubre.
   let huboUpgrade = true;
   let mensajesUpgrade = [];
   while (huboUpgrade) {
     huboUpgrade = false;
-
-    // Expande la seleccion actual: reemplaza combos por sus componentes individuales.
-    // Esto permite detectar que COMBO-CINEMATOGRAFICO + COMBO-VIP activan COMBO-TOTAL.
-    const expandida = new Set();
-    seleccionActual.forEach(function(clave) {
-      const a = addonMap[clave];
-      if (a && a.componentes && a.componentes.length > 0) {
-        a.componentes.forEach(function(c) { expandida.add(c); });
-      } else {
-        expandida.add(clave);
-      }
-    });
-
     combos.forEach(function(combo) {
       if (seleccionActual.has(combo.clave)) return;
-      const todosPresentes = combo.componentes.every(function(c) { return expandida.has(c); });
-      if (!todosPresentes) return;
-
-      // Quitar de seleccionActual cualquier item cubierto por este combo.
-      const aEliminar = [];
-      seleccionActual.forEach(function(clave) {
-        // Es un componente directo del combo.
-        if (combo.componentes.indexOf(clave) !== -1) { aEliminar.push(clave); return; }
-        // Es un sub-combo cuyos componentes estan todos dentro de este combo.
-        const sub = addonMap[clave];
-        if (sub && sub.componentes && sub.componentes.length > 0) {
-          const cubierto = sub.componentes.every(function(c) {
-            return combo.componentes.indexOf(c) !== -1;
-          });
-          if (cubierto) aEliminar.push(clave);
-        }
+      const todosDirectos = combo.componentes.every(function(c) {
+        return seleccionActual.has(c);
       });
-      aEliminar.forEach(function(c) { seleccionActual.delete(c); });
+      if (!todosDirectos) return;
+      combo.componentes.forEach(function(c) { seleccionActual.delete(c); });
       seleccionActual.add(combo.clave);
       mensajesUpgrade.push(combo.nombre);
       huboUpgrade = true;
     });
   }
 
-  // Determina que add-ons individuales quedan cubiertos por los combos seleccionados.
+  // Determina que items quedan cubiertos por los combos seleccionados:
+  // sus componentes individuales y los sub-combos cuyos componentes
+  // estan todos dentro del combo mayor.
   const cubiertos = new Set();
   seleccionActual.forEach(function(clave) {
     const a = addonMap[clave];
     if (a && a.componentes) {
       a.componentes.forEach(function(c) { cubiertos.add(c); });
+    }
+  });
+  combos.forEach(function(combo) {
+    if (seleccionActual.has(combo.clave)) return;
+    if (combo.componentes.every(function(c) { return cubiertos.has(c); })) {
+      cubiertos.add(combo.clave);
     }
   });
 
