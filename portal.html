@@ -191,6 +191,15 @@
     }
     .toggle-sino button.activo { background:var(--gold); color:var(--onyx); }
     .campo-q-hint { font-size:11px; color:var(--ink-3); margin-top:4px; }
+    .origen-opciones { display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; }
+    .origen-chip {
+      padding:7px 14px; border:1.5px solid var(--border2); border-radius:20px;
+      font-size:12px; font-weight:600; color:var(--ink-2); background:var(--card);
+      cursor:pointer; transition:border-color 120ms, background 120ms, color 120ms;
+      font-family:inherit;
+    }
+    .origen-chip:hover { border-color:var(--gold-border); }
+    .origen-chip.activo { border-color:var(--gold); background:var(--gold-pale); color:var(--onyx); }
     .campo-num-familia { display:none; margin-top:8px; }
     .centro { text-align:center; }
     .oculto { display:none; }
@@ -421,8 +430,9 @@ function renderEtapa1() {
     '<div class="card">' +
       '<h2>Antes de continuar, necesitamos algunos datos</h2>' +
       '<div class="campo-q">' +
-        '<label>Nombre de tu pareja <span style="color:var(--danger)">*</span></label>' +
-        '<input type="text" id="inp-nombre-pareja" placeholder="Nombre completo" oninput="actualizarBtnFirmar()">' +
+        '<label>Nombre de tu pareja</label>' +
+        '<input type="text" id="inp-nombre-pareja" placeholder="Nombre completo">' +
+        '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
       '<div class="campo-q">' +
         '<label>Tu correo electrónico</label>' +
@@ -435,8 +445,8 @@ function renderEtapa1() {
         '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
       '<div class="campo-q">' +
-        '<label>¿Tienen alguna canción especial para el evento?</label>' +
-        '<input type="text" id="inp-cancion" placeholder="Nombre de la canción o artista">' +
+        '<label>Canción para el evento</label>' +
+        '<input type="url" id="inp-cancion" placeholder="Enlace de Spotify o YouTube">' +
         '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
       '<div class="campo-q">' +
@@ -457,15 +467,18 @@ function renderEtapa1() {
       '</div>' +
       '<div class="campo-q">' +
         '<label>¿Cómo nos encontraste?</label>' +
-        '<select id="inp-origen" style="width:100%;border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--ink-1);background:var(--card);">' +
-          '<option value="">Selecciona una opción</option>' +
-          '<option value="Instagram">Instagram</option>' +
-          '<option value="TikTok">TikTok</option>' +
-          '<option value="Recomendacion">Recomendación de alguien</option>' +
-          '<option value="Google">Google</option>' +
-          '<option value="Facebook">Facebook</option>' +
-          '<option value="Otro">Otro</option>' +
-        '</select>' +
+        '<div class="origen-opciones">' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'Instagram\')">Instagram</button>' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'TikTok\')">TikTok</button>' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'Recomendacion\')">Recomendación</button>' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'Google\')">Google</button>' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'Facebook\')">Facebook</button>' +
+          '<button type="button" class="origen-chip" onclick="seleccionarOrigen(this,\'Otro\')">Otro</button>' +
+        '</div>' +
+        '<input type="hidden" id="inp-origen" value="">' +
+        '<div id="campo-origen-otro" style="display:none;margin-top:8px">' +
+          '<input type="text" id="inp-origen-otro" placeholder="¿Cuál?" oninput="actualizarOrigenOtro()">' +
+        '</div>' +
         '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
     '</div>' +
@@ -650,10 +663,26 @@ function toggleFamilia(valor) {
 }
 
 function actualizarBtnFirmar() {
-  const nombre = (document.getElementById('inp-nombre-pareja') || {}).value || '';
   const btn = document.getElementById('btn-firmar');
   if (!btn) return;
-  btn.disabled = !(hayTrazo && nombre.trim().length > 0);
+  btn.disabled = !hayTrazo;
+}
+
+function seleccionarOrigen(el, valor) {
+  document.querySelectorAll('.origen-chip').forEach(function(btn) { btn.classList.remove('activo'); });
+  el.classList.add('activo');
+  document.getElementById('inp-origen').value = valor;
+  const campoOtro = document.getElementById('campo-origen-otro');
+  if (campoOtro) campoOtro.style.display = valor === 'Otro' ? 'block' : 'none';
+  if (valor !== 'Otro') {
+    const inpOtro = document.getElementById('inp-origen-otro');
+    if (inpOtro) inpOtro.value = '';
+  }
+}
+
+function actualizarOrigenOtro() {
+  const val = ((document.getElementById('inp-origen-otro') || {}).value || '').trim();
+  document.getElementById('inp-origen').value = val || 'Otro';
 }
 
 // ── FIRMA (canvas) ──
