@@ -178,10 +178,8 @@
     .oculto { display:none; }
     .pie { text-align:center; font-size:11px; color:var(--ink-3); margin-top:24px; }
 
-    .portal-saludo { margin-bottom:24px; text-align:center; }
-    .portal-saludo-nombre { display:block; font-size:36px; font-weight:800; color:var(--gold); line-height:1.1; margin-bottom:10px; letter-spacing:-0.5px; }
-    .portal-saludo-tagline { display:block; font-size:14px; font-style:italic; color:var(--ink-1); margin-bottom:6px; }
-    .portal-saludo-sub { display:block; font-size:13px; color:var(--ink-2); }
+    .portal-saludo { font-size:16px; color:var(--ink-2); margin-bottom:16px; }
+    .portal-saludo strong { color:var(--ink-1); font-weight:700; }
     .countdown-evento {
       display:inline-block; background:var(--gold-pale); border:1px solid var(--gold-border);
       border-radius:var(--r); padding:8px 14px; font-size:13px; font-weight:700;
@@ -1016,11 +1014,7 @@ function parseLinksExtra(texto) {
 function saludoHtml(nombre) {
   const n = String(nombre || '').split(' ')[0];
   if (!n) return '';
-  return '<div class="portal-saludo">' +
-    '<span class="portal-saludo-nombre">' + esc(n) + '</span>' +
-    '<span class="portal-saludo-tagline">Todo empieza aquí.</span>' +
-    '<span class="portal-saludo-sub">Revisa tu contrato y firma para confirmar tu reservación.</span>' +
-    '</div>';
+  return '<p class="portal-saludo">Hola, <strong>' + esc(n) + '</strong>.</p>';
 }
 
 function contadorDiasEvento(fechaStr) {
