@@ -486,6 +486,9 @@
       <button class="bnav-btn" data-tab="sesiones" onclick="mostrarTabMobile('sesiones',this)"><i class="ti ti-calendar-event"></i>Eventos</button>
       <button class="bnav-btn" data-tab="metricas" onclick="mostrarTabMobile('metricas',this)"><i class="ti ti-chart-bar"></i>Métricas</button>
       <button class="bnav-btn" data-tab="paquetes" onclick="mostrarTabMobile('paquetes',this)"><i class="ti ti-package"></i>Paquetes</button>
+      <button class="bnav-btn" data-tab="reportes" onclick="mostrarTabMobile('reportes',this)"><i class="ti ti-chart-bar"></i>Reportes</button>
+      <button class="bnav-btn" data-tab="finanzas" onclick="mostrarTabMobile('finanzas',this)"><i class="ti ti-coin"></i>Finanzas</button>
+      <button class="bnav-btn" data-tab="disponibilidad" onclick="mostrarTabMobile('disponibilidad',this)"><i class="ti ti-calendar-month"></i>Disponibilidad</button>
     </div>
   </nav>
 
@@ -592,11 +595,12 @@
           </div>
           <div class="fila-2">
             <div class="campo"><label>Fecha del evento</label><input type="date" id="est-fecha" onchange="verificarRestriccion()"></div>
-            <div class="campo"><label>Hora del evento</label><input type="time" id="est-hora" value="18:00"></div>
+            <div class="campo"><label>Hora del evento</label><input type="time" id="est-hora" value="18:00" onchange="verificarRestriccion()"></div>
           </div>
           <div class="aviso-restriccion" id="aviso-restriccion"></div>
           <div class="fila-2">
             <div class="campo"><label>Precio total (editable)</label><input type="number" id="est-precio" placeholder="0" oninput="precioManual=true;actualizarAnticipo('est')"></div>
+            <div class="campo"><label>Descuento (MXN)</label><input type="number" id="est-descuento" placeholder="0" min="0" value="0" oninput="actualizarAnticipo('est')"><p style="font-size:11px;color:var(--ink-3);margin:3px 0 0" id="est-precio-final"></p></div>
             <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="est-anticipo" placeholder="0" oninput="anticipoManual=true"></div>
           </div>
           <div class="campo">
@@ -638,6 +642,7 @@
           </div>
           <div class="fila-2">
             <div class="campo"><label>Precio total</label><input type="number" id="per-precio" placeholder="0" oninput="actualizarAnticipo('per')"></div>
+            <div class="campo"><label>Descuento (MXN)</label><input type="number" id="per-descuento" placeholder="0" min="0" value="0" oninput="actualizarAnticipo('per')"><p style="font-size:11px;color:var(--ink-3);margin:3px 0 0" id="per-precio-final"></p></div>
             <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="per-anticipo" placeholder="0"></div>
           </div>
           <div class="campo">
@@ -728,6 +733,61 @@
         </div>
       </div>
     </div>
+
+    <!-- REPORTES -->
+    <div id="sec-reportes" class="seccion">
+      <div class="barra" style="margin-bottom:14px">
+        <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes vendidos, add-ons y tasa de cierre.</p>
+        <button class="btn-secundario btn-sm" onclick="cargarReportes()"><i class="ti ti-refresh"></i> Actualizar</button>
+      </div>
+      <div id="reportes-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+    </div>
+
+    <!-- FINANZAS -->
+    <div id="sec-finanzas" class="seccion">
+      <div class="card" id="panel-financiero">
+        <h2>Finanzas del mes</h2>
+
+        <div id="pf-meta-bloque" style="margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span>Meta mensual: <strong id="pf-meta-valor">—</strong></span>
+            <button onclick="editarMeta()" class="btn-secundario btn-sm" id="btn-editar-meta">Editar</button>
+          </div>
+          <div id="bloque-editar-meta" style="display:none; margin-top:0.5rem;">
+            <input type="number" id="inp-meta-nueva" min="1" style="width:180px;">
+            <button onclick="guardarMeta()" class="btn-primario gold btn-sm" style="margin-left:0.5rem;">Guardar</button>
+            <button onclick="cancelarEditarMeta()" class="btn-secundario btn-sm" style="margin-left:0.25rem;">Cancelar</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:0.5rem;">
+          <span>Cobros del mes: <strong id="pf-cobros">—</strong></span>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <div style="background:#2C2C2E; border-radius:4px; height:12px; overflow:hidden;">
+            <div id="pf-barra" style="height:100%; width:0%; background:#C9A84C; transition:width 0.4s;"></div>
+          </div>
+          <p id="pf-porcentaje" style="font-size:0.8rem; margin-top:0.25rem; color:#8E8E93;"></p>
+        </div>
+
+        <div id="pf-eventos-bloque">
+          <p id="pf-eventos-texto" style="font-size:0.95rem;"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISPONIBILIDAD -->
+    <div id="sec-disponibilidad" class="seccion">
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+          <button onclick="mesAnterior()" class="btn-secundario btn-sm">&lt;</button>
+          <h2 id="disp-titulo-mes" style="margin:0; font-size:1.1rem;"></h2>
+          <button onclick="mesSiguiente()" class="btn-secundario btn-sm">&gt;</button>
+        </div>
+        <div id="disp-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; font-size:0.75rem;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -783,8 +843,9 @@ const ESTATUS_ABIERTOS = ['Pendiente firma', 'Firmado', 'Anticipo recibido', 'Re
 
 let paquetes       = [];
 let todosContratos = [];
-let tokenActivo    = null;
-let precioManual   = false;
+let tokenActivo        = null;
+let contratoActivoData = null;
+let precioManual       = false;
 let anticipoManual = false;
 let filtroCiclo    = 'abiertos';
 
@@ -837,6 +898,9 @@ function mostrarTab(id, btn) {
     if (!todosContratos.length) cargarContratos().then(renderSesionesFuturas);
     else renderSesionesFuturas();
   }
+  if (id === 'reportes')       cargarReportes();
+  if (id === 'finanzas')       cargarPanelFinanciero();
+  if (id === 'disponibilidad') renderCalendario();
 }
 function mostrarTabMobile(id, btn) {
   const topBtn = document.querySelector('.tab-btn[data-tab="' + id + '"]');
@@ -940,25 +1004,50 @@ function onLocacionChange(pref) {
 }
 function actualizarAnticipo(pref) {
   if (pref === 'est' && anticipoManual) return;
-  const total = parseFloat(document.getElementById(pref + '-precio').value) || 0;
+  const precio     = parseFloat(document.getElementById(pref + '-precio').value) || 0;
+  const descuentoEl = document.getElementById(pref + '-descuento');
+  const descuento  = descuentoEl ? (parseFloat(descuentoEl.value) || 0) : 0;
+  const total      = Math.max(0, precio - descuento);
   document.getElementById(pref + '-anticipo').value = Math.round(total * 0.5);
+  const finalEl = document.getElementById(pref + '-precio-final');
+  if (finalEl) {
+    finalEl.textContent = descuento > 0 ? 'Precio final: ' + fmxn(total) : '';
+  }
 }
-// Avisa de las restricciones operativas conocidas de las locaciones.
 function verificarRestriccion() {
   const aviso   = document.getElementById('aviso-restriccion');
   const loc     = document.getElementById('est-locacion').value;
   const espacio = document.getElementById('est-espacio').value;
   const fecha   = document.getElementById('est-fecha').value;
+  const hora    = document.getElementById('est-hora').value;
   const avisos  = [];
+
   if (fecha) {
-    const dia = new Date(fecha + 'T12:00:00').getDay(); // 0 domingo, 6 sabado
+    const dia = new Date(fecha + 'T12:00:00').getDay();
     if (loc === 'Rincón de Santiago' && espacio === 'Isla' && dia === 6) {
       avisos.push('La Isla en Rincón de Santiago no está disponible los sábados. El hotel la reserva ese día.');
     }
     if (loc === 'Safi Metropolitan' && dia === 0) {
       avisos.push('Los domingos Safi no sirve alcohol; el vino y los welcome drinks se reemplazan por bebidas sin alcohol.');
     }
+
+    if (espacio && hora && todosContratos.length) {
+      const partsH = hora.split(':');
+      const minNueva = parseInt(partsH[0]) * 60 + parseInt(partsH[1]);
+      todosContratos.forEach(function(c) {
+        if (!c.fechaEvento || !c.horaEvento) return;
+        if (String(c.fechaEvento).substring(0, 10) !== fecha) return;
+        if (c.locacion !== loc || c.espacioLocacion !== espacio) return;
+        const match = String(c.horaEvento).match(/(\d{1,2}):(\d{2})/);
+        if (!match) return;
+        const minC = parseInt(match[1]) * 60 + parseInt(match[2]);
+        if (Math.abs(minNueva - minC) < 180) {
+          avisos.push('Posible conflicto: ' + c.nombreCliente + ' a las ' + c.horaEvento + ' en ' + espacio + '.');
+        }
+      });
+    }
   }
+
   if (avisos.length) {
     aviso.innerHTML = avisos.map(function(a) { return '<div><i class="ti ti-alert-triangle"></i> ' + esc(a) + '</div>'; }).join('');
     aviso.classList.add('visible');
@@ -1075,7 +1164,11 @@ function renderTabla(lista) {
     const eventoTxt = c.fechaEvento ? fmxnFechaCorta(c.fechaEvento) + (c.horaEvento ? ' · ' + esc(c.horaEvento) : '') : '—';
     return '<tr class="' + activo + '" onclick="abrirPanel(\'' + c.token + '\')">' +
       '<td class="td-folio">' + (esc(c.folio) || '—') + '</td>' +
-      '<td><div class="td-nombre">' + esc(c.nombreCliente) + '</div><div class="td-sub">' + esc(c.correoCliente) + '</div></td>' +
+      '<td><div class="td-nombre">' + esc(c.nombreCliente) +
+        (c.estatus === 'Pendiente firma' && c.avisoSinFirmaEnviado
+          ? ' <span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-weight:700">seguimiento</span>'
+          : '') +
+        '</div><div class="td-sub">' + esc(c.correoCliente) + '</div></td>' +
       '<td><div style="font-size:12px;font-weight:600">' + esc(c.paqueteNombre || '—') + '</div></td>' +
       '<td><div class="td-fecha" style="margin:0">' + eventoTxt + '</div>' +
         '<div class="td-sub">' + esc(c.locacion || '') + (c.espacioLocacion ? ' · ' + esc(c.espacioLocacion) : '') + '</div></td>' +
@@ -1138,6 +1231,7 @@ function cerrarPanel() {
 function renderPanel(data) {
   const c   = data.contrato;
   const url = data.urlPortal;
+  contratoActivoData = c;
 
   document.getElementById('panel-folio').textContent  = c.Folio || 'Sin folio';
   document.getElementById('panel-nombre').textContent = c.NombreCliente;
@@ -1193,7 +1287,21 @@ function renderPanel(data) {
       '</span>' +
     '</div>' +
     '<div class="form-msg" id="msg-espacio" style="font-size:12px;margin-bottom:4px"></div>' +
-    '<div class="info-fila"><span class="etiq">Evento</span><span class="val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + '</span></div>' +
+    '<div class="info-fila"><span class="etiq">Evento</span><span class="val" id="sp-evento-val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + '</span></div>' +
+    (['Firmado','Anticipo recibido','Reservado','Liquidado'].indexOf(c.Estatus) !== -1
+      ? '<div id="bloque-reagendar" style="display:none;margin-bottom:6px">' +
+          '<div style="display:flex;gap:6px;margin-bottom:6px">' +
+            '<input type="date" id="inp-fecha-nueva" style="flex:1;border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;font-size:13px;background:var(--page);color:var(--ink-1)">' +
+            '<input type="time" id="inp-hora-nueva" style="flex:1;border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;font-size:13px;background:var(--page);color:var(--ink-1)">' +
+          '</div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button onclick="confirmarReagendamiento()" class="btn-primario gold btn-sm" style="flex:1">Confirmar</button>' +
+            '<button onclick="cancelarReagendamiento()" class="btn-secundario btn-sm" style="flex:1">Cancelar</button>' +
+          '</div>' +
+          '<div class="form-msg" id="msg-reagendar"></div>' +
+        '</div>' +
+        '<button id="btn-reagendar" onclick="abrirReagendamiento()" class="btn-secundario btn-sm" style="width:100%;margin-bottom:8px">Reagendar evento</button>'
+      : '') +
     '<div class="info-fila"><span class="etiq">Add-ons</span><span class="val">' + addHtml + '</span></div>' +
     (c.DescripcionServicio ? '<div style="font-size:12px;color:var(--ink-2);padding:9px 0;border-bottom:1px solid var(--border)">' + esc(c.DescripcionServicio) + '</div>' : '') +
     (c.NotasContrato ? '<div class="info-fila"><span class="etiq">Notas</span><span class="val">' + esc(c.NotasContrato) + '</span></div>' : '') +
@@ -1209,6 +1317,7 @@ function renderPanel(data) {
         (c.CancionEvento ? '<div class="info-fila"><span class="etiq">Canción</span><span class="val">' + esc(c.CancionEvento) + '</span></div>' : '') +
         (c.FamiliaAsiste ? '<div class="info-fila"><span class="etiq">Familia/amigos</span><span class="val">' + esc(familiaTexto) + '</span></div>' : '') +
         (c.AlergiasAlimentarias ? '<div class="info-fila"><span class="etiq">Alergias</span><span class="val">' + esc(c.AlergiasAlimentarias) + '</span></div>' : '') +
+        (c.OrigenCliente ? '<div class="info-fila"><span class="etiq">Canal</span><span class="val">' + esc(String(c.OrigenCliente)) + '</span></div>' : '') +
       '</div>';
     })() +
     '<div class="link-portal-box">' +
@@ -1333,6 +1442,11 @@ function renderPanel(data) {
     '<button class="btn-primario gold" style="width:100%" id="btn-entrega" onclick="guardarEntrega()"><i class="ti ti-send"></i> Enviar al cliente</button>' +
     '<div class="form-msg" id="msg-entrega"></div>' +
     (c.FechaEntrega ? '<p style="font-size:12px;color:var(--ink-3);margin-top:12px">Entregado el ' + fmxnFecha(c.FechaEntrega) + '</p>' : '') +
+    (c.FechaEntrega
+      ? (c.EncuestaEnviada
+          ? '<p style="font-size:12px;color:var(--ink-3);margin-top:12px">Correo de reseña enviado el ' + fmxnFecha(c.EncuestaEnviada) + '</p>'
+          : '<button class="btn-secundario" style="width:100%;margin-top:10px" onclick="enviarCorreoResena()"><i class="ti ti-star"></i> Enviar correo de reseña</button><div class="form-msg" id="msg-resena"></div>')
+      : '') +
     '<div class="link-portal-box" style="margin-top:18px">' +
       '<div class="link-portal-label">Enlace del portal</div>' +
       '<div class="link-portal-url">' + esc(url) + '</div>' +
@@ -1550,9 +1664,11 @@ async function crearContrato(tipo) {
   const telefono = document.getElementById(pref + '-telefono').value.trim();
   const fecha    = document.getElementById(pref + '-fecha').value;
   const hora     = document.getElementById(pref + '-hora').value;
-  const precio   = parseFloat(document.getElementById(pref + '-precio').value) || 0;
-  const anticipo = parseFloat(document.getElementById(pref + '-anticipo').value) || 0;
-  const notas    = document.getElementById(pref + '-notas').value.trim();
+  const precio    = parseFloat(document.getElementById(pref + '-precio').value) || 0;
+  const anticipo  = parseFloat(document.getElementById(pref + '-anticipo').value) || 0;
+  const descEl    = document.getElementById(pref + '-descuento');
+  const descuento = descEl ? (parseFloat(descEl.value) || 0) : 0;
+  const notas     = document.getElementById(pref + '-notas').value.trim();
 
   if (!nombre) { setMsg(msgId, 'El nombre del cliente es obligatorio.', 'error'); return; }
   if (!fecha)  { setMsg(msgId, 'La fecha del evento es obligatoria.', 'error'); return; }
@@ -1572,7 +1688,7 @@ async function crearContrato(tipo) {
       locacion: document.getElementById('est-locacion').value,
       espacioLocacion: document.getElementById('est-espacio').value,
       fechaEvento: fecha, horaEvento: hora,
-      precio: precio, anticipo: anticipo, notasContrato: notas,
+      precio: precio, anticipo: anticipo, descuento: descuento, notasContrato: notas,
     };
   } else {
     const descripcion = document.getElementById('per-descripcion').value.trim();
@@ -1584,7 +1700,7 @@ async function crearContrato(tipo) {
       espacioLocacion: document.getElementById('per-espacio').value.trim(),
       descripcionServicio: descripcion,
       fechaEvento: fecha, horaEvento: hora,
-      precio: precio, anticipo: anticipo, notasContrato: notas,
+      precio: precio, anticipo: anticipo, descuento: descuento, notasContrato: notas,
     };
   }
 
@@ -1620,8 +1736,12 @@ function limpiarFormCrear(tipo) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const descEl2 = document.getElementById(pref + '-descuento');
+  if (descEl2) descEl2.value = '0';
+  const finalEl2 = document.getElementById(pref + '-precio-final');
+  if (finalEl2) finalEl2.textContent = '';
   document.getElementById(pref + '-hora').value = '18:00';
-  precioManual = false;
+  precioManual  = false;
   anticipoManual = false;
   if (tipo === 'estandar') {
     document.getElementById('est-paquete').selectedIndex = 0;
@@ -2024,6 +2144,301 @@ function normalizarTelWA(tel) {
   if (d.indexOf('52') === 0  && d.length === 12) return '521' + d.substring(2);
   if (d.length === 10) return '521' + d;
   return d;
+}
+
+// ── REAGENDAMIENTO (Plan 2) ──
+function abrirReagendamiento() {
+  const c = contratoActivoData;
+  if (!c) return;
+  const inp = document.getElementById('inp-fecha-nueva');
+  const inpH = document.getElementById('inp-hora-nueva');
+  if (inp) inp.value = String(c.FechaEvento || '').substring(0, 10);
+  if (inpH) inpH.value = String(c.HoraEvento || '').substring(0, 5);
+  setMsg('msg-reagendar', '', '');
+  document.getElementById('bloque-reagendar').style.display = 'block';
+  document.getElementById('btn-reagendar').style.display    = 'none';
+}
+function cancelarReagendamiento() {
+  document.getElementById('bloque-reagendar').style.display = 'none';
+  document.getElementById('btn-reagendar').style.display    = 'block';
+}
+async function confirmarReagendamiento() {
+  const fechaNueva = document.getElementById('inp-fecha-nueva').value;
+  const horaNueva  = document.getElementById('inp-hora-nueva').value;
+  if (!fechaNueva) { setMsg('msg-reagendar', 'Ingresa la nueva fecha.', 'error'); return; }
+  const t = tokenActivo;
+  if (!t) return;
+  try {
+    const data = await apiPost({ action: 'reagendarContrato', token: t, nuevaFecha: fechaNueva, nuevaHora: horaNueva });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-reagendar', 'Evento reagendado.', 'ok');
+    const el = document.getElementById('sp-evento-val');
+    if (el) el.textContent = fechaNueva + (horaNueva ? ' · ' + horaNueva : '');
+    cargarContratos();
+    setTimeout(cancelarReagendamiento, 1500);
+  } catch (e) {
+    setMsg('msg-reagendar', 'Error: ' + e.message, 'error');
+  }
+}
+
+// ── CORREO RESEÑA (Plan 1 Task 7) ──
+async function enviarCorreoResena() {
+  const t = tokenActivo;
+  if (!t) return;
+  const btns = document.querySelectorAll('[onclick="enviarCorreoResena()"]');
+  btns.forEach(function(b) { b.disabled = true; b.textContent = 'Enviando...'; });
+  try {
+    const data = await apiPost({ action: 'enviarCorreoResena', token: t });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-resena', 'Correo de reseña enviado.', 'ok');
+    setTimeout(function() { if (t === tokenActivo) abrirPanel(t); }, 1500);
+  } catch (e) {
+    setMsg('msg-resena', 'Error: ' + e.message, 'error');
+    btns.forEach(function(b) { b.disabled = false; b.textContent = 'Enviar correo de reseña'; });
+  }
+}
+
+// ── REPORTES (Plan 1 Task 9) ──
+async function cargarReportes() {
+  const body = document.getElementById('reportes-body');
+  if (!body) return;
+  body.innerHTML = '<p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>';
+  try {
+    const data = await apiGet({ action: 'listarReportes' });
+    if (!data.ok) throw new Error(data.error || 'Error');
+
+    const pv = data.paquetesMasVendidos || [];
+    const av = data.addonsMasAceptados  || [];
+    const tc = data.tasaCierre          || [];
+
+    const tabPaquetes = pv.length
+      ? '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+          '<tr><th style="text-align:left;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Paquete</th><th style="text-align:right;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Contratos</th></tr>' +
+          pv.map(function(p) {
+            return '<tr><td style="padding:7px 0;border-bottom:1px solid var(--border)">' + esc(p.nombre) + '</td>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border);text-align:right;font-weight:700">' + p.total + '</td></tr>';
+          }).join('') + '</table>'
+      : '<p style="color:var(--ink-3);font-size:13px">Sin datos aún.</p>';
+
+    const tabAddons = av.length
+      ? '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+          '<tr><th style="text-align:left;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Add-on</th><th style="text-align:right;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Aceptados</th></tr>' +
+          av.map(function(a) {
+            return '<tr><td style="padding:7px 0;border-bottom:1px solid var(--border)">' + esc(a.nombre) + '</td>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border);text-align:right;font-weight:700">' + a.total + '</td></tr>';
+          }).join('') + '</table>'
+      : '<p style="color:var(--ink-3);font-size:13px">Sin datos aún.</p>';
+
+    const tabTasa = tc.length
+      ? '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+          '<tr>' +
+            '<th style="text-align:left;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Mes</th>' +
+            '<th style="text-align:right;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Creados</th>' +
+            '<th style="text-align:right;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Firmados</th>' +
+            '<th style="text-align:right;padding:6px 0;border-bottom:2px solid var(--border);color:var(--ink-3)">Tasa</th>' +
+          '</tr>' +
+          tc.map(function(m) {
+            return '<tr>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border)">' + esc(m.label) + '</td>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border);text-align:right">' + m.creados + '</td>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border);text-align:right">' + m.firmados + '</td>' +
+              '<td style="padding:7px 0;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:' +
+                (m.tasa >= 70 ? 'var(--gold)' : m.tasa >= 40 ? 'var(--ink-1)' : 'var(--danger)') + '">' +
+                m.tasa + '%</td>' +
+            '</tr>';
+          }).join('') + '</table>'
+      : '<p style="color:var(--ink-3);font-size:13px">Sin datos aún.</p>';
+
+    body.innerHTML =
+      '<div style="margin-bottom:28px"><p class="sec-label">Paquetes más vendidos — últimos 12 meses</p>' + tabPaquetes + '</div>' +
+      '<div style="margin-bottom:28px"><p class="sec-label">Add-ons más aceptados — últimos 12 meses</p>' + tabAddons + '</div>' +
+      '<div><p class="sec-label">Tasa de cierre por mes — últimos 6 meses</p>' + tabTasa + '</div>';
+  } catch (e) {
+    body.innerHTML = '<p style="color:var(--danger);font-size:13px">Error: ' + esc(e.message) + '</p>';
+  }
+}
+
+// ── PANEL FINANCIERO (Plan 5) ──
+async function cargarPanelFinanciero() {
+  const datos = await apiGet({ action: 'obtenerPanelFinanciero' });
+  if (!datos || datos.error) return;
+
+  const formatPeso = function(n) {
+    return '$' + Number(n).toLocaleString('es-MX') + ' MXN';
+  };
+
+  document.getElementById('pf-meta-valor').textContent = formatPeso(datos.meta_mensual);
+  document.getElementById('pf-cobros').textContent     = formatPeso(datos.cobros_mes);
+
+  const pct  = Math.min(100, Math.round((datos.cobros_mes / datos.meta_mensual) * 100));
+  const barra = document.getElementById('pf-barra');
+  barra.style.width      = pct + '%';
+  barra.style.background = pct >= 100 ? '#4CAF50' : '#C9A84C';
+
+  const excedente  = datos.cobros_mes - datos.meta_mensual;
+  let textoPct = pct + '% de la meta';
+  if (excedente > 0) textoPct += ' (+' + formatPeso(excedente) + ' sobre la meta)';
+  document.getElementById('pf-porcentaje').textContent = textoPct;
+
+  const elEventos = document.getElementById('pf-eventos-texto');
+  if (datos.eventos_necesarios === 0) {
+    elEventos.textContent = 'Meta alcanzada este mes.';
+  } else if (datos.eventos_necesarios === null) {
+    elEventos.textContent = 'No hay suficientes datos para estimar. Configura una meta manualmente.';
+  } else {
+    elEventos.textContent =
+      'Necesitas ' + datos.eventos_necesarios + ' evento' + (datos.eventos_necesarios === 1 ? '' : 's') +
+      ' más para alcanzar tu meta (ticket promedio: ' + formatPeso(datos.ticket_promedio) + ').';
+  }
+
+  window._panelFinancieroData = datos;
+}
+function editarMeta() {
+  const meta = window._panelFinancieroData && window._panelFinancieroData.meta_mensual;
+  document.getElementById('inp-meta-nueva').value = meta || '';
+  document.getElementById('bloque-editar-meta').style.display = 'block';
+  document.getElementById('btn-editar-meta').style.display    = 'none';
+}
+function cancelarEditarMeta() {
+  document.getElementById('bloque-editar-meta').style.display = 'none';
+  document.getElementById('btn-editar-meta').style.display    = 'inline-block';
+}
+async function guardarMeta() {
+  const nuevaMeta = parseFloat(document.getElementById('inp-meta-nueva').value);
+  if (!nuevaMeta || nuevaMeta <= 0) return;
+  const res = await apiPost({ action: 'actualizarMeta', meta: nuevaMeta });
+  if (res && res.ok) {
+    cancelarEditarMeta();
+    cargarPanelFinanciero();
+  }
+}
+
+// ── DISPONIBILIDAD (Plan 6) ──
+const NOMBRES_MESES = [
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
+];
+const NOMBRES_DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const COLORES_ESTATUS_DISP = {
+  'Firmado'         : '#1E3A5F',
+  'Anticipo recibido': '#5C4A00',
+  'Reservado'       : '#1A4731',
+  'Liquidado'       : '#0D3320',
+  'En produccion'   : '#3A3A3C',
+  'Entregado'       : '#2C2C2E',
+};
+let dispMesActual  = new Date().getMonth();
+let dispAnioActual = new Date().getFullYear();
+
+function renderCalendario() {
+  document.getElementById('disp-titulo-mes').textContent =
+    NOMBRES_MESES[dispMesActual] + ' ' + dispAnioActual;
+
+  const grid = document.getElementById('disp-grid');
+  grid.innerHTML = '';
+
+  NOMBRES_DIAS.forEach(function(dia) {
+    const el = document.createElement('div');
+    el.textContent = dia;
+    el.style.cssText = 'text-align:center; color:#8E8E93; padding:4px 0; font-weight:600;';
+    grid.appendChild(el);
+  });
+
+  const primerDia  = new Date(dispAnioActual, dispMesActual, 1);
+  let offsetInicio = primerDia.getDay();
+  offsetInicio = offsetInicio === 0 ? 6 : offsetInicio - 1;
+
+  const diasEnMes = new Date(dispAnioActual, dispMesActual + 1, 0).getDate();
+
+  for (let i = 0; i < offsetInicio; i++) {
+    grid.appendChild(crearCeldaVacia());
+  }
+
+  const ESTATUS_OCULTOS = ['Pendiente firma'];
+  const contratosMes = (todosContratos || []).filter(function(c) {
+    if (ESTATUS_OCULTOS.indexOf(c.estatus) !== -1) return false;
+    if (!c.fechaEvento) return false;
+    const f = new Date(String(c.fechaEvento).substring(0, 10) + 'T00:00:00');
+    return f.getMonth() === dispMesActual && f.getFullYear() === dispAnioActual;
+  });
+
+  for (let dia = 1; dia <= diasEnMes; dia++) {
+    grid.appendChild(crearCeldaDia(dia, contratosMes));
+  }
+}
+function crearCeldaVacia() {
+  const div = document.createElement('div');
+  div.style.cssText = 'min-height:70px; background:#1C1C1E; border-radius:4px;';
+  return div;
+}
+function crearCeldaDia(dia, contratosMes) {
+  const div = document.createElement('div');
+  div.style.cssText = 'min-height:70px; background:#2C2C2E; border-radius:4px; padding:4px; position:relative;';
+
+  const numDia = document.createElement('div');
+  numDia.textContent = dia;
+  numDia.style.cssText = 'font-weight:600; color:#FFFFFF; margin-bottom:3px;';
+  div.appendChild(numDia);
+
+  const contratosDelDia = contratosMes.filter(function(c) {
+    return new Date(String(c.fechaEvento).substring(0, 10) + 'T00:00:00').getDate() === dia;
+  });
+
+  const MAX_VISIBLES = 2;
+  contratosDelDia.slice(0, MAX_VISIBLES).forEach(function(c) {
+    div.appendChild(crearPastilla(c));
+  });
+
+  if (contratosDelDia.length > MAX_VISIBLES) {
+    const mas = document.createElement('div');
+    mas.textContent = '+' + (contratosDelDia.length - MAX_VISIBLES) + ' más';
+    mas.style.cssText = 'font-size:0.65rem; color:#8E8E93; margin-top:2px;';
+    div.appendChild(mas);
+  }
+
+  div.addEventListener('click', function(e) {
+    if (e.target !== div && e.target !== numDia) return;
+    const fechaStr = dispAnioActual + '-' +
+      String(dispMesActual + 1).padStart(2, '0') + '-' +
+      String(dia).padStart(2, '0');
+    abrirFormCrearConFecha(fechaStr);
+  });
+
+  return div;
+}
+function crearPastilla(contrato) {
+  const div   = document.createElement('div');
+  const color = COLORES_ESTATUS_DISP[contrato.estatus] || '#3A3A3C';
+  div.style.cssText = 'background:' + color + '; border-radius:3px; padding:2px 4px; margin-bottom:2px; cursor:pointer; font-size:0.7rem; color:#FFFFFF; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+
+  const hora   = contrato.horaEvento || '';
+  const nombre = contrato.nombreCliente || '';
+  div.textContent = (hora ? hora + ' — ' : '') + nombre;
+
+  div.addEventListener('click', function(e) {
+    e.stopPropagation();
+    abrirPanel(contrato.token);
+  });
+  return div;
+}
+function abrirFormCrearConFecha(fechaStr) {
+  mostrarTabMobile('nuevo');
+  abrirFormCrear();
+  const inputFecha = document.getElementById('est-fecha');
+  if (inputFecha) inputFecha.value = fechaStr;
+}
+function abrirFormCrear() {
+  mostrarTabMobile('nuevo');
+}
+function mesAnterior() {
+  dispMesActual--;
+  if (dispMesActual < 0) { dispMesActual = 11; dispAnioActual--; }
+  renderCalendario();
+}
+function mesSiguiente() {
+  dispMesActual++;
+  if (dispMesActual > 11) { dispMesActual = 0; dispAnioActual++; }
+  renderCalendario();
 }
 
 // ── INICIO ──
