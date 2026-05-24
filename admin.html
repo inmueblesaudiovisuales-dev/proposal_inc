@@ -831,7 +831,7 @@
 
 <script>
 // URL del backend desplegado en Apps Script. Pegar despues de desplegar ScriptContratos1_v1.js.
-const API      = 'https://script.google.com/macros/s/AKfycbzBGRjR4O59P-gP3F53TFWO65TcWO9bsfbu91dhvRwPLWv1e2FcM7nun6KkuDYDVG8MTw/exec';
+const API      = 'https://script.google.com/macros/s/AKfycbwaF0neKxrw8jgeoW7_bkXp0dk2XU3tiWGtE41C9jJhf99m7_-4ovMjWdcPZkNa1kHBPg/exec';
 // La contrasena es solo una barrera de interfaz; tambien es la clave que valida el backend.
 const PASSWORD = 'framedock';
 
@@ -1925,8 +1925,10 @@ async function guardarPaqueteAdmin() {
     entregables      : document.getElementById('mp-entregables').value.trim(),
     componentesCombo : document.getElementById('mp-componentes-combo').value.trim(),
     esAdicional      : document.getElementById('mp-es-adicional').checked,
-    activo           : true,
   };
+  // Al crear un paquete nuevo siempre activo=true. Al actualizar uno existente
+  // no se envía activo: el backend preserva el valor que ya tiene en Sheets.
+  if (!claveOrig) payload.activo = true;
   try {
     const data = await apiPost(payload);
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
