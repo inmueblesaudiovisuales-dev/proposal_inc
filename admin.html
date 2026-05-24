@@ -980,20 +980,7 @@ function renderFormEstandar() {
   onLocacionChange('est');
 }
 function onAddonChange(cb) {
-  if (!cb.checked) return;
-  const clave       = cb.value;
-  const componentes = (cb.dataset.componentes || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-  if (componentes.length) {
-    componentes.forEach(function(c) {
-      const comp = document.querySelector('#lista-adicionales input[value="' + c + '"]');
-      if (comp) comp.checked = false;
-    });
-  } else {
-    document.querySelectorAll('#lista-adicionales input[data-componentes]').forEach(function(comboInput) {
-      const cc = (comboInput.dataset.componentes || '').split(',').map(function(s) { return s.trim(); });
-      if (cc.indexOf(clave) !== -1) comboInput.checked = false;
-    });
-  }
+  // Sin exclusion mutua: en admin se puede seleccionar cualquier combinacion.
 }
 // Add-ons que no aplican a pedidas de mano porque esos paquetes ya incluyen foto y video.
 const ADDONS_SOLO_NOVIAZGO = ['ADD-FOTO', 'ADD-VIDEO', 'COMBO-AUDIOVISUAL'];
