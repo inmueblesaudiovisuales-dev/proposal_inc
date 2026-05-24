@@ -87,6 +87,13 @@
     }
     .addon-wrap.abierto .addon-desc { display:block; }
     .addon-incluido { opacity:0.45; pointer-events:none; }
+    .btn-individuales {
+      width:100%; text-align:left; background:var(--page); border:1px solid var(--border);
+      border-radius:var(--r); padding:11px 14px; font-size:12px; font-weight:700;
+      color:var(--ink-2); cursor:pointer; display:flex; justify-content:space-between;
+      align-items:center; margin-top:4px; font-family:inherit; letter-spacing:0.01em;
+    }
+    .btn-individuales:hover { border-color:var(--border2); color:var(--ink-1); }
 
     .precio-box { background:var(--page); border-radius:var(--r); padding:14px 16px; margin:14px 0; }
     .precio-fila { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
@@ -378,26 +385,40 @@ function renderEtapa1() {
   const entregablesHtml = listaEntregables(d.descripcion);
   const addons = d.addonsDisponibles || [];
 
+  function renderAddonRow(a) {
+    const esCombo   = a.componentes && a.componentes.length > 0;
+    const tieneDesc = !!a.entregables;
+    return '<div class="addon-wrap cerrado' + (tieneDesc ? ' con-detalle' : '') + '" id="addon-wrap-' + esc(a.clave) + '">' +
+      '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
+        '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
+        '<span class="addon-nombre">' + esc(a.nombre) +
+          (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
+        '</span>' +
+        '<span class="addon-precio">+' + fmxn(a.precio) + '</span>' +
+      '</label>' +
+      (tieneDesc ? '<div class="addon-toggle-row" onclick="toggleAddonDesc(event,\'' + esc(a.clave) + '\')"><span class="addon-toggle" id="addon-toggle-' + esc(a.clave) + '">Ver detalle</span></div>' : '') +
+      (tieneDesc ? '<div class="addon-desc">' + esc(a.entregables) + '</div>' : '') +
+    '</div>';
+  }
+
+  const combos       = addons.filter(function(a) { return a.componentes && a.componentes.length > 0; });
+  const individuales = addons.filter(function(a) { return !a.componentes || a.componentes.length === 0; });
+
   let addonsHtml = '';
   if (addons.length) {
     addonsHtml = '<div class="card"><h2>Servicios adicionales</h2>' +
       '<p class="sub" style="margin-bottom:12px">Puedes agregar estos servicios a tu evento. El total se actualiza al seleccionarlos.</p>' +
       '<div id="addon-combo-msg" class="addon-combo-msg"></div>' +
-      addons.map(function(a) {
-        const esCombo = a.componentes && a.componentes.length > 0;
-        const tieneDesc = !!a.entregables;
-        return '<div class="addon-wrap cerrado' + (tieneDesc ? ' con-detalle' : '') + '" id="addon-wrap-' + esc(a.clave) + '">' +
-          '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
-            '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
-            '<span class="addon-nombre">' + esc(a.nombre) +
-              (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
-            '</span>' +
-            '<span class="addon-precio">+' + fmxn(a.precio) + '</span>' +
-          '</label>' +
-          (tieneDesc ? '<div class="addon-toggle-row" onclick="toggleAddonDesc(event,\'' + esc(a.clave) + '\')"><span class="addon-toggle" id="addon-toggle-' + esc(a.clave) + '">Ver detalle</span></div>' : '') +
-          (tieneDesc ? '<div class="addon-desc">' + esc(a.entregables) + '</div>' : '') +
-        '</div>';
-      }).join('') + '</div>';
+      combos.map(renderAddonRow).join('') +
+      (individuales.length
+        ? '<button type="button" class="btn-individuales" onclick="toggleIndividuales()">' +
+            '<span>Personalizar con servicios sueltos</span><span id="ico-individuales">+</span>' +
+          '</button>' +
+          '<div id="individuales-wrap" style="display:none;margin-top:8px">' +
+            individuales.map(renderAddonRow).join('') +
+          '</div>'
+        : '') +
+    '</div>';
   }
 
   cont.innerHTML =
@@ -510,6 +531,15 @@ function listaEntregables(texto) {
   return '<ul class="lista-entregables">' + partes.map(function(p) {
     return '<li>' + esc(p) + '</li>';
   }).join('') + '</ul>';
+}
+
+function toggleIndividuales() {
+  const wrap = document.getElementById('individuales-wrap');
+  const ico  = document.getElementById('ico-individuales');
+  if (!wrap) return;
+  const visible = wrap.style.display !== 'none';
+  wrap.style.display = visible ? 'none' : 'block';
+  if (ico) ico.textContent = visible ? '+' : '−';
 }
 
 function toggleAddonDesc(e, clave) {
