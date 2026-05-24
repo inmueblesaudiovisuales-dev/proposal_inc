@@ -970,13 +970,30 @@ function renderFormEstandar() {
   } else {
     campoAdd.style.display = 'block';
     lista.innerHTML = adds.map(function(p) {
+      const comps = p.ComponentesCombo ? ' data-componentes="' + esc(String(p.ComponentesCombo)) + '"' : '';
       return '<label class="add-item">' +
-        '<input type="checkbox" value="' + esc(p.Clave) + '" checked>' +
+        '<input type="checkbox" value="' + esc(p.Clave) + '"' + comps + ' onchange="onAddonChange(this)">' +
         '<span class="add-item-nombre">' + esc(p.Nombre) + '</span>' +
         '<span class="add-item-precio">+' + fmxn(p.Precio) + '</span></label>';
     }).join('');
   }
   onLocacionChange('est');
+}
+function onAddonChange(cb) {
+  if (!cb.checked) return;
+  const clave       = cb.value;
+  const componentes = (cb.dataset.componentes || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  if (componentes.length) {
+    componentes.forEach(function(c) {
+      const comp = document.querySelector('#lista-adicionales input[value="' + c + '"]');
+      if (comp) comp.checked = false;
+    });
+  } else {
+    document.querySelectorAll('#lista-adicionales input[data-componentes]').forEach(function(comboInput) {
+      const cc = (comboInput.dataset.componentes || '').split(',').map(function(s) { return s.trim(); });
+      if (cc.indexOf(clave) !== -1) comboInput.checked = false;
+    });
+  }
 }
 function onPaqueteSelect() {
   const sel = document.getElementById('est-paquete');
