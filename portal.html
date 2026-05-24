@@ -905,7 +905,7 @@ function imprimirComprobante(acordeonId) {
 // ── ETAPA 2: FIRMADO, SIN PAGO ──
 function renderEtapa2() {
   const d = datos;
-  const saldo = Math.max(0, (parseFloat(d.precio) || 0) - (parseFloat(d.totalAbonado) || 0));
+  const saldo = Math.max(0, (parseFloat(d.precio) || 0) - (parseFloat(d.anticipo) || 0));
   const anticipo = parseFloat(d.anticipo) || 0;
   document.getElementById('contenido').innerHTML =
     '<div class="card">' +
