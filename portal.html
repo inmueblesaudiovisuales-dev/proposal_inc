@@ -72,7 +72,14 @@
     .addon input { width:18px; height:18px; accent-color:var(--gold); flex-shrink:0; }
     .addon-nombre { flex:1; font-size:13px; font-weight:600; }
     .addon-precio { font-size:13px; font-weight:700; color:var(--gold); }
-    .addon-toggle { font-size:11px; font-weight:700; color:var(--gold); padding-left:10px; user-select:none; white-space:nowrap; text-decoration:underline; text-underline-offset:2px; flex-shrink:0; }
+    .addon-toggle-row {
+      padding:5px 14px 7px; border:1.5px solid var(--border2); border-top:none;
+      cursor:pointer; background:var(--page); display:flex; align-items:center;
+    }
+    .addon-wrap.cerrado .addon-toggle-row { border-radius:0 0 var(--r) var(--r); }
+    .addon-wrap.abierto .addon-toggle-row { border-bottom:none; border-radius:0; }
+    .addon-wrap.con-detalle .addon { border-radius:var(--r) var(--r) 0 0 !important; border-bottom:none !important; }
+    .addon-toggle { font-size:11px; font-weight:700; color:var(--gold); user-select:none; text-decoration:underline; text-underline-offset:2px; }
     .addon-desc {
       display:none; font-size:11px; color:var(--ink-2); line-height:1.5;
       padding:8px 14px 10px; border:1.5px solid var(--border2); border-top:none;
@@ -370,15 +377,15 @@ function renderEtapa1() {
       addons.map(function(a) {
         const esCombo = a.componentes && a.componentes.length > 0;
         const tieneDesc = !!a.entregables;
-        return '<div class="addon-wrap cerrado" id="addon-wrap-' + esc(a.clave) + '">' +
+        return '<div class="addon-wrap cerrado' + (tieneDesc ? ' con-detalle' : '') + '" id="addon-wrap-' + esc(a.clave) + '">' +
           '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
             '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
             '<span class="addon-nombre">' + esc(a.nombre) +
               (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
             '</span>' +
             '<span class="addon-precio">+' + fmxn(a.precio) + '</span>' +
-            (tieneDesc ? '<span class="addon-toggle" onclick="toggleAddonDesc(event,\'' + esc(a.clave) + '\')">Ver detalle</span>' : '') +
           '</label>' +
+          (tieneDesc ? '<div class="addon-toggle-row" onclick="toggleAddonDesc(event,\'' + esc(a.clave) + '\')"><span class="addon-toggle" id="addon-toggle-' + esc(a.clave) + '">Ver detalle</span></div>' : '') +
           (tieneDesc ? '<div class="addon-desc">' + esc(a.entregables) + '</div>' : '') +
         '</div>';
       }).join('') + '</div>';
@@ -496,12 +503,11 @@ function toggleAddonDesc(e, clave) {
   e.preventDefault();
   e.stopPropagation();
   const wrap   = document.getElementById('addon-wrap-' + clave);
-  const toggle = e.currentTarget;
+  const toggle = document.getElementById('addon-toggle-' + clave);
   if (!wrap) return;
   const abierto = wrap.classList.toggle('abierto');
   wrap.classList.toggle('cerrado', !abierto);
-  toggle.textContent = abierto ? 'Ocultar' : 'Ver detalle';
-  toggle.style.transform = '';
+  if (toggle) toggle.textContent = abierto ? 'Ocultar' : 'Ver detalle';
 }
 
 // Actualiza seleccionActual cuando el cliente marca o desmarca un add-on.
