@@ -178,6 +178,13 @@
     .oculto { display:none; }
     .pie { text-align:center; font-size:11px; color:var(--ink-3); margin-top:24px; }
 
+    .portal-saludo { font-size:13px; color:var(--ink-2); margin-bottom:14px; }
+    .countdown-evento {
+      display:inline-block; background:var(--gold-pale); border:1px solid var(--gold-border);
+      border-radius:var(--r); padding:8px 14px; font-size:13px; font-weight:700;
+      color:var(--onyx); margin-bottom:12px;
+    }
+
     .addon-combo-badge {
       font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
       background:var(--gold-pale); color:var(--gold); border:1px solid var(--gold-border);
@@ -314,9 +321,9 @@ function render() {
   document.getElementById('app').classList.remove('oculto');
   const est = datos.estatus;
   let etapa = 1;
-  if (est === 'Firmado')                                    etapa = 2;
-  else if (est === 'Anticipo recibido' || est === 'En produccion') etapa = 3;
-  else if (est === 'Entregado' || est === 'Liquidado')      etapa = 4;
+  if (est === 'Firmado') etapa = 2;
+  if (est === 'Anticipo recibido' || est === 'Reservado' || est === 'Liquidado' || est === 'En produccion') etapa = 3;
+  if (est === 'Entregado') etapa = 4;
   renderPasos(etapa);
   if (etapa === 1) renderEtapa1();
   else if (etapa === 2) renderEtapa2();
@@ -361,6 +368,7 @@ function renderEtapa1() {
 
   cont.innerHTML =
     '<div class="card">' +
+      saludoHtml(d.nombre) +
       '<h1>Tu contrato</h1>' +
       '<p class="sub">Revisa los datos de tu evento y firma para confirmarlo.</p>' +
       '<div class="resumen-fila"><span class="et">Paquete</span><span class="vl">' + esc(d.paqueteNombre || 'Servicio personalizado') + '</span></div>' +
@@ -392,6 +400,16 @@ function renderEtapa1() {
         '<input type="text" id="inp-nombre-pareja" placeholder="Nombre completo" oninput="actualizarBtnFirmar()">' +
       '</div>' +
       '<div class="campo-q">' +
+        '<label>Tu correo electrónico</label>' +
+        '<input type="email" id="inp-correo-cliente" placeholder="ejemplo@correo.com" value="' + esc(d.correo || '') + '">' +
+        '<p class="campo-q-hint">Para enviarte actualizaciones de tu evento</p>' +
+      '</div>' +
+      '<div class="campo-q">' +
+        '<label>Tu número de WhatsApp</label>' +
+        '<input type="tel" id="inp-telefono-cliente" placeholder="81 1234 5678" value="' + esc(d.telefono || '') + '">' +
+        '<p class="campo-q-hint">Opcional</p>' +
+      '</div>' +
+      '<div class="campo-q">' +
         '<label>¿Tienen alguna canción especial para el evento?</label>' +
         '<input type="text" id="inp-cancion" placeholder="Nombre de la canción o artista">' +
         '<p class="campo-q-hint">Opcional</p>' +
@@ -410,6 +428,19 @@ function renderEtapa1() {
       '<div class="campo-q">' +
         '<label>¿Alguna alergia alimentaria que debamos informar al restaurante?</label>' +
         '<textarea id="inp-alergias" placeholder="Describe la alergia o intolerancia"></textarea>' +
+        '<p class="campo-q-hint">Opcional</p>' +
+      '</div>' +
+      '<div class="campo-q">' +
+        '<label>¿Cómo nos encontraste?</label>' +
+        '<select id="inp-origen" style="width:100%;border:1.5px solid var(--border2);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--ink-1);background:var(--card);">' +
+          '<option value="">Selecciona una opción</option>' +
+          '<option value="Instagram">Instagram</option>' +
+          '<option value="TikTok">TikTok</option>' +
+          '<option value="Recomendacion">Recomendación de alguien</option>' +
+          '<option value="Google">Google</option>' +
+          '<option value="Facebook">Facebook</option>' +
+          '<option value="Otro">Otro</option>' +
+        '</select>' +
         '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
     '</div>' +
@@ -706,6 +737,9 @@ async function firmarContrato() {
           ? (parseInt(((document.getElementById('inp-familia-num') || {}).value || '0'), 10) || 0)
           : 0,
         alergiasAlimentarias: (document.getElementById('inp-alergias') || {}).value || '',
+        origenCliente       : (document.getElementById('inp-origen') || {}).value || '',
+        correoCliente       : ((document.getElementById('inp-correo-cliente') || {}).value || '').trim(),
+        telefonoCliente     : ((document.getElementById('inp-telefono-cliente') || {}).value || '').trim(),
       }),
       redirect: 'follow',
     });
@@ -875,7 +909,9 @@ function renderEtapa2() {
   const anticipo = parseFloat(d.anticipo) || 0;
   document.getElementById('contenido').innerHTML =
     '<div class="card">' +
+      saludoHtml(d.nombre) +
       '<div class="banner banner-info">Contrato firmado</div>' +
+      contadorDiasEvento(d.fechaEvento) +
       '<h1>Aparta tu fecha</h1>' +
       '<p class="sub">Tu contrato está firmado. Para confirmar tu evento, realiza el anticipo.</p>' +
       '<div class="precio-box">' +
@@ -899,7 +935,9 @@ function renderEtapa3() {
 
   document.getElementById('contenido').innerHTML =
     '<div class="card">' +
+      saludoHtml(d.nombre) +
       '<div class="banner banner-ok">Tu evento está apartado</div>' +
+      contadorDiasEvento(d.fechaEvento) +
       '<h1>' + esc(primerNombre()) + ', tu fecha está confirmada.</h1>' +
       '<p class="sub">' + fmxnFechaLarga(d.fechaEvento) + (d.horaEvento ? ' · ' + esc(d.horaEvento) : '') +
         (d.locacion ? ' · ' + esc(d.locacion) : '') + '</p>' +
@@ -950,6 +988,7 @@ function renderEtapa4() {
 
   document.getElementById('contenido').innerHTML =
     '<div class="card centro">' +
+      saludoHtml(d.nombre) +
       '<div class="banner banner-ok" style="display:inline-block">Evento completado</div>' +
       '<h1 style="margin-top:8px">Gracias, ' + esc(primerNombre()) + '.</h1>' +
       '<p class="sub">Fue un gusto ser parte de tu momento.</p>' +
@@ -986,6 +1025,22 @@ function parseLinksExtra(texto) {
 }
 
 // ── HELPERS ──
+function saludoHtml(nombre) {
+  const n = String(nombre || '').split(' ')[0];
+  if (!n) return '';
+  return '<p class="portal-saludo">Hola, <strong>' + esc(n) + '</strong>.</p>';
+}
+
+function contadorDiasEvento(fechaStr) {
+  if (!fechaStr) return '';
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const evento = new Date(fechaStr + 'T00:00:00'); evento.setHours(0, 0, 0, 0);
+  const diff = Math.round((evento - hoy) / 86400000);
+  if (diff < 0) return '';
+  if (diff === 0) return '<div class="countdown-evento">Tu evento es hoy.</div>';
+  return '<div class="countdown-evento">Faltan <strong>' + diff + '</strong> día' + (diff === 1 ? '' : 's') + ' para tu evento.</div>';
+}
+
 function primerNombre() {
   return String(datos.nombre || '').split(' ')[0] || 'que gusto';
 }
