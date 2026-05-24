@@ -32,6 +32,9 @@ const CABECERAS_HOJAS = {
     'RecordatorioEnviado','FotografiaLista','VideoListo','EntregaRevocada','Oculto',
     'NombrePareja','CancionEvento','FamiliaAsiste','FamiliaNumero','AlergiasAlimentarias',
     'GastosVariablesExtra','ReservacionConfirmada',
+    'Descuento','AvisoSinFirmaEnviado','EncuestaEnviada','OrigenCliente',
+    'EventoCalendarioID','FechaReagendamiento',
+    'RecordatorioSaldoEnviado','AlertaBrunoEnviada','EventoEntregaCalendarioID',
   ],
   Tokens1: ['Token','ContratoID','Tipo','Expira','Usado'],
   Abonos1: ['ID','ContratoToken','Monto','Metodo','Fecha','FechaRegistro','Notas'],
@@ -39,7 +42,7 @@ const CABECERAS_HOJAS = {
     'Clave','Locacion','Nombre','Precio','EsAdicional',
     'Entregables','Activo','Orden','ComponentesCombo','CostoVariable',
   ],
-  Configuracion1: ['Mes','PresupuestoAnuncios'],
+  Configuracion1: ['Mes','PresupuestoAnuncios','MetaMensual'],
 };
 
 // === Catalogo inicial de paquetes (v2) ===
@@ -324,7 +327,7 @@ function poblarConfiguracion(sheetsId) {
 
   // Fila inicial con el mes en curso y el presupuesto base de anuncios.
   // Bruno puede editar el monto desde el admin mes a mes.
-  hoja.appendRow(['2026-05', 5500]);
+  hoja.appendRow(['2026-05', 5500, 62833]);
   Logger.log('Configuracion1: fila inicial insertada (2026-05, $5,500).');
 }
 
