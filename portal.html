@@ -62,13 +62,24 @@
     .lista-entregables li { font-size:13px; padding:5px 0 5px 20px; position:relative; color:var(--ink-2); }
     .lista-entregables li::before { content:''; position:absolute; left:4px; top:12px; width:6px; height:6px; border-radius:50%; background:var(--gold); }
 
+    .addon-wrap { margin-bottom:8px; }
     .addon {
       display:flex; align-items:center; gap:12px; padding:12px 14px;
-      border:1.5px solid var(--border2); border-radius:var(--r); margin-bottom:8px; cursor:pointer;
+      border:1.5px solid var(--border2); border-radius:var(--r); cursor:pointer;
     }
+    .addon-wrap .addon { border-radius:var(--r) var(--r) 0 0; border-bottom:none; margin-bottom:0; }
+    .addon-wrap.cerrado .addon { border-radius:var(--r); border-bottom:1.5px solid var(--border2); }
     .addon input { width:18px; height:18px; accent-color:var(--gold); flex-shrink:0; }
     .addon-nombre { flex:1; font-size:13px; font-weight:600; }
     .addon-precio { font-size:13px; font-weight:700; color:var(--gold); }
+    .addon-toggle { font-size:16px; color:var(--ink-3); line-height:1; padding-left:4px; user-select:none; }
+    .addon-desc {
+      display:none; font-size:11px; color:var(--ink-2); line-height:1.5;
+      padding:8px 14px 10px; border:1.5px solid var(--border2); border-top:none;
+      border-radius:0 0 var(--r) var(--r); background:var(--page);
+    }
+    .addon-wrap.abierto .addon-desc { display:block; }
+    .addon-incluido { opacity:0.45; pointer-events:none; }
 
     .precio-box { background:var(--page); border-radius:var(--r); padding:14px 16px; margin:14px 0; }
     .precio-fila { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
@@ -358,12 +369,18 @@ function renderEtapa1() {
       '<div id="addon-combo-msg" class="addon-combo-msg"></div>' +
       addons.map(function(a) {
         const esCombo = a.componentes && a.componentes.length > 0;
-        return '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
-          '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
-          '<span class="addon-nombre">' + esc(a.nombre) +
-            (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
-          '</span>' +
-          '<span class="addon-precio">+' + fmxn(a.precio) + '</span></label>';
+        const tieneDesc = !!a.entregables;
+        return '<div class="addon-wrap cerrado" id="addon-wrap-' + esc(a.clave) + '">' +
+          '<label class="addon" id="addon-label-' + esc(a.clave) + '">' +
+            '<input type="checkbox" class="addon-check" value="' + esc(a.clave) + '" data-precio="' + a.precio + '" onchange="onAddonChange(this.value)">' +
+            '<span class="addon-nombre">' + esc(a.nombre) +
+              (esCombo ? '<span class="addon-combo-badge">Combo</span>' : '') +
+            '</span>' +
+            '<span class="addon-precio">+' + fmxn(a.precio) + '</span>' +
+            (tieneDesc ? '<span class="addon-toggle" onclick="toggleAddonDesc(event,\'' + esc(a.clave) + '\')">›</span>' : '') +
+          '</label>' +
+          (tieneDesc ? '<div class="addon-desc">' + esc(a.entregables) + '</div>' : '') +
+        '</div>';
       }).join('') + '</div>';
   }
 
@@ -473,6 +490,18 @@ function listaEntregables(texto) {
   return '<ul class="lista-entregables">' + partes.map(function(p) {
     return '<li>' + esc(p) + '</li>';
   }).join('') + '</ul>';
+}
+
+function toggleAddonDesc(e, clave) {
+  e.preventDefault();
+  e.stopPropagation();
+  const wrap   = document.getElementById('addon-wrap-' + clave);
+  const toggle = e.currentTarget;
+  if (!wrap) return;
+  const abierto = wrap.classList.toggle('abierto');
+  wrap.classList.toggle('cerrado', !abierto);
+  toggle.textContent = abierto ? '›' : '›';
+  toggle.style.transform = abierto ? 'rotate(90deg)' : '';
 }
 
 // Actualiza seleccionActual cuando el cliente marca o desmarca un add-on.
