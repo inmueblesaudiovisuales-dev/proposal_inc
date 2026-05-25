@@ -949,6 +949,23 @@ function renderConsulta() {
   wrap.appendChild(card);
 }
 
+// Devuelve los espacios libres para una fecha según su estado y nota.
+// Isla nunca está disponible los sábados (dow === 6).
+function getEspaciosLibres(dow, estado, notaStr) {
+  if (estado === 'bloqueada') return [];
+  if (estado === 'parcial') {
+    return (notaStr || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  }
+  return ESPACIOS.filter(function(e) { return !(e === 'Isla' && dow === 6); });
+}
+
+// Formatea un array de nombres: ['A','B','C'] -> 'A, B y C'
+function formatearEspacios(arr) {
+  if (!arr.length) return '';
+  if (arr.length === 1) return arr[0];
+  return arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+}
+
 function copiarRespuesta() {
   const dias = getDiasDelMes(mesActivo.year, mesActivo.month);
   const hoy  = hoyStr(), lineas = [];
@@ -956,7 +973,9 @@ function copiarRespuesta() {
     if (d.fecha < hoy) return;
     const estado = getEstado(d.fecha);
     if (estado === 'bloqueada') return;
-    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': disponible.');
+    const espacios = getEspaciosLibres(d.dow, estado, getNota(d.fecha));
+    if (!espacios.length) return;
+    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': ' + formatearEspacios(espacios) + ' disponible' + (espacios.length > 1 ? 's' : '') + '.');
   });
   if (!lineas.length) { mostrarToast('No hay fechas futuras en este mes.', true); return; }
   const msg =
