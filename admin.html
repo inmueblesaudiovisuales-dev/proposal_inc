@@ -480,33 +480,28 @@
 
   <nav class="bottom-nav">
     <div class="bnav-inner">
-      <button class="bnav-btn activo" data-tab="contratos" onclick="mostrarTabMobile('contratos',this)"><i class="ti ti-file-text"></i>Contratos</button>
-      <button class="bnav-btn" data-tab="nuevo"    onclick="mostrarTabMobile('nuevo',this)"><i class="ti ti-plus"></i>Nuevo</button>
-      <button class="bnav-btn" data-tab="crm"      onclick="mostrarTabMobile('crm',this)"><i class="ti ti-users"></i>Clientes</button>
-      <button class="bnav-btn" data-tab="sesiones" onclick="mostrarTabMobile('sesiones',this)"><i class="ti ti-calendar-event"></i>Eventos</button>
-      <button class="bnav-btn" data-tab="metricas" onclick="mostrarTabMobile('metricas',this)"><i class="ti ti-chart-bar"></i>Métricas</button>
-      <button class="bnav-btn" data-tab="paquetes" onclick="mostrarTabMobile('paquetes',this)"><i class="ti ti-package"></i>Paquetes</button>
-      <button class="bnav-btn" data-tab="reportes" onclick="mostrarTabMobile('reportes',this)"><i class="ti ti-chart-bar"></i>Reportes</button>
-      <button class="bnav-btn" data-tab="finanzas" onclick="mostrarTabMobile('finanzas',this)"><i class="ti ti-coin"></i>Finanzas</button>
-      <button class="bnav-btn" data-tab="disponibilidad" onclick="mostrarTabMobile('disponibilidad',this)"><i class="ti ti-calendar-month"></i>Disponibilidad</button>
+      <button class="bnav-btn activo" data-tab="contratos"    onclick="mostrarTabMobile('contratos',this)"><i class="ti ti-file-text"></i>Contratos</button>
+      <button class="bnav-btn" data-tab="nuevo"              onclick="mostrarTabMobile('nuevo',this)"><i class="ti ti-plus"></i>Nuevo</button>
+      <button class="bnav-btn" data-tab="analisis"           onclick="mostrarTabMobile('analisis',this)"><i class="ti ti-chart-bar"></i>Análisis</button>
+      <button class="bnav-btn" data-tab="disponibilidad"     onclick="mostrarTabMobile('disponibilidad',this)"><i class="ti ti-calendar-month"></i>Disponibilidad</button>
     </div>
   </nav>
 
   <div class="contenido">
     <div class="tabs">
-      <button class="tab-btn activo" data-tab="contratos" onclick="mostrarTab('contratos', this)">Contratos</button>
-      <button class="tab-btn" data-tab="nuevo"         onclick="mostrarTab('nuevo', this)">Nuevo contrato</button>
-      <button class="tab-btn" data-tab="crm"           onclick="mostrarTab('crm', this)">Clientes</button>
-      <button class="tab-btn" data-tab="sesiones"      onclick="mostrarTab('sesiones', this)">Eventos</button>
-      <button class="tab-btn" data-tab="metricas"      onclick="mostrarTab('metricas', this)">Métricas</button>
-      <button class="tab-btn" data-tab="paquetes"      onclick="mostrarTab('paquetes', this)">Paquetes</button>
-      <button class="tab-btn" data-tab="reportes"      onclick="mostrarTab('reportes', this)">Reportes</button>
-      <button class="tab-btn" data-tab="finanzas"      onclick="mostrarTab('finanzas', this)">Finanzas</button>
-      <button class="tab-btn" data-tab="disponibilidad" onclick="mostrarTab('disponibilidad', this)">Disponibilidad</button>
+      <button class="tab-btn activo" data-tab="contratos"     onclick="mostrarTab('contratos', this)">Contratos</button>
+      <button class="tab-btn" data-tab="nuevo"              onclick="mostrarTab('nuevo', this)">Nuevo</button>
+      <button class="tab-btn" data-tab="analisis"           onclick="mostrarTab('analisis', this)">Análisis</button>
+      <button class="tab-btn" data-tab="disponibilidad"     onclick="mostrarTab('disponibilidad', this)">Disponibilidad</button>
     </div>
 
     <!-- CONTRATOS -->
     <div id="sec-contratos" class="seccion activa">
+      <div class="ciclo-toggle" style="margin-bottom:14px">
+        <button class="ciclo-btn contratos-vista-btn activo-ciclo" onclick="mostrarVistaContratos('lista', this)">Lista</button>
+        <button class="ciclo-btn contratos-vista-btn" onclick="mostrarVistaContratos('eventos', this)">Eventos</button>
+      </div>
+      <div id="contratos-vista-lista">
       <div id="alerta-evento-hoy" style="display:none;background:#FEF9ED;border:1.5px solid var(--gold-border);border-radius:var(--r);padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--onyx);align-items:center;gap:10px"></div>
       <div id="stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px"></div>
       <div class="barra">
@@ -551,10 +546,23 @@
           </tbody>
         </table>
       </div>
+      </div><!-- /contratos-vista-lista -->
+      <div id="contratos-vista-eventos" style="display:none">
+        <div class="barra" style="margin-bottom:14px">
+          <p style="font-size:13px;color:var(--ink-3);flex:1">Eventos próximos ordenados por fecha.</p>
+          <button class="btn-secundario btn-sm" onclick="renderSesionesFuturas()"><i class="ti ti-refresh"></i> Actualizar</button>
+        </div>
+        <div id="sesiones-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+      </div>
     </div>
 
-    <!-- NUEVO CONTRATO -->
+    <!-- NUEVO CONTRATO / CATALOGO -->
     <div id="sec-nuevo" class="seccion">
+      <div class="sub-tabs" style="margin-bottom:20px">
+        <button class="sub-tab-btn activo" onclick="mostrarTabNuevo('contrato', this)">Nuevo contrato</button>
+        <button class="sub-tab-btn" onclick="mostrarTabNuevo('catalogo', this)">Catálogo</button>
+      </div>
+      <div id="nuevo-pane-contrato">
       <div class="form-card">
         <h2>Nuevo contrato</h2>
         <p class="form-desc">Elige el tipo de contrato para este cliente.</p>
@@ -659,124 +667,103 @@
           <div id="resultado-personalizado"></div>
         </div>
       </div>
-    </div>
-
-    <!-- EVENTOS -->
-    <div id="sec-sesiones" class="seccion">
-      <div class="barra" style="margin-bottom:14px">
-        <p style="font-size:13px;color:var(--ink-3);flex:1">Eventos próximos ordenados por fecha.</p>
-        <button class="btn-secundario btn-sm" onclick="renderSesionesFuturas()"><i class="ti ti-refresh"></i> Actualizar</button>
-      </div>
-      <div id="sesiones-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
-    </div>
-
-    <!-- METRICAS -->
-    <div id="sec-metricas" class="seccion">
-      <div class="barra" style="margin-bottom:14px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="ciclo-btn activo-ciclo" id="met-btn-mes"       onclick="setMetPeriodo('mes',this)">Este mes</button>
-          <button class="ciclo-btn" id="met-btn-trimestre" onclick="setMetPeriodo('trimestre',this)">Trimestre</button>
-          <button class="ciclo-btn" id="met-btn-anio"      onclick="setMetPeriodo('anio',this)">Este año</button>
-          <button class="ciclo-btn" id="met-btn-todo"      onclick="setMetPeriodo('todo',this)">Todo</button>
+      </div><!-- /nuevo-pane-contrato -->
+      <div id="nuevo-pane-catalogo" style="display:none">
+        <div class="barra">
+          <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes y add-ons del catálogo.</p>
+          <button class="btn-secundario btn-sm" onclick="cargarPaquetesAdmin()"><i class="ti ti-refresh"></i> Actualizar</button>
+          <button class="btn-primario gold btn-sm" onclick="abrirModalNuevoPaquete()"><i class="ti ti-plus"></i> Nuevo</button>
         </div>
-        <button class="btn-secundario btn-sm" onclick="cargarMetricas()"><i class="ti ti-refresh"></i></button>
-      </div>
-      <div id="metricas-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+        <div id="lista-paquetes-admin">
+          <p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>
+        </div>
+      </div><!-- /nuevo-pane-catalogo -->
     </div>
 
-    <!-- CRM -->
-    <div id="sec-crm" class="seccion">
-      <div class="barra">
-        <p style="font-size:13px;color:var(--ink-3);flex:1">Clientes únicos con su historial de eventos.</p>
-        <button class="btn-secundario btn-sm" onclick="cargarCRM()"><i class="ti ti-refresh"></i> Actualizar</button>
+    <!-- ANALISIS -->
+    <div id="sec-analisis" class="seccion">
+      <div class="sub-tabs" style="margin-bottom:20px">
+        <button class="sub-tab-btn activo" data-sub="metricas" onclick="mostrarTabAnalisis('metricas', this)">Métricas</button>
+        <button class="sub-tab-btn" data-sub="reportes" onclick="mostrarTabAnalisis('reportes', this)">Reportes</button>
+        <button class="sub-tab-btn" data-sub="finanzas" onclick="mostrarTabAnalisis('finanzas', this)">Finanzas</button>
       </div>
-      <div class="crm-grid" id="crm-grid">
-        <p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>
-      </div>
-    </div>
-
-    <!-- PAQUETES -->
-    <div id="sec-paquetes" class="seccion">
-      <div class="barra">
-        <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes y add-ons del catálogo.</p>
-        <button class="btn-secundario btn-sm" onclick="cargarPaquetesAdmin()"><i class="ti ti-refresh"></i> Actualizar</button>
-        <button class="btn-primario gold btn-sm" onclick="abrirModalNuevoPaquete()"><i class="ti ti-plus"></i> Nuevo</button>
-      </div>
-      <div id="lista-paquetes-admin">
-        <p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p>
-      </div>
-
-      <div id="modal-paquete" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
-        <div style="background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">
-          <p style="font-size:15px;font-weight:700;margin-bottom:16px" id="modal-paq-titulo">Nuevo paquete</p>
-          <input type="hidden" id="mp-clave-original">
-          <div class="campo"><label>Clave</label><input type="text" id="mp-clave" placeholder="SAFI-LETRAS-ESENCIAL" style="text-transform:uppercase"></div>
-          <div class="campo"><label>Nombre</label><input type="text" id="mp-nombre" placeholder="Letras Esencial"></div>
-          <div class="campo">
-            <label>Locación</label>
-            <select id="mp-locacion">
-              <option value="Safi Metropolitan">Safi Metropolitan</option>
-              <option value="Rincón de Santiago">Rincón de Santiago</option>
-              <option value="Todas">Todas</option>
-            </select>
+      <div id="analisis-pane-metricas">
+        <div class="barra" style="margin-bottom:14px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="ciclo-btn activo-ciclo" id="met-btn-mes"       onclick="setMetPeriodo('mes',this)">Este mes</button>
+            <button class="ciclo-btn" id="met-btn-trimestre" onclick="setMetPeriodo('trimestre',this)">Trimestre</button>
+            <button class="ciclo-btn" id="met-btn-anio"      onclick="setMetPeriodo('anio',this)">Este año</button>
+            <button class="ciclo-btn" id="met-btn-todo"      onclick="setMetPeriodo('todo',this)">Todo</button>
           </div>
-          <div class="campo"><label>Precio (MXN)</label><input type="number" id="mp-precio" placeholder="0" min="0" step="100"></div>
-          <div class="campo"><label>Costo variable interno (MXN)</label><input type="number" id="mp-costo-variable" placeholder="0" min="0" step="50"></div>
-          <div class="campo"><label>Entregables</label><textarea id="mp-entregables" placeholder="Terraza privada · Cena · Fotografía · Video"></textarea></div>
-          <div class="campo"><label>Componentes del combo (claves separadas por coma)</label><input type="text" id="mp-componentes-combo" placeholder="ADD-FOTO,ADD-VIDEO"></div>
-          <div class="campo" style="display:flex;align-items:center;gap:10px">
-            <input type="checkbox" id="mp-es-adicional" style="width:auto;margin:0">
-            <label for="mp-es-adicional" style="margin:0;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink-1)">Es add-on (servicio adicional)</label>
+          <button class="btn-secundario btn-sm" onclick="cargarMetricas()"><i class="ti ti-refresh"></i></button>
+        </div>
+        <div id="metricas-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+      </div>
+      <div id="analisis-pane-reportes" style="display:none">
+        <div class="barra" style="margin-bottom:14px">
+          <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes vendidos, add-ons y tasa de cierre.</p>
+          <button class="btn-secundario btn-sm" onclick="cargarReportes()"><i class="ti ti-refresh"></i> Actualizar</button>
+        </div>
+        <div id="reportes-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
+      </div>
+      <div id="analisis-pane-finanzas" style="display:none">
+        <div class="card" id="panel-financiero">
+          <h2>Finanzas del mes</h2>
+          <div id="pf-meta-bloque" style="margin-bottom:1rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <span>Meta mensual: <strong id="pf-meta-valor">—</strong></span>
+              <button onclick="editarMeta()" class="btn-secundario btn-sm" id="btn-editar-meta">Editar</button>
+            </div>
+            <div id="bloque-editar-meta" style="display:none; margin-top:0.5rem;">
+              <input type="number" id="inp-meta-nueva" min="1" style="width:180px;">
+              <button onclick="guardarMeta()" class="btn-primario gold btn-sm" style="margin-left:0.5rem;">Guardar</button>
+              <button onclick="cancelarEditarMeta()" class="btn-secundario btn-sm" style="margin-left:0.25rem;">Cancelar</button>
+            </div>
           </div>
-          <div style="display:flex;gap:10px;margin-top:20px">
-            <button class="btn-primario gold" style="flex:1" onclick="guardarPaqueteAdmin()">Guardar</button>
-            <button class="btn-secundario" style="flex:1" onclick="cerrarModalPaquete()">Cancelar</button>
+          <div style="margin-bottom:0.5rem;">
+            <span>Ganancia del mes: <strong id="pf-cobros">—</strong></span>
           </div>
-          <div id="modal-paq-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
+          <div style="margin-bottom:1rem;">
+            <div style="background:#2C2C2E; border-radius:4px; height:12px; overflow:hidden;">
+              <div id="pf-barra" style="height:100%; width:0%; background:#C9A84C; transition:width 0.4s;"></div>
+            </div>
+            <p id="pf-porcentaje" style="font-size:0.8rem; margin-top:0.25rem; color:#8E8E93;"></p>
+          </div>
+          <div id="pf-eventos-bloque">
+            <p id="pf-eventos-texto" style="font-size:0.95rem;"></p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- REPORTES -->
-    <div id="sec-reportes" class="seccion">
-      <div class="barra" style="margin-bottom:14px">
-        <p style="font-size:13px;color:var(--ink-3);flex:1">Paquetes vendidos, add-ons y tasa de cierre.</p>
-        <button class="btn-secundario btn-sm" onclick="cargarReportes()"><i class="ti ti-refresh"></i> Actualizar</button>
-      </div>
-      <div id="reportes-body"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Cargando...</p></div>
-    </div>
-
-    <!-- FINANZAS -->
-    <div id="sec-finanzas" class="seccion">
-      <div class="card" id="panel-financiero">
-        <h2>Finanzas del mes</h2>
-
-        <div id="pf-meta-bloque" style="margin-bottom:1rem;">
-          <div style="display:flex; align-items:center; gap:0.75rem;">
-            <span>Meta mensual: <strong id="pf-meta-valor">—</strong></span>
-            <button onclick="editarMeta()" class="btn-secundario btn-sm" id="btn-editar-meta">Editar</button>
-          </div>
-          <div id="bloque-editar-meta" style="display:none; margin-top:0.5rem;">
-            <input type="number" id="inp-meta-nueva" min="1" style="width:180px;">
-            <button onclick="guardarMeta()" class="btn-primario gold btn-sm" style="margin-left:0.5rem;">Guardar</button>
-            <button onclick="cancelarEditarMeta()" class="btn-secundario btn-sm" style="margin-left:0.25rem;">Cancelar</button>
-          </div>
+    <!-- MODAL PAQUETE (position:fixed, vive fuera de secciones) -->
+    <div id="modal-paquete" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
+      <div style="background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+        <p style="font-size:15px;font-weight:700;margin-bottom:16px" id="modal-paq-titulo">Nuevo paquete</p>
+        <input type="hidden" id="mp-clave-original">
+        <div class="campo"><label>Clave</label><input type="text" id="mp-clave" placeholder="SAFI-LETRAS-ESENCIAL" style="text-transform:uppercase"></div>
+        <div class="campo"><label>Nombre</label><input type="text" id="mp-nombre" placeholder="Letras Esencial"></div>
+        <div class="campo">
+          <label>Locación</label>
+          <select id="mp-locacion">
+            <option value="Safi Metropolitan">Safi Metropolitan</option>
+            <option value="Rincón de Santiago">Rincón de Santiago</option>
+            <option value="Todas">Todas</option>
+          </select>
         </div>
-
-        <div style="margin-bottom:0.5rem;">
-          <span>Ganancia del mes: <strong id="pf-cobros">—</strong></span>
+        <div class="campo"><label>Precio (MXN)</label><input type="number" id="mp-precio" placeholder="0" min="0" step="100"></div>
+        <div class="campo"><label>Costo variable interno (MXN)</label><input type="number" id="mp-costo-variable" placeholder="0" min="0" step="50"></div>
+        <div class="campo"><label>Entregables</label><textarea id="mp-entregables" placeholder="Terraza privada · Cena · Fotografía · Video"></textarea></div>
+        <div class="campo"><label>Componentes del combo (claves separadas por coma)</label><input type="text" id="mp-componentes-combo" placeholder="ADD-FOTO,ADD-VIDEO"></div>
+        <div class="campo" style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" id="mp-es-adicional" style="width:auto;margin:0">
+          <label for="mp-es-adicional" style="margin:0;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink-1)">Es add-on (servicio adicional)</label>
         </div>
-
-        <div style="margin-bottom:1rem;">
-          <div style="background:#2C2C2E; border-radius:4px; height:12px; overflow:hidden;">
-            <div id="pf-barra" style="height:100%; width:0%; background:#C9A84C; transition:width 0.4s;"></div>
-          </div>
-          <p id="pf-porcentaje" style="font-size:0.8rem; margin-top:0.25rem; color:#8E8E93;"></p>
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn-primario gold" style="flex:1" onclick="guardarPaqueteAdmin()">Guardar</button>
+          <button class="btn-secundario" style="flex:1" onclick="cerrarModalPaquete()">Cancelar</button>
         </div>
-
-        <div id="pf-eventos-bloque">
-          <p id="pf-eventos-texto" style="font-size:0.95rem;"></p>
-        </div>
+        <div id="modal-paq-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
       </div>
     </div>
 
@@ -895,16 +882,14 @@ function mostrarTab(id, btn) {
   if (btn) btn.classList.add('activo');
   const bnav = document.querySelector('.bnav-btn[data-tab="' + id + '"]');
   if (bnav) bnav.classList.add('activo');
-  if (id === 'contratos') cargarContratos();
-  if (id === 'crm')       cargarCRM();
-  if (id === 'paquetes')  cargarPaquetesAdmin();
-  if (id === 'metricas')  cargarMetricas();
-  if (id === 'sesiones') {
-    if (!todosContratos.length) cargarContratos().then(renderSesionesFuturas);
-    else renderSesionesFuturas();
+  if (id === 'contratos')    cargarContratos();
+  if (id === 'analisis') {
+    const activo = document.querySelector('#sec-analisis .sub-tab-btn.activo');
+    const sub = activo ? (activo.dataset.sub || 'metricas') : 'metricas';
+    if (sub === 'metricas') cargarMetricas();
+    else if (sub === 'reportes') cargarReportes();
+    else cargarPanelFinanciero();
   }
-  if (id === 'reportes')       cargarReportes();
-  if (id === 'finanzas')       cargarPanelFinanciero();
   if (id === 'disponibilidad') renderCalendario();
 }
 function mostrarTabMobile(id, btn) {
@@ -912,10 +897,37 @@ function mostrarTabMobile(id, btn) {
   mostrarTab(id, topBtn || btn);
 }
 function mostrarSubTab(tipo, btn) {
-  document.querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  btn.closest('.sub-tabs').querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
   btn.classList.add('activo');
   document.getElementById('form-estandar').style.display      = tipo === 'estandar'      ? 'block' : 'none';
   document.getElementById('form-personalizado').style.display = tipo === 'personalizado' ? 'block' : 'none';
+}
+function mostrarTabNuevo(id, btn) {
+  btn.closest('.sub-tabs').querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  document.getElementById('nuevo-pane-contrato').style.display = id === 'contrato' ? 'block' : 'none';
+  document.getElementById('nuevo-pane-catalogo').style.display = id === 'catalogo' ? 'block' : 'none';
+  if (id === 'catalogo') cargarPaquetesAdmin();
+}
+function mostrarTabAnalisis(id, btn) {
+  btn.closest('.sub-tabs').querySelectorAll('.sub-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  ['metricas','reportes','finanzas'].forEach(function(p) {
+    document.getElementById('analisis-pane-' + p).style.display = p === id ? 'block' : 'none';
+  });
+  if (id === 'metricas') cargarMetricas();
+  else if (id === 'reportes') cargarReportes();
+  else cargarPanelFinanciero();
+}
+function mostrarVistaContratos(vista, btn) {
+  document.querySelectorAll('.contratos-vista-btn').forEach(function(b) { b.classList.remove('activo-ciclo'); });
+  btn.classList.add('activo-ciclo');
+  document.getElementById('contratos-vista-lista').style.display   = vista === 'lista'   ? 'block' : 'none';
+  document.getElementById('contratos-vista-eventos').style.display = vista === 'eventos' ? 'block' : 'none';
+  if (vista === 'eventos') {
+    if (!todosContratos.length) cargarContratos().then(renderSesionesFuturas);
+    else renderSesionesFuturas();
+  }
 }
 function mostrarPanelTab(id, btn) {
   document.querySelectorAll('.panel-tab-btn').forEach(function(b) { b.classList.remove('activo'); });
