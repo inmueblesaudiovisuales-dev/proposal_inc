@@ -1548,7 +1548,7 @@ async function guardarEntrega() {
     setMsg('msg-entrega', 'Entrega guardada. Se envió correo al cliente.', 'ok');
     cargarContratos();
     if (t === tokenActivo) {
-      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[2]); } catch (e) {}
+      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[3]); } catch (e) {}
     }
   } catch (e) {
     setMsg('msg-entrega', 'Error: ' + e.message, 'error');
@@ -1584,7 +1584,7 @@ async function revocarEntrega(revocar) {
     const data = await apiPost({ action: 'revocarEntrega', token: t, revocar: revocar });
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     if (t === tokenActivo) {
-      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[2]); } catch (e) {}
+      try { await abrirPanel(t); mostrarPanelTab('entrega', document.querySelectorAll('.panel-tab-btn')[3]); } catch (e) {}
     }
   } catch (e) {
     setMsg('msg-revocar', 'Error: ' + e.message, 'error');
