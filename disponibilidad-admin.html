@@ -1022,10 +1022,13 @@ function confirmarGuardar() {
   const btnConf = document.getElementById('btnConfirmar');
   btnConf.disabled = true; btnConf.textContent = 'Guardando...';
 
-  fetch(API, {
-    method: 'POST',
-    body: new URLSearchParams({ payload: JSON.stringify({ action: 'disponibilidadGuardar', adminKey: PASSWORD, usuario: 'Proposal Inc', cambios: cambios.map(c => ({ fecha: c.fecha, estado: c.ahora, nota: c.nota || '' })) }) }),
-  })
+  const params = new URLSearchParams({
+    action  : 'disponibilidadGuardar',
+    adminKey: PASSWORD,
+    usuario : 'Proposal Inc',
+    cambios : JSON.stringify(cambios.map(c => ({ fecha: c.fecha, estado: c.ahora, nota: c.nota || '' }))),
+  });
+  fetch(API + '?' + params.toString())
   .then(r => r.text())
   .then(texto => {
     let data;
