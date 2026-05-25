@@ -163,6 +163,21 @@ header.top {
 }
 .mes-pill.activo { background: var(--accent); color: white; border-color: var(--accent); }
 
+.mes-pill-mas {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.mes-pill-mas:hover { border-color: var(--text-muted); color: var(--text); }
+
 .toggle-row {
   display: flex;
   gap: 6px;
@@ -479,7 +494,7 @@ main { flex: 1; padding: 16px 20px 80px; }
     </div>
 
     <!-- Selector de mes -->
-    <div class="header-pills-row" id="mesesPills"></div>
+    <div class="header-pills-row" id="mesesPills" style="flex-wrap:wrap;"></div>
 
     <!-- Modo: Captura / Consulta -->
     <div class="toggle-row">
@@ -572,6 +587,7 @@ let cargado        = {};
 let modoActual     = 'captura';
 let vistaActual    = 'semana';
 let entresemanaVisible = false;
+let mesesVisibles  = 3; // Empieza con 3; el botón "+" agrega de 3 en 3
 
 // ── Utilidades ──
 function hoyStr() {
@@ -609,7 +625,7 @@ function getSemanasMes(year, month) {
 
 function getMesesActivos() {
   const base = new Date(), meses = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < mesesVisibles; i++) {
     const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
     meses.push({ year: d.getFullYear(), month: d.getMonth() });
   }
@@ -658,7 +674,7 @@ document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key
 // ── Init ──
 function iniciarApp() {
   const meses = getMesesActivos();
-  mesActivo = meses[0];
+  if (!mesActivo) mesActivo = meses[0];
   renderPills(meses);
   cargarMes(mesActivo.year, mesActivo.month);
 }
@@ -668,7 +684,8 @@ function renderPills(meses) {
   c.innerHTML = '';
   meses.forEach((m, i) => {
     const btn = document.createElement('button');
-    btn.className = 'mes-pill' + (i === 0 ? ' activo' : '');
+    const esMesActivo = mesActivo && m.year === mesActivo.year && m.month === mesActivo.month;
+    btn.className = 'mes-pill' + (esMesActivo ? ' activo' : '');
     btn.textContent = MESES_NOMBRES[m.month];
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mes-pill').forEach(p => p.classList.remove('activo'));
@@ -680,6 +697,17 @@ function renderPills(meses) {
     });
     c.appendChild(btn);
   });
+
+  // Botón "+" para ampliar
+  const btnMas = document.createElement('button');
+  btnMas.className = 'mes-pill-mas';
+  btnMas.textContent = '+';
+  btnMas.title = 'Ver más meses';
+  btnMas.addEventListener('click', () => {
+    mesesVisibles += 3;
+    renderPills(getMesesActivos());
+  });
+  c.appendChild(btnMas);
 }
 
 function resetEntresemana() {
