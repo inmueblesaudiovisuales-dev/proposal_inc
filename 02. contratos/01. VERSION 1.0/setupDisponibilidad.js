@@ -60,12 +60,7 @@ function logResultadosDisponibilidad(sheetsId) {
 
 function instalarDisponibilidad() {
   // Reemplaza este valor con el ID del Sheets del sistema (el mismo que usa ScriptContratos1_v1.js).
-  const SHEET_ID = 'PEGA_AQUI_EL_ID_DEL_SHEETS';
-
-  if (SHEET_ID === 'PEGA_AQUI_EL_ID_DEL_SHEETS') {
-    Logger.log('ERROR: debes reemplazar SHEET_ID con el ID real del Sheets antes de ejecutar.');
-    return;
-  }
+  const SHEET_ID = '1DaRGkVcYtpDfVnhMzX2wlcs2YTzep71NzpGSszBsYG4';
 
   try {
     Logger.log('Iniciando instalación del módulo de Disponibilidad...');
