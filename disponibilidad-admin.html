@@ -727,7 +727,7 @@ function renderLista() {
   const entre = dias.filter(d => !d.esFinde);
 
   // Vista por tipo
-  document.getElementById('findesCount').textContent = finds.length + ' fechas';
+  document.getElementById('findesCount').textContent = finds.filter(d => !esPasado(d.fecha)).length + ' fechas';
   renderFechas(document.getElementById('findesList'), finds, false);
   renderFechas(document.getElementById('entresemanaList'), entre, true);
   actualizarLabelEntresemana();
@@ -745,9 +745,10 @@ function renderLista() {
 }
 
 function renderFechas(container, dias, compacta) {
-  if (!dias.length) { container.innerHTML = '<div class="vacio">Sin fechas en este período.</div>'; return; }
+  const visibles = dias.filter(d => !esPasado(d.fecha));
+  if (!visibles.length) { container.innerHTML = '<div class="vacio">Sin fechas próximas en este período.</div>'; return; }
   container.innerHTML = '';
-  dias.forEach(d => container.appendChild(crearRow(d, compacta)));
+  visibles.forEach(d => container.appendChild(crearRow(d, compacta)));
 }
 
 function renderSemanas() {
@@ -756,17 +757,19 @@ function renderSemanas() {
   container.innerHTML = '';
 
   semanas.forEach(s => {
+    const visibles = s.dias.filter(d => !esPasado(d.fecha));
+    if (!visibles.length) return; // Omitir semanas completamente pasadas
+
     const labelEl = document.createElement('div');
     labelEl.className = 'semana-label';
-    // Rango de fechas de la semana: primer y último día
-    const primero = s.dias[0];
-    const ultimo  = s.dias[s.dias.length - 1];
+    const primero = visibles[0];
+    const ultimo  = visibles[visibles.length - 1];
     labelEl.textContent = 'Semana ' + s.num + '  ·  ' + primero.label + ' – ' + ultimo.label;
     container.appendChild(labelEl);
 
     const card = document.createElement('div');
     card.className = 'fechas section';
-    s.dias.forEach(d => card.appendChild(crearRow(d, false)));
+    visibles.forEach(d => card.appendChild(crearRow(d, false)));
     container.appendChild(card);
   });
 }
@@ -779,7 +782,6 @@ function crearRow(d, compacta) {
     'fecha-row',
     compacta        ? 'compacta'      : '',
     esCambiada(d.fecha) ? 'cambiada' : '',
-    pasado          ? 'pasada'        : '',
     estado === 'bloqueada' ? 'bloqueada-row' : '',
   ].filter(Boolean).join(' ');
   row.dataset.fecha = d.fecha;
