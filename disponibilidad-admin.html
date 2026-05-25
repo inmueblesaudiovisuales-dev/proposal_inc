@@ -287,6 +287,30 @@ main { flex: 1; padding: 16px 20px 80px; }
 .chip.parcial   { background: var(--parcial-soft);   color: var(--parcial); }
 .chip.bloqueada { background: var(--bloqueada-soft); color: var(--bloqueada); }
 
+.terraza-picks {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+.terraza-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.terraza-chip.activo {
+  background: var(--parcial-soft);
+  color: var(--parcial);
+  border-color: var(--parcial);
+  font-weight: 600;
+}
+
 .expand-btn {
   width: 100%;
   background: var(--surface);
@@ -545,6 +569,8 @@ const ETIQUETAS_WA  = { libre: 'disponibilidad completa', parcial: 'disponibilid
 let mesActivo      = null;
 let estadoGuardado = {};
 let estadoActual   = {};
+let notaGuardada   = {}; // { 'YYYY-MM-DD': 'Principal'|'Condominios'|'' }
+let notaActual     = {};
 let cargado        = {};
 let modoActual     = 'captura';
 let vistaActual    = 'semana';
@@ -596,22 +622,30 @@ function getMesesActivos() {
 
 function getEstado(f)  { return estadoActual[f]  || 'libre'; }
 function getGuardado(f){ return estadoGuardado[f] || 'libre'; }
-function esCambiada(f) { return getEstado(f) !== getGuardado(f); }
+function getNota(f)    { return notaActual[f]    || ''; }
+function esCambiada(f) { return getEstado(f) !== getGuardado(f) || getNota(f) !== (notaGuardada[f] || ''); }
 function esPasado(f)   { return f < hoyStr(); }
 
 // ── Cambios ──
 function getCambios() {
   const hoy = hoyStr(), cambios = [], visto = new Set();
-  Object.keys(estadoActual).forEach(f => {
+  // Fechas que el usuario ha tocado
+  const todasFechas = new Set([...Object.keys(estadoActual), ...Object.keys(notaActual)]);
+  todasFechas.forEach(f => {
     if (f < hoy) return;
     visto.add(f);
-    if (estadoActual[f] !== (estadoGuardado[f] || 'libre'))
-      cambios.push({ fecha: f, antes: estadoGuardado[f] || 'libre', ahora: estadoActual[f] });
+    const estadoA = estadoActual[f]  || 'libre';
+    const estadoG = estadoGuardado[f] || 'libre';
+    const notaA   = notaActual[f]    || '';
+    const notaG   = notaGuardada[f]  || '';
+    if (estadoA !== estadoG || notaA !== notaG)
+      cambios.push({ fecha: f, antes: estadoG, ahora: estadoA, nota: notaA });
   });
+  // Fechas guardadas no libres que volvieron a libre (ausentes de estadoActual)
   Object.keys(estadoGuardado).forEach(f => {
     if (f < hoy || visto.has(f)) return;
     if (estadoGuardado[f] !== 'libre')
-      cambios.push({ fecha: f, antes: estadoGuardado[f], ahora: 'libre' });
+      cambios.push({ fecha: f, antes: estadoGuardado[f], ahora: 'libre', nota: '' });
   });
   return cambios.sort((a, b) => a.fecha < b.fecha ? -1 : 1);
 }
@@ -693,7 +727,9 @@ function cargarMes(year, month) {
       if (data.ok) {
         (data.fechas || []).forEach(f => {
           estadoGuardado[f.fecha] = f.estado;
+          notaGuardada[f.fecha]   = f.nota || '';
           if (!(f.fecha in estadoActual)) estadoActual[f.fecha] = f.estado;
+          if (!(f.fecha in notaActual))   notaActual[f.fecha]   = f.nota || '';
         });
         cargado[key] = true;
       } else {
@@ -781,6 +817,25 @@ function crearRow(d, compacta) {
   diaEl.className = 'fecha-dia';
   diaEl.textContent = d.label;
   labelEl.appendChild(diaEl);
+
+  // Mini-chips de terraza (solo cuando el estado activo es parcial)
+  if (estado === 'parcial' && !pasado) {
+    const picks = document.createElement('div');
+    picks.className = 'terraza-picks';
+    ['Principal', 'Condominios'].forEach(terraza => {
+      const tc = document.createElement('button');
+      tc.className = 'terraza-chip' + (getNota(d.fecha) === terraza ? ' activo' : '');
+      tc.textContent = terraza;
+      tc.addEventListener('click', e => {
+        e.stopPropagation();
+        notaActual[d.fecha] = getNota(d.fecha) === terraza ? '' : terraza;
+        renderLista();
+      });
+      picks.appendChild(tc);
+    });
+    labelEl.appendChild(picks);
+  }
+
   row.appendChild(labelEl);
 
   const actions = document.createElement('div');
@@ -800,7 +855,9 @@ function crearRow(d, compacta) {
 function ciclarEstado(fecha) {
   if (esPasado(fecha)) return;
   const e = getEstado(fecha);
-  estadoActual[fecha] = ESTADOS[(ESTADOS.indexOf(e) + 1) % ESTADOS.length];
+  const siguiente = ESTADOS[(ESTADOS.indexOf(e) + 1) % ESTADOS.length];
+  estadoActual[fecha] = siguiente;
+  if (siguiente !== 'parcial') notaActual[fecha] = '';
   renderLista();
 }
 
@@ -938,8 +995,13 @@ function confirmarGuardar() {
     cerrarDiff();
     if (data.ok) {
       cambios.forEach(c => {
-        if (c.ahora === 'libre') { delete estadoGuardado[c.fecha]; delete estadoActual[c.fecha]; }
-        else { estadoGuardado[c.fecha] = c.ahora; estadoActual[c.fecha] = c.ahora; }
+        if (c.ahora === 'libre') {
+          delete estadoGuardado[c.fecha]; delete estadoActual[c.fecha];
+          delete notaGuardada[c.fecha];   delete notaActual[c.fecha];
+        } else {
+          estadoGuardado[c.fecha] = c.ahora; estadoActual[c.fecha] = c.ahora;
+          notaGuardada[c.fecha]   = c.nota;  notaActual[c.fecha]   = c.nota;
+        }
       });
       const n = data.procesados;
       mostrarToast(n + ' cambio' + (n === 1 ? '' : 's') + ' guardado' + (n === 1 ? '' : 's'));
