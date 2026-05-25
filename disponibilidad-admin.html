@@ -1024,8 +1024,7 @@ function confirmarGuardar() {
 
   fetch(API, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'disponibilidadGuardar', adminKey: PASSWORD, usuario: 'Proposal Inc', cambios: cambios.map(c => ({ fecha: c.fecha, estado: c.ahora })) }),
+    body: JSON.stringify({ action: 'disponibilidadGuardar', adminKey: PASSWORD, usuario: 'Proposal Inc', cambios: cambios.map(c => ({ fecha: c.fecha, estado: c.ahora, nota: c.nota || '' })) }),
   })
   .then(r => r.json())
   .then(data => {
