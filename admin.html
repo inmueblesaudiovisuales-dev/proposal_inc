@@ -821,10 +821,12 @@
   <div class="panel-tabs">
     <button class="panel-tab-btn activo" onclick="mostrarPanelTab('general', this)">General</button>
     <button class="panel-tab-btn" onclick="mostrarPanelTab('produccion', this)">Producción</button>
+    <button class="panel-tab-btn" onclick="mostrarPanelTab('gastos', this)">Gastos</button>
     <button class="panel-tab-btn" onclick="mostrarPanelTab('entrega', this)">Entrega</button>
   </div>
   <div id="pane-general" class="panel-tab-pane activo"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
   <div id="pane-produccion" class="panel-tab-pane"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
+  <div id="pane-gastos" class="panel-tab-pane"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
   <div id="pane-entrega" class="panel-tab-pane"><p style="color:var(--ink-3);font-style:italic;font-size:13px">Selecciona un contrato.</p></div>
 </div>
 <div id="overlay" onclick="cerrarPanel()"></div>
@@ -1307,7 +1309,16 @@ function renderPanel(data) {
       '</span>' +
     '</div>' +
     '<div class="form-msg" id="msg-espacio" style="font-size:12px;margin-bottom:4px"></div>' +
-    '<div class="info-fila"><span class="etiq">Evento</span><span class="val" id="sp-evento-val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + '</span></div>' +
+    (function() {
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const fe  = c.FechaEvento instanceof Date ? c.FechaEvento : new Date(String(c.FechaEvento || '').indexOf('T') !== -1 ? c.FechaEvento : (c.FechaEvento || '') + 'T12:00:00');
+      const diff = isNaN(fe) ? null : Math.round((fe - hoy) / 86400000);
+      const badge = (diff !== null && diff >= 0)
+        ? '<span style="margin-left:8px;background:var(--gold-pale);color:var(--onyx);border:1px solid var(--gold-border);border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700">'
+          + (diff === 0 ? 'Hoy' : 'Faltan ' + diff + ' día' + (diff === 1 ? '' : 's')) + '</span>'
+        : '';
+      return '<div class="info-fila"><span class="etiq">Evento</span><span class="val" id="sp-evento-val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + badge + '</span></div>';
+    })() +
     (['Firmado','Anticipo recibido','Reservado','Liquidado'].indexOf(c.Estatus) !== -1
       ? '<div id="bloque-reagendar" style="display:none;margin-bottom:6px">' +
           '<div style="display:flex;gap:6px;margin-bottom:6px">' +
@@ -1356,12 +1367,6 @@ function renderPanel(data) {
       '</div>' +
       '<div class="pago-barra-track"><div class="pago-barra-fill" style="width:' + pct + '%"></div></div>' +
       '<div class="sec-label">Historial de abonos</div><div>' + abonosHtml + '</div>' +
-      '<div class="sec-label" style="margin-top:16px">Gastos variables del evento</div>' +
-      '<div class="fila-2" style="margin-bottom:6px">' +
-        '<div class="campo campo-sm"><label>Monto extra (MXN)</label><input type="number" id="gastos-variables-monto" placeholder="0" min="0" value="' + (parseFloat(c.GastosVariablesExtra) || 0) + '"></div>' +
-        '<div class="campo campo-sm" style="display:flex;align-items:flex-end"><button class="btn-secundario btn-sm" onclick="guardarGastosVariables()">Guardar</button></div>' +
-      '</div>' +
-      '<div class="form-msg" id="msg-gastos-variables"></div>' +
       '<div class="sec-label" style="margin-top:8px">Registrar abono</div>' +
       '<div class="fila-2">' +
         '<div class="campo campo-sm"><label>Monto</label><input type="number" id="abono-monto" placeholder="0"></div>' +
@@ -1422,6 +1427,14 @@ function renderPanel(data) {
       '<div style="flex:1"><div style="font-size:13px;font-weight:' + (hecho ? '600' : '400') + '">' + esc(etiqueta) + '</div>' +
       (hecho && fechaVal ? '<div style="font-size:11px;color:var(--ink-3)">' + fmxnFecha(fechaVal) + '</div>' : '') + '</div></div>';
   };
+  document.getElementById('pane-gastos').innerHTML =
+    '<p class="sec-label" style="margin-bottom:6px">Gastos variables del evento</p>' +
+    '<div class="fila-2" style="margin-bottom:6px">' +
+      '<div class="campo campo-sm"><label>Monto extra (MXN)</label><input type="number" id="gastos-variables-monto" placeholder="0" min="0" value="' + (parseFloat(c.GastosVariablesExtra) || 0) + '"></div>' +
+      '<div class="campo campo-sm" style="display:flex;align-items:flex-end"><button class="btn-secundario btn-sm" onclick="guardarGastosVariables()">Guardar</button></div>' +
+    '</div>' +
+    '<div class="form-msg" id="msg-gastos-variables"></div>';
+
   const estadoAnticipo  = totalAbonado > 0 || ['Anticipo recibido','Reservado','Liquidado','En produccion','Entregado'].indexOf(c.Estatus) !== -1;
   const estadoEntregado = ['Entregado','Liquidado'].indexOf(c.Estatus) !== -1;
   const fotoHecho  = !!(c.FotografiaLista && String(c.FotografiaLista).trim());
