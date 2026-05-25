@@ -288,15 +288,25 @@ main { flex: 1; padding: 16px 20px 80px; }
 
 .terraza-picks {
   display: flex;
+  align-items: center;
   gap: 5px;
-  margin-top: 5px;
+  flex: 1;
+  justify-content: center;
+  padding: 0 6px;
+}
+.terraza-libre-lbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .terraza-chip {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-muted);
   border-radius: 999px;
-  padding: 3px 10px;
+  padding: 4px 10px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -304,9 +314,9 @@ main { flex: 1; padding: 16px 20px 80px; }
   white-space: nowrap;
 }
 .terraza-chip.activo {
-  background: var(--parcial-soft);
-  color: var(--parcial);
-  border-color: var(--parcial);
+  background: var(--libre-soft);
+  color: var(--libre);
+  border-color: var(--libre);
   font-weight: 600;
 }
 
@@ -835,17 +845,19 @@ function crearRow(d, compacta) {
 
   const labelEl = document.createElement('div');
   labelEl.className = 'fecha-label';
+  labelEl.style.flex = '0 0 auto';
   const diaEl = document.createElement('span');
   diaEl.className = 'fecha-dia';
   diaEl.textContent = d.label;
   labelEl.appendChild(diaEl);
+  row.appendChild(labelEl);
 
-  // Mini-chips de terraza (solo cuando el estado activo es parcial)
+  // Mini-chips de terraza en línea (entre fecha y chip de estado)
   if (estado === 'parcial' && !pasado) {
     const picks = document.createElement('div');
     picks.className = 'terraza-picks';
     const lbl = document.createElement('span');
-    lbl.style.cssText = 'font-size:11px;color:var(--text-muted);font-weight:600;line-height:1;padding-top:2px;white-space:nowrap;';
+    lbl.className = 'terraza-libre-lbl';
     lbl.textContent = 'Libre:';
     picks.appendChild(lbl);
     ['Principal', 'Condominios'].forEach(terraza => {
@@ -860,10 +872,8 @@ function crearRow(d, compacta) {
       });
       picks.appendChild(tc);
     });
-    labelEl.appendChild(picks);
+    row.appendChild(picks);
   }
-
-  row.appendChild(labelEl);
 
   const actions = document.createElement('div');
   actions.className = 'fecha-actions';
