@@ -489,8 +489,8 @@ main { flex: 1; padding: 16px 20px 80px; }
 
     <!-- Vista (solo en modo Captura) -->
     <div class="toggle-row" id="vistaRow">
-      <button class="btn-toggle activo" id="btnVistaTipo" onclick="setVista('tipo',this)">Por tipo</button>
-      <button class="btn-toggle" id="btnVistaSemana" onclick="setVista('semana',this)">Por semana</button>
+      <button class="btn-toggle" id="btnVistaTipo" onclick="setVista('tipo',this)">Por tipo</button>
+      <button class="btn-toggle activo" id="btnVistaSemana" onclick="setVista('semana',this)">Por semana</button>
     </div>
   </header>
 
@@ -498,7 +498,7 @@ main { flex: 1; padding: 16px 20px 80px; }
   <main id="mainCaptura">
 
     <!-- Vista: por tipo (fines de semana + entresemana) -->
-    <div id="vistaTipo">
+    <div id="vistaTipo" style="display:none">
       <section class="section">
         <div class="section-header">
           <span class="section-title">Fines de semana</span>
@@ -519,7 +519,7 @@ main { flex: 1; padding: 16px 20px 80px; }
     </div>
 
     <!-- Vista: por semana -->
-    <div id="vistaSemana" style="display:none">
+    <div id="vistaSemana">
       <div id="semanasList"></div>
     </div>
 
@@ -570,7 +570,7 @@ let estadoGuardado = {};
 let estadoActual   = {};
 let cargado        = {};
 let modoActual     = 'captura';
-let vistaActual    = 'tipo';
+let vistaActual    = 'semana';
 let entresemanaVisible = false;
 
 // ── Utilidades ──
