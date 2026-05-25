@@ -259,7 +259,6 @@ main { flex: 1; padding: 16px 20px 80px; }
 }
 .fecha-row:last-child { border-bottom: none; }
 .fecha-row.compacta { padding: 10px 16px; min-height: 48px; }
-.fecha-row.cambiada { background: linear-gradient(to right, #fffbea 0%, var(--surface) 35%); }
 .fecha-row.pasada { opacity: 0.4; }
 
 .fecha-label { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
@@ -626,6 +625,29 @@ function getNota(f)    { return notaActual[f]    || ''; }
 function esCambiada(f) { return getEstado(f) !== getGuardado(f) || getNota(f) !== (notaGuardada[f] || ''); }
 function esPasado(f)   { return f < hoyStr(); }
 
+// ── Borrador en localStorage ──
+function guardarBorrador() {
+  try {
+    const hoy = hoyStr(), estado = {}, nota = {};
+    Object.keys(estadoActual).forEach(f => { if (f >= hoy) estado[f] = estadoActual[f]; });
+    Object.keys(notaActual).forEach(f => { if (f >= hoy && notaActual[f]) nota[f] = notaActual[f]; });
+    localStorage.setItem('pi_disp_borrador', JSON.stringify({ estado, nota }));
+  } catch (e) {}
+}
+function restaurarBorrador() {
+  try {
+    const raw = localStorage.getItem('pi_disp_borrador');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    const hoy = hoyStr();
+    Object.keys(data.estado || {}).forEach(f => { if (f >= hoy) estadoActual[f] = data.estado[f]; });
+    Object.keys(data.nota   || {}).forEach(f => { if (f >= hoy) notaActual[f]   = data.nota[f]; });
+  } catch (e) {}
+}
+function limpiarBorrador() {
+  try { localStorage.removeItem('pi_disp_borrador'); } catch (e) {}
+}
+
 // ── Cambios ──
 function getCambios() {
   const hoy = hoyStr(), cambios = [], visto = new Set();
@@ -669,6 +691,7 @@ document.getElementById('login-pw').addEventListener('keydown', e => { if (e.key
 
 // ── Init ──
 function iniciarApp() {
+  restaurarBorrador();
   const meses = getMesesActivos();
   if (!mesActivo) mesActivo = meses[0];
   renderPills(meses);
@@ -806,8 +829,7 @@ function crearRow(d, compacta) {
   const row = document.createElement('div');
   row.className = [
     'fecha-row',
-    compacta        ? 'compacta'      : '',
-    esCambiada(d.fecha) ? 'cambiada' : '',
+    compacta ? 'compacta' : '',
   ].filter(Boolean).join(' ');
   row.dataset.fecha = d.fecha;
 
@@ -833,6 +855,7 @@ function crearRow(d, compacta) {
       tc.addEventListener('click', e => {
         e.stopPropagation();
         notaActual[d.fecha] = getNota(d.fecha) === terraza ? '' : terraza;
+        guardarBorrador();
         renderLista();
       });
       picks.appendChild(tc);
@@ -862,6 +885,7 @@ function ciclarEstado(fecha) {
   const siguiente = ESTADOS[(ESTADOS.indexOf(e) + 1) % ESTADOS.length];
   estadoActual[fecha] = siguiente;
   if (siguiente !== 'parcial') notaActual[fecha] = '';
+  guardarBorrador();
   renderLista();
 }
 
@@ -1008,6 +1032,7 @@ function confirmarGuardar() {
         }
       });
       const n = data.procesados;
+      limpiarBorrador();
       mostrarToast(n + ' cambio' + (n === 1 ? '' : 's') + ' guardado' + (n === 1 ? '' : 's'));
       renderLista();
     } else {
@@ -1031,8 +1056,18 @@ function mostrarToast(msg, error) {
   toastTimer = setTimeout(() => t.classList.remove('visible'), 2400);
 }
 
+// Advertencia al salir con cambios sin guardar (refresh / cerrar tab)
 window.addEventListener('beforeunload', e => {
   if (getCambios().length > 0) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// Advertencia al tocar el botón Volver con cambios sin guardar
+document.querySelector('.btn-back').addEventListener('click', function(e) {
+  if (getCambios().length > 0) {
+    if (!confirm('Tienes cambios sin guardar. Los cambios se conservan si vuelves a abrir esta página. ¿Deseas salir de todos modos?')) {
+      e.preventDefault();
+    }
+  }
 });
 
 // ── Auto-login ──
