@@ -761,7 +761,7 @@
         </div>
 
         <div style="margin-bottom:0.5rem;">
-          <span>Cobros del mes: <strong id="pf-cobros">—</strong></span>
+          <span>Ganancia del mes: <strong id="pf-cobros">—</strong></span>
         </div>
 
         <div style="margin-bottom:1rem;">
@@ -2303,14 +2303,14 @@ async function cargarPanelFinanciero() {
   };
 
   document.getElementById('pf-meta-valor').textContent = formatPeso(datos.meta_mensual);
-  document.getElementById('pf-cobros').textContent     = formatPeso(datos.cobros_mes);
+  document.getElementById('pf-cobros').textContent     = formatPeso(datos.ganancia_mes);
 
-  const pct  = Math.min(100, Math.round((datos.cobros_mes / datos.meta_mensual) * 100));
+  const pct  = Math.min(100, Math.round((datos.ganancia_mes / datos.meta_mensual) * 100));
   const barra = document.getElementById('pf-barra');
   barra.style.width      = pct + '%';
   barra.style.background = pct >= 100 ? '#4CAF50' : '#C9A84C';
 
-  const excedente  = datos.cobros_mes - datos.meta_mensual;
+  const excedente  = datos.ganancia_mes - datos.meta_mensual;
   let textoPct = pct + '% de la meta';
   if (excedente > 0) textoPct += ' (+' + formatPeso(excedente) + ' sobre la meta)';
   document.getElementById('pf-porcentaje').textContent = textoPct;
@@ -2323,7 +2323,7 @@ async function cargarPanelFinanciero() {
   } else {
     elEventos.textContent =
       'Necesitas ' + datos.eventos_necesarios + ' evento' + (datos.eventos_necesarios === 1 ? '' : 's') +
-      ' más para alcanzar tu meta (ticket promedio: ' + formatPeso(datos.ticket_promedio) + ').';
+      ' más para alcanzar tu meta (ganancia promedio por evento: ' + formatPeso(datos.ticket_promedio) + ').';
   }
 
   window._panelFinancieroData = datos;
