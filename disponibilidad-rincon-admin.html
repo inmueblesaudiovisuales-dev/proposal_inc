@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Disponibilidad Rincón — Captura</title>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --border: #e6e6e2;
+  --text: #1a1a1a;
+  --text-muted: #6b6b66;
+  --libre: #2f9e6b;
+  --libre-soft: #e3f3ec;
+  --parcial: #d49224;
+  --parcial-soft: #fbeed5;
+  --bloqueada: #4a4a48;
+  --bloqueada-soft: #e1e1dd;
+  --accent: #1a1a1a;
+  --danger: #c0392b;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  --radius-card: 14px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* LOGIN */
+#pantalla-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.login-box {
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow);
+}
+.login-box h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.login-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+.login-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
+.login-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  margin-bottom: 14px;
+  outline: none;
+}
+.login-input:focus { border-color: var(--accent); }
+.btn-login {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 4px;
+}
+.error-login { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: -8px; margin-bottom: 10px; }
+
+/* APP */
+#pantalla-app { display: none; }
+
+.phone-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+header.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px 12px;
+}
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+.btn-back {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+.top-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.btn-guardar {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.btn-guardar:disabled { background: var(--border); color: var(--text-muted); cursor: default; }
+
+.header-pills-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mes-pill {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.mes-pill.activo { background: var(--accent); color: white; border-color: var(--accent); }
+
+.mes-pill-mas {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.mes-pill-mas:hover { border-color: var(--text-muted); color: var(--text); }
+
+.toggle-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.btn-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  flex: 1;
+}
+.btn-toggle.activo { background: var(--bg); color: var(--text); border-color: var(--text); font-weight: 600; }
+
+/* MAIN */
+main { flex: 1; padding: 16px 20px 80px; }
+
+/* SECCIONES */
+.section { margin-bottom: 16px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 10px;
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.section-count { font-size: 12px; color: var(--text-muted); }
+
+.semana-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 4px 6px;
+}
+
+.fechas {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.vacio {
+  padding: 18px 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* FECHA ROW */
+.fecha-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 60px;
+}
+.fecha-row:last-child { border-bottom: none; }
+.fecha-row.compacta { padding: 10px 16px; min-height: 48px; }
+.fecha-row.pasada { opacity: 0.4; }
+
+.fecha-label { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.fecha-dia { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.fecha-row.compacta .fecha-dia { font-size: 14px; font-weight: 500; }
+
+.fecha-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.chip {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 88px;
+  min-height: 38px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  flex-shrink: 0;
+}
+.chip:active:not(:disabled) { transform: scale(0.96); }
+.chip:disabled { cursor: default; }
+.chip.libre     { background: var(--libre-soft);     color: var(--libre); }
+.chip.parcial   { background: var(--parcial-soft);   color: var(--parcial); }
+.chip.bloqueada { background: var(--bloqueada-soft); color: var(--bloqueada); }
+
+.terraza-picks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.terraza-libre-lbl {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.terraza-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  min-height: 32px;
+}
+.terraza-chip.activo {
+  background: var(--libre-soft);
+  color: var(--libre);
+  border-color: var(--libre);
+  font-weight: 600;
+}
+
+.expand-btn {
+  width: 100%;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.expand-btn svg { transition: transform 0.2s; }
+.expand-btn.abierto svg { transform: rotate(180deg); }
+
+.loading-row {
+  padding: 18px 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.help {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+
+/* CONSULTA */
+.consulta-wrap { display: flex; flex-direction: column; gap: 16px; }
+.consulta-mes {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 4px 6px;
+}
+.consulta-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.consulta-item:last-child { border-bottom: none; }
+.consulta-dia { font-size: 15px; font-weight: 500; }
+.consulta-estado {
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+.consulta-estado.libre     { background: var(--libre-soft);     color: var(--libre); }
+.consulta-estado.parcial   { background: var(--parcial-soft);   color: var(--parcial); }
+.consulta-estado.bloqueada { background: var(--bloqueada-soft); color: var(--bloqueada); }
+
+.btn-copiar {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 8px;
+}
+.btn-copiar:active { opacity: 0.85; }
+
+/* DIFF */
+.diff-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: flex-end;
+  z-index: 100;
+}
+.diff-overlay.visible { display: flex; }
+.diff-panel {
+  background: var(--surface);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 36px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.diff-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.diff-title { font-size: 20px; font-weight: 700; margin-bottom: 3px; letter-spacing: -0.01em; }
+.diff-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 18px; }
+.diff-list { background: var(--bg); border-radius: var(--radius-card); padding: 4px 14px; margin-bottom: 16px; }
+.diff-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.diff-item:last-child { border-bottom: none; }
+.diff-fecha { font-size: 15px; font-weight: 500; flex-shrink: 0; }
+.diff-cambio { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.diff-chip { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+.arrow-icon { color: var(--text-muted); font-size: 14px; font-weight: 700; }
+.diff-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn-confirmar {
+  background: var(--accent); color: white; border: none;
+  border-radius: var(--radius-card); padding: 15px; font-size: 15px;
+  font-weight: 600; cursor: pointer; font-family: inherit; width: 100%;
+}
+.btn-confirmar:disabled { background: var(--border); color: var(--text-muted); cursor: default; }
+.btn-volver {
+  background: transparent; color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius-card); padding: 15px; font-size: 15px;
+  font-weight: 500; cursor: pointer; font-family: inherit; width: 100%;
+}
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--accent); color: white;
+  padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.22s, transform 0.22s;
+  z-index: 200; white-space: nowrap;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--danger); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="pantalla-login">
+  <div class="login-box">
+    <h1>Disponibilidad Rincón</h1>
+    <p class="login-sub">Acceso para el equipo de Proposal Inc</p>
+    <label class="login-label" for="login-pw">Contraseña</label>
+    <input class="login-input" id="login-pw" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <div class="error-login" id="error-login"></div>
+    <button class="btn-login" id="btn-login-submit">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="pantalla-app">
+<div class="phone-wrap">
+
+  <header class="top">
+    <div class="top-row">
+      <a class="btn-back" href="admin.html">&#8592; Volver</a>
+      <span class="top-title">Disponibilidad Rincón</span>
+      <button class="btn-guardar" id="btnGuardar" disabled>Guardar</button>
+    </div>
+
+    <!-- Selector de mes -->
+    <div class="header-pills-row" id="mesesPills" style="flex-wrap:wrap;"></div>
+
+    <!-- Modo: Captura / Consulta -->
+    <div class="toggle-row">
+      <button class="btn-toggle activo" id="btnModoCaptura" onclick="setModo('captura',this)">Captura</button>
+      <button class="btn-toggle" id="btnModoConsulta" onclick="setModo('consulta',this)">Consulta</button>
+    </div>
+
+    <!-- Vista (solo en modo Captura) -->
+    <div class="toggle-row" id="vistaRow">
+      <button class="btn-toggle" id="btnVistaTipo" onclick="setVista('tipo',this)">Por tipo</button>
+      <button class="btn-toggle activo" id="btnVistaSemana" onclick="setVista('semana',this)">Por semana</button>
+    </div>
+  </header>
+
+  <!-- Modo captura -->
+  <main id="mainCaptura">
+
+    <!-- Vista: por tipo (fines de semana + entresemana) -->
+    <div id="vistaTipo" style="display:none">
+      <section class="section">
+        <div class="section-header">
+          <span class="section-title">Fines de semana</span>
+          <span class="section-count" id="findesCount"></span>
+        </div>
+        <div class="fechas" id="findesList"></div>
+      </section>
+
+      <section class="section">
+        <button class="expand-btn" id="btnExpandEntresemana" onclick="toggleEntresemana()">
+          <span id="labelEntresemana">Mostrar entresemana</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="fechas" id="entresemanaList" style="display:none; margin-top:8px;"></div>
+      </section>
+    </div>
+
+    <!-- Vista: por semana -->
+    <div id="vistaSemana">
+      <div id="semanasList"></div>
+    </div>
+
+    <p class="help">Toca el chip para ciclar entre Libre, Parcial y Bloqueada.<br>En estado Parcial selecciona los espacios disponibles.</p>
+  </main>
+
+  <!-- Modo consulta -->
+  <main id="mainConsulta" style="display:none">
+    <div class="consulta-wrap" id="consultaWrap"></div>
+    <button class="btn-copiar" onclick="copiarRespuesta()">Copiar respuesta para WhatsApp</button>
+  </main>
+
+</div>
+</div>
+
+<!-- DIFF -->
+<div class="diff-overlay" id="diffOverlay">
+  <div class="diff-panel">
+    <div class="diff-handle"></div>
+    <p class="diff-title">Confirmar cambios</p>
+    <p class="diff-subtitle" id="diffSubtitle"></p>
+    <div class="diff-list" id="diffList"></div>
+    <div class="diff-actions">
+      <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarGuardar()">Confirmar y guardar</button>
+      <button class="btn-volver" onclick="cerrarDiff()">Volver a editar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API      = 'https://script.google.com/macros/s/AKfycbwaF0neKxrw8jgeoW7_bkXp0dk2XU3tiWGtE41C9jJhf99m7_-4ovMjWdcPZkNa1kHBPg/exec';
+const PASSWORD = 'framedock';
+
+const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_CORTO    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DIAS_LARGO    = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const ESTADOS       = ['libre','parcial','bloqueada'];
+const ETIQUETAS     = { libre: 'Libre', parcial: 'Parcial', bloqueada: 'Bloqueada' };
+const ESPACIOS      = ['Isla', 'Terraza Spa', 'Auditorio', 'Área de yoga'];
+
+let mesActivo      = null;
+let estadoGuardado = {};
+let estadoActual   = {};
+let notaGuardada   = {};
+let notaActual     = {};
+let cargado        = {};
+let modoActual     = 'captura';
+let vistaActual    = 'semana';
+let entresemanaVisible = false;
+let mesesVisibles  = 3;
+
+// Utilidades
+function hoyStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fechaStr(y, m1, d) { return y + '-' + pad2(m1) + '-' + pad2(d); }
+function getMesKey(y, m) { return y + '-' + pad2(m + 1); }
+
+function getDiasDelMes(year, month) {
+  const dias = [], total = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= total; d++) {
+    const fecha = fechaStr(year, month + 1, d);
+    const dow   = new Date(year, month, d).getDay();
+    dias.push({ fecha, dow, label: DIAS_CORTO[dow] + ' ' + d, esFinde: dow === 0 || dow === 6 });
+  }
+  return dias;
+}
+
+function getSemanasMes(year, month) {
+  const dias = getDiasDelMes(year, month);
+  const semanas = [];
+  let actual = null;
+  dias.forEach(d => {
+    if (!actual || d.dow === 1) {
+      actual = { num: semanas.length + 1, dias: [] };
+      semanas.push(actual);
+    }
+    actual.dias.push(d);
+  });
+  return semanas;
+}
+
+function getMesesActivos() {
+  const base = new Date(), meses = [];
+  for (let i = 0; i < mesesVisibles; i++) {
+    const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    meses.push({ year: d.getFullYear(), month: d.getMonth() });
+  }
+  return meses;
+}
+
+function getEstado(f)  { return estadoActual[f]  || 'libre'; }
+function getGuardado(f){ return estadoGuardado[f] || 'libre'; }
+function getNota(f)    { return notaActual[f]    || ''; }
+
+// Devuelve array de espacios libres a partir de la nota separada por coma.
+function getNotaArr(f) {
+  const n = notaActual[f] || '';
+  return n ? n.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+}
+
+function esCambiada(f) { return getEstado(f) !== getGuardado(f) || getNota(f) !== (notaGuardada[f] || ''); }
+function esPasado(f)   { return f < hoyStr(); }
+
+// Alterna un espacio individual en la lista de espacios libres de la nota.
+function toggleEspacio(fecha, espacio) {
+  const arr = getNotaArr(fecha);
+  const idx = arr.indexOf(espacio);
+  if (idx === -1) arr.push(espacio);
+  else arr.splice(idx, 1);
+  notaActual[fecha] = arr.join(',');
+  renderLista();
+}
+
+// Cambios
+function getCambios() {
+  const hoy = hoyStr(), cambios = [], visto = new Set();
+  const todasFechas = new Set([...Object.keys(estadoActual), ...Object.keys(notaActual)]);
+  todasFechas.forEach(f => {
+    if (f < hoy) return;
+    visto.add(f);
+    const estadoA = estadoActual[f]  || 'libre';
+    const estadoG = estadoGuardado[f] || 'libre';
+    const notaA   = notaActual[f]    || '';
+    const notaG   = notaGuardada[f]  || '';
+    if (estadoA !== estadoG || notaA !== notaG)
+      cambios.push({ fecha: f, antes: estadoG, ahora: estadoA, nota: notaA });
+  });
+  Object.keys(estadoGuardado).forEach(f => {
+    if (f < hoy || visto.has(f)) return;
+    if (estadoGuardado[f] !== 'libre')
+      cambios.push({ fecha: f, antes: estadoGuardado[f], ahora: 'libre', nota: '' });
+  });
+  return cambios.sort(function(a, b) { return a.fecha < b.fecha ? -1 : 1; });
+}
+
+// Login
+function intentarLogin() {
+  const pw  = document.getElementById('login-pw').value;
+  const err = document.getElementById('error-login');
+  if (pw !== PASSWORD) { err.textContent = 'Contraseña incorrecta.'; return; }
+  err.textContent = '';
+  try { localStorage.setItem('pi_disp_ok', '1'); } catch (e) {}
+  abrirApp();
+}
+function abrirApp() {
+  document.getElementById('pantalla-login').style.display = 'none';
+  document.getElementById('pantalla-app').style.display  = 'block';
+  iniciarApp();
+}
+document.getElementById('btn-login-submit').addEventListener('click', intentarLogin);
+document.getElementById('login-pw').addEventListener('keydown', function(e) { if (e.key === 'Enter') intentarLogin(); });
+
+// Init
+function iniciarApp() {
+  const meses = getMesesActivos();
+  if (!mesActivo) mesActivo = meses[0];
+  renderPills(meses);
+  cargarMes(mesActivo.year, mesActivo.month);
+}
+
+function renderPills(meses) {
+  const c = document.getElementById('mesesPills');
+  c.innerHTML = '';
+  meses.forEach(function(m) {
+    const btn = document.createElement('button');
+    const esMesActivo = mesActivo && m.year === mesActivo.year && m.month === mesActivo.month;
+    btn.className = 'mes-pill' + (esMesActivo ? ' activo' : '');
+    btn.textContent = MESES_NOMBRES[m.month];
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.mes-pill').forEach(function(p) { p.classList.remove('activo'); });
+      btn.classList.add('activo');
+      mesActivo = m;
+      entresemanaVisible = false;
+      resetEntresemana();
+      cargarMes(m.year, m.month);
+    });
+    c.appendChild(btn);
+  });
+
+  const btnMas = document.createElement('button');
+  btnMas.className = 'mes-pill-mas';
+  btnMas.textContent = '+';
+  btnMas.title = 'Ver más meses';
+  btnMas.addEventListener('click', function() {
+    mesesVisibles += 3;
+    renderPills(getMesesActivos());
+  });
+  c.appendChild(btnMas);
+}
+
+function resetEntresemana() {
+  document.getElementById('btnExpandEntresemana').classList.remove('abierto');
+  document.getElementById('entresemanaList').style.display = 'none';
+  actualizarLabelEntresemana();
+}
+
+// Carga
+function cargarMes(year, month) {
+  const key = getMesKey(year, month);
+  if (cargado[key]) { renderLista(); return; }
+
+  renderCargando();
+  const desde = fechaStr(year, month + 1, 1);
+  const hasta  = fechaStr(year, month + 1, new Date(year, month + 1, 0).getDate());
+
+  fetch(API + '?action=disponibilidadRinconObtener&desde=' + desde + '&hasta=' + hasta)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        (data.fechas || []).forEach(function(f) {
+          estadoGuardado[f.fecha] = f.estado;
+          notaGuardada[f.fecha]   = f.nota || '';
+          estadoActual[f.fecha]   = f.estado;
+          notaActual[f.fecha]     = f.nota || '';
+        });
+        cargado[key] = true;
+      } else {
+        mostrarToast('Error al cargar: ' + (data.error || 'desconocido'), true);
+      }
+      renderLista();
+    })
+    .catch(function() { mostrarToast('Sin conexión. Verifica e intenta.', true); renderLista(); });
+}
+
+function renderCargando() {
+  document.getElementById('findesList').innerHTML      = '<div class="loading-row">Cargando...</div>';
+  document.getElementById('entresemanaList').innerHTML = '';
+  document.getElementById('semanasList').innerHTML     = '<div class="loading-row">Cargando...</div>';
+}
+
+// Render
+function renderLista() {
+  const dias  = getDiasDelMes(mesActivo.year, mesActivo.month);
+  const finds = dias.filter(function(d) { return d.esFinde; });
+  const entre = dias.filter(function(d) { return !d.esFinde; });
+
+  document.getElementById('findesCount').textContent = finds.filter(function(d) { return !esPasado(d.fecha); }).length + ' fechas';
+  renderFechas(document.getElementById('findesList'), finds, false);
+  renderFechas(document.getElementById('entresemanaList'), entre, true);
+  actualizarLabelEntresemana();
+
+  renderSemanas();
+
+  const n = getCambios().length;
+  const btn = document.getElementById('btnGuardar');
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Guardar' : 'Guardar (' + n + ')';
+
+  if (modoActual === 'consulta') renderConsulta();
+}
+
+function renderFechas(container, dias, compacta) {
+  const visibles = dias.filter(function(d) { return !esPasado(d.fecha); });
+  if (!visibles.length) { container.innerHTML = '<div class="vacio">Sin fechas próximas en este período.</div>'; return; }
+  container.innerHTML = '';
+  visibles.forEach(function(d) { container.appendChild(crearRow(d, compacta)); });
+}
+
+function renderSemanas() {
+  const container = document.getElementById('semanasList');
+  const semanas   = getSemanasMes(mesActivo.year, mesActivo.month);
+  container.innerHTML = '';
+
+  semanas.forEach(function(s) {
+    const visibles = s.dias.filter(function(d) { return !esPasado(d.fecha); });
+    if (!visibles.length) return;
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'semana-label';
+    const primero = visibles[0];
+    const ultimo  = visibles[visibles.length - 1];
+    labelEl.textContent = 'Semana ' + s.num + '  ·  ' + primero.label + ' – ' + ultimo.label;
+    container.appendChild(labelEl);
+
+    const card = document.createElement('div');
+    card.className = 'fechas section';
+    visibles.forEach(function(d) { card.appendChild(crearRow(d, false)); });
+    container.appendChild(card);
+  });
+}
+
+function crearRow(d, compacta) {
+  const estado = getEstado(d.fecha);
+  const pasado = esPasado(d.fecha);
+  const row = document.createElement('div');
+  row.className = ['fecha-row', compacta ? 'compacta' : '', pasado ? 'pasada' : ''].filter(Boolean).join(' ');
+  row.dataset.fecha = d.fecha;
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'fecha-label';
+  const diaEl = document.createElement('span');
+  diaEl.className = 'fecha-dia';
+  diaEl.textContent = d.label;
+  labelEl.appendChild(diaEl);
+
+  // Chips de espacios libres (solo cuando parcial y no pasado)
+  if (estado === 'parcial' && !pasado) {
+    const picks = document.createElement('div');
+    picks.className = 'terraza-picks';
+    const lbl = document.createElement('span');
+    lbl.className = 'terraza-libre-lbl';
+    lbl.textContent = 'Libre:';
+    picks.appendChild(lbl);
+
+    const notaArr = getNotaArr(d.fecha);
+    ESPACIOS.forEach(function(espacio) {
+      // Isla no está disponible los sábados (dow === 6)
+      if (espacio === 'Isla' && d.dow === 6) return;
+      const tc = document.createElement('button');
+      tc.className = 'terraza-chip' + (notaArr.indexOf(espacio) !== -1 ? ' activo' : '');
+      tc.textContent = espacio;
+      tc.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleEspacio(d.fecha, espacio);
+      });
+      picks.appendChild(tc);
+    });
+    labelEl.appendChild(picks);
+  }
+
+  row.appendChild(labelEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'fecha-actions';
+
+  const chip = document.createElement('button');
+  chip.className = 'chip ' + estado;
+  chip.textContent = ETIQUETAS[estado];
+  chip.disabled = pasado;
+  if (!pasado) chip.addEventListener('click', function() { ciclarEstado(d.fecha); });
+  actions.appendChild(chip);
+  row.appendChild(actions);
+  return row;
+}
+
+// Tap-ciclo
+function ciclarEstado(fecha) {
+  if (esPasado(fecha)) return;
+  const e = getEstado(fecha);
+  const siguiente = ESTADOS[(ESTADOS.indexOf(e) + 1) % ESTADOS.length];
+  estadoActual[fecha] = siguiente;
+  if (siguiente !== 'parcial') notaActual[fecha] = '';
+  renderLista();
+}
+
+// Toggle entresemana
+function toggleEntresemana() {
+  entresemanaVisible = !entresemanaVisible;
+  document.getElementById('entresemanaList').style.display = entresemanaVisible ? 'block' : 'none';
+  document.getElementById('btnExpandEntresemana').classList.toggle('abierto', entresemanaVisible);
+  actualizarLabelEntresemana();
+}
+function actualizarLabelEntresemana() {
+  const n = getDiasDelMes(mesActivo.year, mesActivo.month).filter(function(d) { return !d.esFinde; }).length;
+  document.getElementById('labelEntresemana').textContent =
+    entresemanaVisible ? 'Ocultar entresemana' : 'Mostrar ' + n + ' días entresemana';
+}
+
+// Modo (Captura / Consulta)
+function setModo(modo, btn) {
+  modoActual = modo;
+  document.querySelectorAll('#mainCaptura, #mainConsulta').forEach(function(el) { el.style.display = 'none'; });
+  document.getElementById(modo === 'captura' ? 'mainCaptura' : 'mainConsulta').style.display = 'block';
+  document.querySelectorAll('.toggle-row:first-of-type .btn-toggle, .toggle-row .btn-toggle').forEach(function(b) {
+    if (b.closest('#vistaRow')) return;
+    b.classList.remove('activo');
+  });
+  btn.classList.add('activo');
+  document.getElementById('vistaRow').style.display = modo === 'captura' ? 'flex' : 'none';
+  if (modo === 'consulta') renderConsulta();
+}
+
+// Vista (Por tipo / Por semana)
+function setVista(vista, btn) {
+  vistaActual = vista;
+  document.querySelectorAll('#vistaRow .btn-toggle').forEach(function(b) { b.classList.remove('activo'); });
+  btn.classList.add('activo');
+  document.getElementById('vistaTipo').style.display   = vista === 'tipo'   ? 'block' : 'none';
+  document.getElementById('vistaSemana').style.display = vista === 'semana' ? 'block' : 'none';
+}
+
+// Consulta
+function renderConsulta() {
+  const wrap = document.getElementById('consultaWrap');
+  const dias = getDiasDelMes(mesActivo.year, mesActivo.month);
+  wrap.innerHTML = '';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'consulta-mes';
+  hdr.textContent = MESES_NOMBRES[mesActivo.month] + ' ' + mesActivo.year;
+  wrap.appendChild(hdr);
+
+  const card = document.createElement('div');
+  card.className = 'fechas';
+  dias.forEach(function(d) {
+    const estado = getEstado(d.fecha);
+    const item   = document.createElement('div');
+    item.className = 'consulta-item';
+    const diaEl = document.createElement('span');
+    diaEl.className = 'consulta-dia';
+    diaEl.textContent = d.label;
+    const eEl = document.createElement('span');
+    eEl.className = 'consulta-estado ' + estado;
+    eEl.textContent = ETIQUETAS[estado];
+    item.appendChild(diaEl);
+    item.appendChild(eEl);
+    card.appendChild(item);
+  });
+  wrap.appendChild(card);
+}
+
+function copiarRespuesta() {
+  const dias = getDiasDelMes(mesActivo.year, mesActivo.month);
+  const hoy  = hoyStr(), lineas = [];
+  dias.forEach(function(d) {
+    if (d.fecha < hoy) return;
+    const estado = getEstado(d.fecha);
+    if (estado === 'bloqueada') return;
+    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': disponible.');
+  });
+  if (!lineas.length) { mostrarToast('No hay fechas futuras en este mes.', true); return; }
+  const msg =
+    'Disponibilidad en Rincón de Santiago, ' + MESES_NOMBRES[mesActivo.month].toLowerCase() + ' ' + mesActivo.year + ':\n\n' +
+    lineas.join('\n') +
+    '\n\nSi quieres apartar una fecha avísanos para mandarte la propuesta.';
+  navigator.clipboard.writeText(msg)
+    .then(function() { mostrarToast('Mensaje copiado al portapapeles'); })
+    .catch(function() {
+      const ta = document.createElement('textarea');
+      ta.value = msg; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); mostrarToast('Mensaje copiado'); }
+      catch(e) { mostrarToast('No se pudo copiar.', true); }
+      document.body.removeChild(ta);
+    });
+}
+
+// Diff
+document.getElementById('btnGuardar').addEventListener('click', function() {
+  const cambios = getCambios();
+  if (!cambios.length) return;
+  const n = cambios.length;
+  document.getElementById('diffSubtitle').textContent = n + ' cambio' + (n === 1 ? '' : 's') + ' antes de guardar';
+  const labels = {};
+  getMesesActivos().forEach(function(m) {
+    getDiasDelMes(m.year, m.month).forEach(function(d) {
+      labels[d.fecha] = d.label + ' ' + MESES_NOMBRES[m.month].substring(0,3).toLowerCase();
+    });
+  });
+  document.getElementById('diffList').innerHTML = cambios.map(function(c) {
+    return '<div class="diff-item">' +
+      '<span class="diff-fecha">' + (labels[c.fecha] || c.fecha) + '</span>' +
+      '<div class="diff-cambio">' +
+        '<span class="diff-chip" style="background:var(--' + c.antes + '-soft);color:var(--' + c.antes + ')">' + ETIQUETAS[c.antes] + '</span>' +
+        '<span class="arrow-icon">→</span>' +
+        '<span class="diff-chip" style="background:var(--' + c.ahora + '-soft);color:var(--' + c.ahora + ')">' + ETIQUETAS[c.ahora] + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('diffOverlay').classList.add('visible');
+});
+function cerrarDiff() { document.getElementById('diffOverlay').classList.remove('visible'); }
+
+// Guardar
+function confirmarGuardar() {
+  const cambios = getCambios();
+  if (!cambios.length) return;
+  const btnConf = document.getElementById('btnConfirmar');
+  btnConf.disabled = true; btnConf.textContent = 'Guardando...';
+
+  const params = new URLSearchParams({
+    action  : 'disponibilidadRinconGuardar',
+    adminKey: PASSWORD,
+    usuario : 'Proposal Inc',
+    cambios : JSON.stringify(cambios.map(function(c) { return { fecha: c.fecha, estado: c.ahora, nota: c.nota || '' }; })),
+  });
+  fetch(API + '?' + params.toString())
+  .then(function(r) { return r.text(); })
+  .then(function(texto) {
+    var data;
+    try { data = JSON.parse(texto); }
+    catch (e) { throw new Error('Respuesta no JSON: ' + texto.substring(0, 120)); }
+    btnConf.disabled = false; btnConf.textContent = 'Confirmar y guardar';
+    cerrarDiff();
+    if (data.ok) {
+      cambios.forEach(function(c) {
+        if (c.ahora === 'libre') {
+          delete estadoGuardado[c.fecha]; delete estadoActual[c.fecha];
+          delete notaGuardada[c.fecha];   delete notaActual[c.fecha];
+        } else {
+          estadoGuardado[c.fecha] = c.ahora; estadoActual[c.fecha] = c.ahora;
+          notaGuardada[c.fecha]   = c.nota;  notaActual[c.fecha]   = c.nota;
+        }
+      });
+      const n = data.procesados;
+      mostrarToast(n + ' cambio' + (n === 1 ? '' : 's') + ' guardado' + (n === 1 ? '' : 's'));
+      renderLista();
+    } else {
+      mostrarToast('Error: ' + (data.error || 'desconocido'), true);
+    }
+  })
+  .catch(function(err) {
+    btnConf.disabled = false; btnConf.textContent = 'Confirmar y guardar';
+    cerrarDiff();
+    mostrarToast((err && err.message ? err.message : 'Error de conexión') + ' — cambios conservados.', true);
+  });
+}
+
+// Toast
+var toastTimer;
+function mostrarToast(msg, error) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visible' + (error ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('visible'); }, 2400);
+}
+
+// Advertencia al salir con cambios sin guardar (refresh / cerrar tab)
+window.addEventListener('beforeunload', function(e) {
+  if (getCambios().length > 0) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// Advertencia al tocar el botón Volver con cambios sin guardar
+document.querySelector('.btn-back').addEventListener('click', function(e) {
+  if (getCambios().length > 0) {
+    if (!confirm('Tienes cambios sin guardar. Los cambios se conservan si vuelves a abrir esta página. ¿Deseas salir de todos modos?')) {
+      e.preventDefault();
+    }
+  }
+});
+
+// Auto-login
+(function() {
+  var ok = false;
+  try { ok = localStorage.getItem('pi_admin_ok') === '1' || localStorage.getItem('pi_disp_ok') === '1'; } catch (e) {}
+  if (ok) abrirApp();
+})();
+</script>
+</body>
+</html>
