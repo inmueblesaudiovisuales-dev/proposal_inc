@@ -970,7 +970,8 @@ function copiarRespuesta() {
   dias.forEach(d => {
     if (d.fecha < hoy) return;
     const estado = getEstado(d.fecha);
-    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': ' + ETIQUETAS_WA[estado] + '.');
+    if (estado === 'bloqueada') return;
+    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': disponible.');
   });
   if (!lineas.length) { mostrarToast('No hay fechas futuras en este mes.', true); return; }
   const msg =
