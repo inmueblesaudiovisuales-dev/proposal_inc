@@ -289,10 +289,9 @@ main { flex: 1; padding: 16px 20px 80px; }
 .terraza-picks {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 1;
-  justify-content: center;
-  padding: 0 6px;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
 }
 .terraza-libre-lbl {
   font-size: 11px;
@@ -306,12 +305,13 @@ main { flex: 1; padding: 16px 20px 80px; }
   border: 1px solid var(--border);
   color: var(--text-muted);
   border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
+  padding: 6px 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
+  min-height: 34px;
 }
 .terraza-chip.activo {
   background: var(--libre-soft);
@@ -845,14 +845,12 @@ function crearRow(d, compacta) {
 
   const labelEl = document.createElement('div');
   labelEl.className = 'fecha-label';
-  labelEl.style.flex = '0 0 auto';
   const diaEl = document.createElement('span');
   diaEl.className = 'fecha-dia';
   diaEl.textContent = d.label;
   labelEl.appendChild(diaEl);
-  row.appendChild(labelEl);
 
-  // Mini-chips de terraza en línea (entre fecha y chip de estado)
+  // Mini-chips de terraza debajo del nombre de la fecha (solo cuando parcial)
   if (estado === 'parcial' && !pasado) {
     const picks = document.createElement('div');
     picks.className = 'terraza-picks';
@@ -872,8 +870,10 @@ function crearRow(d, compacta) {
       });
       picks.appendChild(tc);
     });
-    row.appendChild(picks);
+    labelEl.appendChild(picks);
   }
+
+  row.appendChild(labelEl);
 
   const actions = document.createElement('div');
   actions.className = 'fecha-actions';
