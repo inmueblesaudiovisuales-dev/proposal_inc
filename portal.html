@@ -236,6 +236,14 @@
       font-size:11px; font-weight:600; color:var(--ink-3); flex:1; margin-left:0;
     }
 
+    .btn-copy {
+      background:var(--page); border:1px solid var(--border2); border-radius:4px;
+      padding:3px 8px; font-family:inherit; font-size:10px; font-weight:700;
+      color:var(--ink-2); cursor:pointer; white-space:nowrap; transition:all 120ms;
+    }
+    .btn-copy:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-copy.copiado { border-color:var(--success); color:var(--success); background:#E8F5EE; }
+
     @media print {
       .no-print { display:none !important; }
       body { background:#fff; padding:0; }
@@ -724,33 +732,40 @@ function initFirma() {
   hayTrazo = false;
 
   function ajustar() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr  = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    canvas.width  = rect.width * dpr;
+    canvas.width  = rect.width  * dpr;
     canvas.height = rect.height * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1C1C1E';
+    if (hayTrazo) {
+      hayTrazo = false;
+      actualizarBtnFirmar();
+      const hint = document.getElementById('firma-hint');
+      if (hint) hint.style.display = '';
+    }
   }
   ajustar();
+  new ResizeObserver(ajustar).observe(canvas);
 
   let dibujando = false;
   function pos(e) {
     const rect = canvas.getBoundingClientRect();
-    const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
-    return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
-  function inicio(e) {
-    e.preventDefault();
+
+  canvas.addEventListener('pointerdown', function(e) {
     dibujando = true;
     const p = pos(e);
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
-  }
-  function mover(e) {
-    if (!dibujando) return;
     e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('pointermove', function(e) {
+    if (!dibujando) return;
     const p = pos(e);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
@@ -760,15 +775,11 @@ function initFirma() {
       const hint = document.getElementById('firma-hint');
       if (hint) hint.style.display = 'none';
     }
-  }
-  function fin(e) { dibujando = false; }
+    e.preventDefault();
+  }, { passive: false });
 
-  canvas.addEventListener('mousedown', inicio);
-  canvas.addEventListener('mousemove', mover);
-  window.addEventListener('mouseup', fin);
-  canvas.addEventListener('touchstart', inicio, { passive: false });
-  canvas.addEventListener('touchmove', mover, { passive: false });
-  canvas.addEventListener('touchend', fin);
+  canvas.addEventListener('pointerup', function() { dibujando = false; });
+  canvas.addEventListener('pointerleave', function() { dibujando = false; });
 }
 
 function limpiarFirma() {
@@ -865,7 +876,7 @@ function bloquePago(monto, concepto) {
   const datosHtml =
     '<div class="datos-banco">' +
       '<div class="pago-dato"><span class="et">Banco</span><span class="vl">' + banco + '</span></div>' +
-      '<div class="pago-dato"><span class="et">CLABE</span><span class="vl clabe">' + clabe + '</span></div>' +
+      '<div class="pago-dato"><span class="et">CLABE</span><span class="vl clabe" style="display:flex;align-items:center;gap:8px"><span id="clabe-pi-num">' + clabe + '</span><button class="btn-copy" onclick="copiarTextoId(\'clabe-pi-num\',this)">Copiar</button></span></div>' +
       '<div class="pago-dato"><span class="et">Cuenta</span><span class="vl">' + cuenta + '</span></div>' +
       '<div class="pago-dato"><span class="et">Titular</span><span class="vl">' + titular + '</span></div>' +
     '</div>';
@@ -896,16 +907,21 @@ function bloquePago(monto, concepto) {
       '</div>' +
     '</div>' +
 
-    // Metodo 2: Deposito OXXO / 7-Eleven
+    // Metodo 2: Deposito OXXO / 7-Eleven (numero de tarjeta Banamex, no CLABE)
     '<div class="metodo-acordeon">' +
       '<button class="acordeon-btn" onclick="toggleAcordeonId(\'acord-oxxo\',\'ico-oxxo\')">' +
         '<span>Depósito en OXXO o 7-Eleven</span><span id="ico-oxxo">+</span>' +
       '</button>' +
       '<div class="acordeon-cuerpo metodo-pasos" id="acord-oxxo">' +
+        '<div class="datos-banco">' +
+          '<div class="pago-dato"><span class="et">Banco</span><span class="vl">' + banco + '</span></div>' +
+          '<div class="pago-dato"><span class="et">Núm. de tarjeta</span><span class="vl" style="display:flex;align-items:center;gap:8px"><span id="tarjeta-oxxo-num">5544 9206 0686 5310</span><button class="btn-copy" onclick="copiarTextoId(\'tarjeta-oxxo-num\',this)">Copiar</button></span></div>' +
+          '<div class="pago-dato"><span class="et">Titular</span><span class="vl">' + titular + '</span></div>' +
+        '</div>' +
         '<ol>' +
           '<li>Ve a cualquier tienda OXXO o 7-Eleven.</li>' +
-          '<li>Dile al cajero que quieres hacer un depósito a cuenta ' + banco + '.</li>' +
-          '<li>Proporciona la CLABE: <strong>' + clabe + '</strong>.</li>' +
+          '<li>Dile al cajero que quieres hacer un depósito con número de tarjeta Banamex.</li>' +
+          '<li>Proporciona el número de tarjeta: <strong>5544 9206 0686 5310</strong>.</li>' +
           '<li>Indica el monto a depositar: <strong>' + montoFmt + '</strong>.</li>' +
           '<li>Guarda el ticket que te entregue la tienda como comprobante.</li>' +
           '<li>Envíanos una foto del ticket por WhatsApp para registrar tu pago.</li>' +
@@ -1173,6 +1189,16 @@ function setMsg(id, text, tipo) {
   if (!el) return;
   el.textContent = text;
   el.className = 'msg' + (tipo ? ' ' + tipo : '');
+}
+
+function copiarTextoId(elementoId, btn) {
+  var txt = (document.getElementById(elementoId) || {textContent:''}).textContent.trim();
+  navigator.clipboard.writeText(txt).catch(function() {});
+  if (!btn) return;
+  var orig = btn.textContent;
+  btn.textContent = 'Copiado';
+  btn.classList.add('copiado');
+  setTimeout(function() { btn.textContent = orig; btn.classList.remove('copiado'); }, 2500);
 }
 
 init();
