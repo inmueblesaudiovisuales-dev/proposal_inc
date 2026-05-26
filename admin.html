@@ -1307,7 +1307,8 @@ function renderPanel(data) {
     : '<span style="font-size:12px;color:var(--ink-3)">Sin add-ons</span>';
 
   const tel = normalizarTelWA(c.TelefonoCliente);
-  const nombre1 = String(c.NombreCliente || '').split(' ')[0];
+  // BUG-012: nombre completo en el saludo del mensaje de WhatsApp.
+  const nombre1 = String(c.NombreCliente || '').trim() || 'cliente';
   const waTexto = (function() {
     const st = c.Estatus || '';
     if (st === 'Pendiente firma') return 'Hola ' + nombre1 + ', aquí está tu enlace para revisar y firmar tu contrato con Proposal Inc: ' + url;
