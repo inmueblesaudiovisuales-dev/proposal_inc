@@ -1223,7 +1223,7 @@ function renderTabla(lista) {
     const dias   = diasEnEstatus(c);
     const horas  = c.fechaCreacion ? (ahora - new Date(c.fechaCreacion).getTime()) / 3600000 : 0;
     const alerta = c.estatus === 'Pendiente firma' && horas > 60;
-    const eventoTxt = c.fechaEvento ? fmxnFechaCorta(c.fechaEvento) + (c.horaEvento ? ' · ' + esc(c.horaEvento) : '') : '—';
+    const eventoTxt = c.fechaEvento ? fmxnFechaCorta(c.fechaEvento) + (c.horaEvento ? ' · ' + formatHora(c.horaEvento) : '') : '—';
     return '<tr class="' + activo + '" onclick="abrirPanel(\'' + c.token + '\')">' +
       '<td class="td-folio">' + (esc(c.folio) || '—') + '</td>' +
       '<td><div class="td-nombre">' + esc(c.nombreCliente) +
@@ -1357,7 +1357,7 @@ function renderPanel(data) {
         ? '<span style="margin-left:8px;background:var(--gold-pale);color:var(--onyx);border:1px solid var(--gold-border);border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700">'
           + (diff === 0 ? 'Hoy' : 'Faltan ' + diff + ' día' + (diff === 1 ? '' : 's')) + '</span>'
         : '';
-      return '<div class="info-fila"><span class="etiq">Evento</span><span class="val" id="sp-evento-val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + esc(c.HoraEvento) : '') + badge + '</span></div>';
+      return '<div class="info-fila"><span class="etiq">Evento</span><span class="val" id="sp-evento-val">' + fmxnFechaLarga(c.FechaEvento) + (c.HoraEvento ? ' · ' + formatHora(c.HoraEvento) : '') + badge + '</span></div>';
     })() +
     (['Firmado','Anticipo recibido','Reservado','Liquidado'].indexOf(c.Estatus) !== -1
       ? '<div id="bloque-reagendar" style="display:none;margin-bottom:6px">' +
@@ -2115,6 +2115,8 @@ async function ejecutarConfirmarReservacion() {
     });
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     cerrarModalReservacion();
+    // BUG-011: recargar la lista completa para que la tabla refleje el nuevo estatus.
+    await cargarContratos();
     await abrirPanel(tokenActivo);
   } catch (e) {
     errEl.textContent = 'Error: ' + e.message;
@@ -2231,6 +2233,19 @@ function fmxnFechaLarga(val) {
   const d = new Date(s);
   if (isNaN(d)) return String(val);
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+// BUG-000: normaliza un valor de hora (string HH:MM, ISO, o Date de 1899)
+// y retorna el formato de 12 horas con a.m./p.m. Si el valor no es parseable, retorna '—'.
+function formatHora(val) {
+  if (!val) return '—';
+  const s = String(val);
+  // Extraer HH:MM de cualquier string que contenga ese patron (incluye ISO 1899)
+  const match = s.match(/(\d{1,2}):(\d{2})/);
+  if (!match) return '—';
+  const h = parseInt(match[1]), m = parseInt(match[2]);
+  if (isNaN(h) || isNaN(m)) return '—';
+  const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+  return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 function esc(str) {
   if (str == null) return '';
