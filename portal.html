@@ -459,9 +459,9 @@ function renderEtapa1() {
     '<div class="card">' +
       '<h2>Antes de continuar, necesitamos algunos datos</h2>' +
       '<div class="campo-q">' +
-        '<label>Nombre de tu pareja</label>' +
+        '<label>Nombre de tu pareja <span style="color:#C0392B">*</span></label>' +
         '<input type="text" id="inp-nombre-pareja" placeholder="Nombre completo">' +
-        '<p class="campo-q-hint">Opcional</p>' +
+        '<p class="campo-q-hint" style="color:#C0392B">Obligatorio</p>' +
       '</div>' +
       '<div class="campo-q">' +
         '<label>Tu correo electrónico</label>' +
@@ -1122,17 +1122,22 @@ function parseLinksExtra(texto) {
 
 // ── HELPERS ──
 function saludoHtml(nombre) {
-  const n = String(nombre || '').split(' ')[0];
+  // BUG-012: usar el nombre completo en el saludo, sin split.
+  const n = String(nombre || '').trim();
   if (!n) return '';
   return '<p class="portal-saludo">Hola, <strong>' + esc(n) + '</strong>.</p>';
 }
 
 function contadorDiasEvento(fechaStr) {
+  // BUG-002: fechaStr puede venir como ISO completo ("2026-05-29T19:00:00.000Z").
+  // Extraer solo YYYY-MM-DD para evitar que la concatenacion produzca un string invalido.
   if (!fechaStr) return '';
+  const soloFecha = String(fechaStr).substring(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) return '';
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  const evento = new Date(fechaStr + 'T00:00:00'); evento.setHours(0, 0, 0, 0);
+  const evento = new Date(soloFecha + 'T00:00:00'); evento.setHours(0, 0, 0, 0);
   const diff = Math.round((evento - hoy) / 86400000);
-  if (diff < 0) return '';
+  if (isNaN(diff) || diff < 0) return '';
   if (diff === 0) return '<div class="countdown-evento">Tu evento es hoy.</div>';
   return '<div class="countdown-evento">Faltan <strong>' + diff + '</strong> día' + (diff === 1 ? '' : 's') + ' para tu evento.</div>';
 }
