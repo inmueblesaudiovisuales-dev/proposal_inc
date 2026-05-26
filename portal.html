@@ -459,14 +459,14 @@ function renderEtapa1() {
     '<div class="card">' +
       '<h2>Antes de continuar, necesitamos algunos datos</h2>' +
       '<div class="campo-q">' +
-        '<label>Nombre de tu pareja <span style="color:#C0392B">*</span></label>' +
+        '<label>Nombre de tu pareja</label>' +
         '<input type="text" id="inp-nombre-pareja" placeholder="Nombre completo">' +
-        '<p class="campo-q-hint" style="color:#C0392B">Obligatorio</p>' +
+        '<p class="campo-q-hint">Opcional</p>' +
       '</div>' +
       '<div class="campo-q">' +
-        '<label>Tu correo electrónico</label>' +
+        '<label>Tu correo electrónico <span style="color:#C0392B">*</span></label>' +
         '<input type="email" id="inp-correo-cliente" placeholder="ejemplo@correo.com" value="' + esc(d.correo || '') + '">' +
-        '<p class="campo-q-hint">Para enviarte actualizaciones de tu evento</p>' +
+        '<p class="campo-q-hint" style="color:#C0392B">Para recibir el contrato firmado</p>' +
       '</div>' +
       '<div class="campo-q">' +
         '<label>Tu número de WhatsApp</label>' +
@@ -794,9 +794,12 @@ function limpiarFirma() {
 
 async function firmarContrato() {
   if (enviando) return;
-  const nombrePareja = (document.getElementById('inp-nombre-pareja') || {}).value || '';
+  const correoCliente = (document.getElementById('inp-correo-cliente') || {}).value || '';
   if (!hayTrazo) { setMsg('msg-firma', 'Dibuja tu firma antes de continuar.', 'error'); return; }
-  if (!nombrePareja.trim()) { setMsg('msg-firma', 'El nombre de tu pareja es obligatorio.', 'error'); return; }
+  if (!correoCliente.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoCliente.trim())) {
+    setMsg('msg-firma', 'Necesitamos un correo electrónico válido para enviarte el contrato firmado.', 'error');
+    return;
+  }
   enviando = true;
 
   const btn   = document.getElementById('btn-firmar');
