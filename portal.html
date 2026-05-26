@@ -1035,7 +1035,7 @@ function renderEtapa3() {
       '<div class="banner banner-ok">Tu evento está apartado</div>' +
       contadorDiasEvento(d.fechaEvento) +
       '<h1>' + esc(primerNombre()) + ', tu fecha está confirmada.</h1>' +
-      '<p class="sub">' + fmxnFechaLarga(d.fechaEvento) + (d.horaEvento ? ' · ' + esc(d.horaEvento) : '') +
+      '<p class="sub">' + fmxnFechaLarga(d.fechaEvento) + (d.horaEvento ? ' · ' + esc(fmxnHora(d.horaEvento)) : '') +
         (d.locacion ? ' · ' + esc(d.locacion) : '') + '</p>' +
       '<div class="precio-box">' +
         '<div class="precio-fila sub"><span>Total del contrato</span><span>' + fmxn(total) + '</span></div>' +
