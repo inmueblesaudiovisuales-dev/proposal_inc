@@ -810,6 +810,19 @@
   </div>
 </div>
 
+<!-- MODAL: ABONO EXCEDE SALDO -->
+<div id="modal-exceso" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <p style="font-size:15px;font-weight:700;margin-bottom:14px">El abono excede el saldo</p>
+    <div id="modal-exceso-detalle" style="font-size:13px;color:var(--ink-2);line-height:1.55;margin-bottom:18px"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-primario gold" onclick="confirmarAbonoConExceso()">Subir precio del contrato y registrar abono completo</button>
+      <button class="btn-secundario" onclick="ajustarAbonoAlSaldo()">Registrar solo el saldo pendiente</button>
+      <button class="btn-secundario" onclick="cerrarModalExceso()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- PANEL LATERAL -->
 <div id="panel-lateral" class="panel-lateral">
   <div class="panel-header">
@@ -1524,20 +1537,29 @@ function renderPanel(data) {
 }
 
 // ── ACCIONES DEL PANEL ──
-async function registrarAbono() {
-  const monto = parseFloat(document.getElementById('abono-monto').value);
+async function registrarAbono(opts) {
+  opts = opts || {};
+  const monto = parseFloat(opts.monto !== undefined ? opts.monto : document.getElementById('abono-monto').value);
   if (!monto || monto <= 0) { setMsg('msg-abono', 'Ingresa un monto válido.', 'error'); return; }
   const btn = document.getElementById('btn-abono');
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
   setMsg('msg-abono', '', '');
   const t = tokenActivo;
+  const payload = {
+    action: 'registrarAbono', token: t, monto: monto,
+    metodo: document.getElementById('abono-metodo').value,
+    notas:  document.getElementById('abono-notas').value,
+  };
+  if (opts.permitirExceso) payload.permitirExceso = true;
   try {
-    const data = await apiPost({
-      action: 'registrarAbono', token: t, monto: monto,
-      metodo: document.getElementById('abono-metodo').value,
-      notas:  document.getElementById('abono-notas').value,
-    });
-    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    const data = await apiPost(payload);
+    if (!data.ok) {
+      if (data.codigoError === 'EXCEDE_SALDO') {
+        mostrarModalExceso(data, monto);
+        return;
+      }
+      throw new Error(data.error || 'Error desconocido');
+    }
     setMsg('msg-abono', 'Abono registrado.', 'ok');
     cargarContratos();
     if (t === tokenActivo) { try { await abrirPanel(t); } catch (e) {} }
@@ -1545,6 +1567,52 @@ async function registrarAbono() {
     setMsg('msg-abono', 'Error: ' + e.message, 'error');
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar abono'; }
   }
+}
+
+// ── MODAL: ABONO EXCEDE SALDO ────────────────────────────────────────────────
+
+let _excesoInfo = null;
+
+function mostrarModalExceso(data, montoIntentado) {
+  _excesoInfo = {
+    montoIntentado      : montoIntentado,
+    saldoActual         : data.saldoActual || 0,
+    precioActual        : data.precioActual || 0,
+    nuevoPrecioPropuesto: data.nuevoPrecioPropuesto || 0,
+  };
+  const detalle = document.getElementById('modal-exceso-detalle');
+  if (!detalle) {
+    alert('El monto excede el saldo pendiente. Saldo: ' + _excesoInfo.saldoActual + ', monto: ' + montoIntentado + '. Para registrarlo, sube el precio del contrato manualmente.');
+    return;
+  }
+  detalle.innerHTML =
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Saldo pendiente</span><b>' + fmxn(_excesoInfo.saldoActual) + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Abono que intentas registrar</span><b>' + fmxn(_excesoInfo.montoIntentado) + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Excede el saldo por</span><b style="color:var(--danger)">' + fmxn(_excesoInfo.montoIntentado - _excesoInfo.saldoActual) + '</b></div>' +
+    '<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)"><span>Si subes el precio del contrato a</span><b style="color:var(--gold)">' + fmxn(_excesoInfo.nuevoPrecioPropuesto) + '</b></div>' +
+    '<p style="margin-top:10px;font-size:12px;color:var(--ink-3)">El portal del cliente reflejará el nuevo total al recargar.</p>';
+  document.getElementById('modal-exceso').style.display = 'flex';
+  const b = document.getElementById('btn-abono');
+  if (b) { b.disabled = false; b.innerHTML = '<i class="ti ti-check"></i> Registrar abono'; }
+}
+
+function cerrarModalExceso() {
+  const m = document.getElementById('modal-exceso');
+  if (m) m.style.display = 'none';
+  _excesoInfo = null;
+}
+
+function confirmarAbonoConExceso() {
+  cerrarModalExceso();
+  registrarAbono({ permitirExceso: true });
+}
+
+function ajustarAbonoAlSaldo() {
+  if (!_excesoInfo) return;
+  const saldo = _excesoInfo.saldoActual;
+  cerrarModalExceso();
+  document.getElementById('abono-monto').value = saldo;
+  registrarAbono({ monto: saldo });
 }
 async function cambiarEstatus() {
   const estatus = document.getElementById('panel-estatus').value;
