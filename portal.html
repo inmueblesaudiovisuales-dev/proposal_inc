@@ -658,9 +658,12 @@ function resolverYActualizar() {
     if (a) addTotal += a.precio;
   });
   const total    = base + addTotal;
-  // Si el cliente agrega add-ons, el anticipo se recalcula al 50%. Si no, se
-  // conserva el anticipo que definio Proposal Inc al crear el contrato.
-  const anticipo = addTotal > 0 ? Math.round(total * 0.5) : (parseFloat(datos.anticipo) || 0);
+  // Si el cliente agrega add-ons, el anticipo se recalcula manteniendo la misma
+  // proporcion que Bruno configuro al crear el contrato (no forzar al 50%).
+  const ratioAnticipoPortal = base > 0
+    ? Math.min(1, (parseFloat(datos.anticipo) || 0) / base)
+    : 0.5;
+  const anticipo = addTotal > 0 ? Math.round(total * ratioAnticipoPortal) : (parseFloat(datos.anticipo) || 0);
   const restante = Math.max(0, total - anticipo);
   const pct      = total > 0 ? Math.round(anticipo / total * 100) : 0;
 
