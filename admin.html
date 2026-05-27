@@ -1447,7 +1447,7 @@ function renderPanel(data) {
       '</select><button class="btn-secundario btn-sm" onclick="cambiarEstatus()">Guardar</button></div>' +
       '<div class="form-msg" id="msg-estatus"></div>' +
     '</div>' +
-    (c.Estatus === 'Anticipo recibido' && !c.ReservacionConfirmada
+    ((c.Estatus === 'Anticipo recibido' || c.Estatus === 'Firmado') && !c.ReservacionConfirmada
       ? '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">' +
         '<p class="sec-label" style="margin-bottom:6px">Reservación con locación</p>' +
         '<button class="btn-primario gold" style="width:100%" onclick="abrirModalReservacion()">' +
