@@ -618,6 +618,14 @@
             <label>Notas del contrato <span style="font-weight:400;color:var(--ink-3)">(opcional, visible al cliente)</span></label>
             <textarea id="est-notas" placeholder="Indicaciones o aclaraciones para el cliente..."></textarea>
           </div>
+          <div class="campo">
+            <label>¿Por dónde te contactó? <span style="font-weight:400;color:var(--ink-3)">(opcional)</span></label>
+            <select id="est-origen">
+              <option value="">No especificado</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+            </select>
+          </div>
           <div class="form-msg" id="msg-estandar"></div>
           <button class="btn-primario gold" style="width:100%;margin-top:6px" id="btn-crear-estandar" onclick="crearContrato('estandar')">
             Crear contrato y generar enlace
@@ -659,6 +667,14 @@
           <div class="campo">
             <label>Notas del contrato <span style="font-weight:400;color:var(--ink-3)">(opcional, visible al cliente)</span></label>
             <textarea id="per-notas" placeholder="Indicaciones o aclaraciones para el cliente..."></textarea>
+          </div>
+          <div class="campo">
+            <label>¿Por dónde te contactó? <span style="font-weight:400;color:var(--ink-3)">(opcional)</span></label>
+            <select id="per-origen">
+              <option value="">No especificado</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Instagram">Instagram</option>
+            </select>
           </div>
           <div class="form-msg" id="msg-personalizado"></div>
           <button class="btn-primario gold" style="width:100%;margin-top:6px" id="btn-crear-personalizado" onclick="crearContrato('personalizado')">
@@ -1419,6 +1435,10 @@ function renderPanel(data) {
       '<div class="campo campo-sm"><label>Notas (opcional)</label><input type="text" id="abono-notas" placeholder="Referencia..."></div>' +
       '<button class="btn-primario gold" style="width:100%" id="btn-abono" onclick="registrarAbono()"><i class="ti ti-check"></i> Registrar abono</button>' +
       '<div class="form-msg" id="msg-abono"></div>' +
+      (saldo > 0
+        ? '<button class="btn-secundario btn-sm" style="width:100%;margin-top:8px" id="btn-recordatorio-pago" onclick="enviarRecordatorioPago()"><i class="ti ti-mail"></i> Enviar recordatorio de pago</button>' +
+          '<div class="form-msg" id="msg-recordatorio-pago"></div>'
+        : '') +
       '<div class="sec-label" style="margin-top:22px">Cambiar estatus</div>' +
       '<div class="estatus-fila"><select id="panel-estatus">' +
         ['Pendiente firma','Firmado','Anticipo recibido','Reservado','Liquidado','En produccion','Entregado'].map(function(s) {
@@ -1742,6 +1762,22 @@ async function guardarNotasInternas() {
     setMsg('msg-notas-internas', 'Error: ' + e.message, 'error');
   }
 }
+async function enviarRecordatorioPago() {
+  const t = tokenActivo;
+  if (!t) return;
+  const btn = document.getElementById('btn-recordatorio-pago');
+  setMsg('msg-recordatorio-pago', '', '');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try {
+    const data = await apiPost({ action: 'enviarRecordatorioPago', token: t });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    setMsg('msg-recordatorio-pago', 'Recordatorio enviado.', 'ok');
+  } catch (e) {
+    setMsg('msg-recordatorio-pago', 'Error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-mail"></i> Enviar recordatorio de pago'; }
+  }
+}
 async function archivarContrato() {
   if (!tokenActivo) return;
   const c = todosContratos.filter(function(x) { return x.token === tokenActivo; })[0];
@@ -1798,6 +1834,7 @@ async function crearContrato(tipo) {
   const descEl    = document.getElementById(pref + '-descuento');
   const descuento = descEl ? (parseFloat(descEl.value) || 0) : 0;
   const notas     = document.getElementById(pref + '-notas').value.trim();
+  const origen    = document.getElementById(pref + '-origen').value;
 
   if (!nombre) { setMsg(msgId, 'El nombre del cliente es obligatorio.', 'error'); return; }
   if (!fecha)  { setMsg(msgId, 'La fecha del evento es obligatoria.', 'error'); return; }
@@ -1818,6 +1855,7 @@ async function crearContrato(tipo) {
       espacioLocacion: document.getElementById('est-espacio').value,
       fechaEvento: fecha, horaEvento: hora,
       precio: precio, anticipo: anticipo, descuento: descuento, notasContrato: notas,
+      origenCliente: origen,
     };
   } else {
     const descripcion = document.getElementById('per-descripcion').value.trim();
@@ -1830,6 +1868,7 @@ async function crearContrato(tipo) {
       descripcionServicio: descripcion,
       fechaEvento: fecha, horaEvento: hora,
       precio: precio, anticipo: anticipo, descuento: descuento, notasContrato: notas,
+      origenCliente: origen,
     };
   }
 
