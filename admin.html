@@ -1798,7 +1798,9 @@ async function eliminarContrato() {
   const nombre = c ? c.nombreCliente : null;
   const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\nEscribe el nombre del cliente para confirmar:');
   if (conf === null) return;
-  if (nombre && conf.trim().toLowerCase() !== nombre.trim().toLowerCase()) {
+  if (!nombre) {
+    if (!conf.trim()) { alert('Escribe algo para confirmar la eliminación.'); return; }
+  } else if (conf.trim().toLowerCase() !== nombre.trim().toLowerCase()) {
     alert('El nombre no coincide. No se eliminó nada.');
     return;
   }
