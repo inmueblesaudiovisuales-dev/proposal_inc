@@ -905,7 +905,7 @@ function accionManejarFirmaCliente1(body) {
     // Si sí agregó, se recalcula manteniendo la misma proporción del anticipo original
     // respecto al precio base, para no sobreescribir un anticipo personalizado.
     const ratioAnticipo = precioBase > 0
-      ? (parseFloat(contrato.Anticipo) || 0) / precioBase : 0.5;
+      ? Math.min(1, (parseFloat(contrato.Anticipo) || 0) / precioBase) : 0.5;
     anticipoFinal = precioAddons > 0
       ? Math.round(precioFinal * ratioAnticipo)
       : parseFloat(contrato.Anticipo) || 0;
@@ -957,6 +957,12 @@ function accionManejarFirmaCliente1(body) {
     contratoFinal = obtenerContrato1(tokenData.contratoID);
   } finally {
     lock.releaseLock();
+  }
+
+  // C2: si Sheets devolvio null (error transitorio), no continuar con datos indefinidos.
+  if (!contratoFinal) {
+    Logger.log('manejarFirmaCliente: no se pudo releer el contrato tras la firma para token ' + token);
+    return jsonResponse1({ error: 'La firma se procesó pero no se pudo confirmar el estado final. Recarga el portal.' });
   }
 
   // Contrato con anticipo cero: salta a En produccion sin pasar por confirmarReservacion.
@@ -1050,11 +1056,19 @@ function accionRegistrarAbono1(body) {
 
     // No retroceder un estatus que ya avanzó por un abono parcial. Si el contrato
     // ya está en produccion o entregado, un pago completo no debe degradarlo a Liquidado.
+    // Si el saldo llega a cero pero la reservacion aún no fue confirmada con el hotel
+    // (Firmado o Anticipo recibido), el estatus avanza solo a Anticipo recibido para
+    // que Bruno aún pueda usar "Confirmar reservacion" y que ésta cree la carpeta en
+    // Drive, el evento en Calendar y envíe el correo al cliente.
     const ESTATUSES_AVANZADOS      = ['Reservado', 'En produccion', 'Entregado'];
     const ESTATUSES_POST_PRODUCCION = ['En produccion', 'Entregado'];
+    const ESTATUSES_SIN_RESERVACION = ['Firmado', 'Anticipo recibido'];
     estatusNuevo = saldoNuevo === 0
       ? (ESTATUSES_POST_PRODUCCION.indexOf(contrato.Estatus) !== -1
-          ? contrato.Estatus : 'Liquidado')
+          ? contrato.Estatus
+          : (ESTATUSES_SIN_RESERVACION.indexOf(contrato.Estatus) !== -1
+              ? 'Anticipo recibido'
+              : 'Liquidado'))
       : (ESTATUSES_AVANZADOS.indexOf(contrato.Estatus) !== -1
           ? contrato.Estatus : 'Anticipo recibido');
 
@@ -1281,11 +1295,13 @@ function accionGuardarNotasInternas1(body) {
   if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
 
   const notasNuevas = body.notas !== undefined ? String(body.notas) : '';
-  actualizarContrato1(token, { NotasInternas: notasNuevas });
+  const guardadoOk = actualizarContrato1(token, { NotasInternas: notasNuevas });
+  if (!guardadoOk) return jsonResponse1({ error: 'No se pudo guardar: contrato no encontrado en el Sheets.' });
 
-  // Sincronizar la descripcion del evento de Calendar con el dato recien guardado.
-  contrato.NotasInternas = notasNuevas;
-  actualizarDescripcionEventoCalendario1(contrato);
+  // Re-leer el contrato fresco para que Calendar refleje el estado actual del Sheets,
+  // incluyendo campos actualizados en otras operaciones (CarpetaProyectoID, etc.).
+  const contratoFresh = obtenerContrato1(token);
+  if (contratoFresh) actualizarDescripcionEventoCalendario1(contratoFresh);
 
   return jsonResponse1({ ok: true });
 }
@@ -1378,7 +1394,7 @@ function accionReagendarContrato1(body) {
   if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
 
   // Solo se puede reagendar si el contrato está en un estatus con evento confirmado.
-  const ESTATUSES_REAGENDABLES1 = ['Firmado','Anticipo recibido','Reservado','Liquidado'];
+  const ESTATUSES_REAGENDABLES1 = ['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'];
   if (ESTATUSES_REAGENDABLES1.indexOf(contrato.Estatus) === -1) {
     return jsonResponse1({ error: 'No se puede reagendar un contrato en estatus "' + contrato.Estatus + '".' });
   }
@@ -2752,82 +2768,101 @@ function accionConfirmarReservacion1(body) {
   if (!espacio) return jsonResponse1({ error: 'El espacio de la locación es obligatorio' });
   const contrato = obtenerContrato1(token);
   if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
-  if (contrato.ReservacionConfirmada) {
+  // Bloqueada solo si ya tiene AMBOS: confirmacion y evento de Calendar.
+  // Si falta el evento (fallo previo de Calendar), se permite reintentar solo esa parte.
+  const eventoIdExistente = String(contrato.EventoCalendarioID || '').trim();
+  if (contrato.ReservacionConfirmada && eventoIdExistente) {
     return jsonResponse1({ error: 'La reservación ya fue confirmada anteriormente.' });
   }
-  // Previene degradar un contrato que ya avanzó más allá de Anticipo recibido
-  // (p. ej. anticipo=0 que quedó en En produccion al firmar).
-  const ESTATUSES_CONFIRMABLES = ['Firmado', 'Anticipo recibido'];
-  if (ESTATUSES_CONFIRMABLES.indexOf(contrato.Estatus) === -1) {
-    return jsonResponse1({ error: 'La reservación no puede confirmarse en el estatus actual: ' + contrato.Estatus });
+  const esReintento = !!(contrato.ReservacionConfirmada && !eventoIdExistente);
+
+  let ahora = String(contrato.ReservacionConfirmada || '');
+
+  if (!esReintento) {
+    // Primera confirmacion: validar estatus y restricciones.
+    // Previene degradar un contrato que ya avanzó más allá de Anticipo recibido.
+    const ESTATUSES_CONFIRMABLES = ['Firmado', 'Anticipo recibido'];
+    if (ESTATUSES_CONFIRMABLES.indexOf(contrato.Estatus) === -1) {
+      return jsonResponse1({ error: 'La reservación no puede confirmarse en el estatus actual: ' + contrato.Estatus });
+    }
+
+    // Aplicar la misma restricción de Isla-sábado que valida accionCrearContrato1.
+    const diaEventoConf = parseFecha1(contrato.FechaEvento);
+    if (diaEventoConf && diaEventoConf.getDay() === 6 &&
+        sinAcentos1(contrato.Locacion || '').includes('rincon') &&
+        sinAcentos1(espacio).includes('isla')) {
+      return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
+    }
+
+    asegurarColumnaReservacion1();
+    ahora = new Date().toISOString();
+    actualizarContrato1(token, {
+      EspacioLocacion      : espacio,
+      ReservacionConfirmada: ahora,
+      Estatus              : 'Reservado',
+    });
+    SpreadsheetApp.flush();
   }
 
-  // Aplicar la misma restricción de Isla-sábado que valida accionCrearContrato1:
-  // si el espacio a confirmar es la Isla de Rincón y el evento cae sábado, rechazar.
-  const diaEventoConf = parseFecha1(contrato.FechaEvento);
-  if (diaEventoConf && diaEventoConf.getDay() === 6 &&
-      sinAcentos1(contrato.Locacion || '').includes('rincon') &&
-      sinAcentos1(espacio).includes('isla')) {
-    return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
-  }
-
-  asegurarColumnaReservacion1();
-  const ahora = new Date().toISOString();
-  actualizarContrato1(token, {
-    EspacioLocacion      : espacio,
-    ReservacionConfirmada: ahora,
-    Estatus              : 'Reservado',
-  });
-  SpreadsheetApp.flush();
   const contratoActualizado = obtenerContrato1(token);
   if (!contratoActualizado) {
     return jsonResponse1({ error: 'No se pudo releer el contrato tras la actualización. Intenta de nuevo.' });
   }
-  try {
-    const carpetaId = crearCarpetaProyecto1(contratoActualizado);
-    if (carpetaId) {
-      actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
-      contratoActualizado.CarpetaProyectoID = carpetaId;
+
+  // Crear carpeta solo si no existe aún (idempotente).
+  if (!String(contratoActualizado.CarpetaProyectoID || '').trim()) {
+    try {
+      const carpetaId = crearCarpetaProyecto1(contratoActualizado);
+      if (carpetaId) {
+        actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
+        contratoActualizado.CarpetaProyectoID = carpetaId;
+      }
+    } catch (err) {
+      Logger.log('confirmarReservacion - carpeta: ' + err.message);
     }
-  } catch (err) {
-    Logger.log('confirmarReservacion - carpeta: ' + err.message);
   }
+
+  // Crear evento de Calendar (se intenta siempre — sea primera vez o reintento).
   try {
     crearEventoCalendario1(contratoActualizado);
   } catch (err) {
     Logger.log('confirmarReservacion - calendario: ' + err.message);
   }
-  try {
-    enviarCorreo1(
-      contratoActualizado.CorreoCliente,
-      'Tu reservación está confirmada — Proposal Inc',
-      correoReservacionConfirmada1(contratoActualizado),
-      []
-    );
-  } catch (err) {
-    Logger.log('confirmarReservacion - correo: ' + err.message);
-  }
-  // Correo de coordinación interna (Plan 3 Task 2).
-  try {
-    const correoCoord = [
-      'Folio: '    + contratoActualizado.Folio,
-      'Cliente: '  + contratoActualizado.NombreCliente,
-      'Fecha: '    + contratoActualizado.FechaEvento,
-      'Hora: '     + formatHoraCorreo1(contratoActualizado.HoraEvento || ''),
-      'Locación: ' + (contratoActualizado.Locacion || '') + ' — ' + (espacio || ''),
-      formatearAdicionalesTexto(contratoActualizado.AdicionalesJSON),
-      '',
-      'Coordinar con proveedor de letras y de pétalos según el paquete.',
-      '',
-      'Portal: ' + CONFIG1.BASE_URL_PORTAL + '?token=' + token,
-    ].filter(Boolean).join('\n');
-    MailApp.sendEmail({
-      to     : CONFIG1.EMAIL_ADMIN,
-      subject: 'Reservación confirmada — ' + contratoActualizado.Folio + ' — ' + contratoActualizado.NombreCliente,
-      body   : correoCoord,
-    });
-  } catch (err) {
-    Logger.log('confirmarReservacion - correo coordinacion: ' + err.message);
+
+  // Correos: solo en la primera confirmacion, no en reintentos.
+  if (!esReintento) {
+    try {
+      enviarCorreo1(
+        contratoActualizado.CorreoCliente,
+        'Tu reservación está confirmada — Proposal Inc',
+        correoReservacionConfirmada1(contratoActualizado),
+        []
+      );
+    } catch (err) {
+      Logger.log('confirmarReservacion - correo: ' + err.message);
+    }
+    // Correo de coordinación interna (Plan 3 Task 2).
+    try {
+      const correoCoord = [
+        'Folio: '    + contratoActualizado.Folio,
+        'Cliente: '  + contratoActualizado.NombreCliente,
+        'Fecha: '    + contratoActualizado.FechaEvento,
+        'Hora: '     + formatHoraCorreo1(contratoActualizado.HoraEvento || ''),
+        'Locación: ' + (contratoActualizado.Locacion || '') + ' — ' + (espacio || ''),
+        formatearAdicionalesTexto(contratoActualizado.AdicionalesJSON),
+        '',
+        'Coordinar con proveedor de letras y de pétalos según el paquete.',
+        '',
+        'Portal: ' + CONFIG1.BASE_URL_PORTAL + '?token=' + token,
+      ].filter(Boolean).join('\n');
+      MailApp.sendEmail({
+        to     : CONFIG1.EMAIL_ADMIN,
+        subject: 'Reservación confirmada — ' + contratoActualizado.Folio + ' — ' + contratoActualizado.NombreCliente,
+        body   : correoCoord,
+      });
+    } catch (err) {
+      Logger.log('confirmarReservacion - correo coordinacion: ' + err.message);
+    }
   }
 
   return jsonResponse1({ ok: true, timestamp: ahora });
@@ -2869,6 +2904,7 @@ function correoRecordatorioPago1(contrato) {
         'Puedes realizar el pago por transferencia o depósito:</p>' +
       '<table style="width:100%;border-collapse:collapse;margin-bottom:16px">' +
         _filaCorreo1('Folio',             contrato.Folio || '') +
+        _filaCorreo1('Fecha del evento',  formatFechaEspanol1(contrato.FechaEvento)) +
         _filaCorreo1('Saldo pendiente',   formatMXN1(saldo)) +
         _filaCorreo1('Banco',             CONFIG1.BANCO) +
         _filaCorreo1('CLABE',             CONFIG1.CLABE) +
