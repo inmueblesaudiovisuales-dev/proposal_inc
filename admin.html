@@ -1638,8 +1638,23 @@ function renderPanel(data) {
         '<div style="font-size:12px;color:var(--ink-2);margin-top:2px">El cliente no ve los enlaces de descarga en su portal.</div></div>'
       : '') +
     '<p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:18px">Ingresa el enlace de Drive con el material terminado. Se enviará un correo al cliente.</p>' +
-    '<div class="campo"><label>Enlace de Google Drive</label>' +
-      '<input type="url" id="entrega-drive" value="' + esc(c.EntregaDriveLink || '') + '" placeholder="https://drive.google.com/..."></div>' +
+    (function() {
+      const carpetaId  = c.carpetaProyectoId ? String(c.carpetaProyectoId).trim() : '';
+      const urlAuto    = carpetaId ? 'https://drive.google.com/drive/folders/' + carpetaId : '';
+      const valorFinal = c.EntregaDriveLink ? esc(c.EntregaDriveLink) : esc(urlAuto);
+      const tieneAuto  = !!(carpetaId && !c.EntregaDriveLink);
+      const soloLectura = tieneAuto || !!c.EntregaDriveLink;
+      return '<div class="campo"><label>Enlace de Google Drive</label>' +
+        '<input type="url" id="entrega-drive"' +
+          ' value="' + valorFinal + '"' +
+          ' placeholder="https://drive.google.com/..."' +
+          (soloLectura ? ' readonly style="cursor:pointer;background:var(--bg);color:var(--ink-1)"' : '') + '>' +
+        (soloLectura
+          ? '<p class="form-hint" style="margin-top:4px">Enlace generado desde la carpeta del proyecto. ' +
+            '<a href="' + valorFinal + '" target="_blank" rel="noopener" style="color:var(--gold)">Abrir en Drive</a>.</p>'
+          : '<p class="form-hint" style="margin-top:4px">Este contrato aún no tiene carpeta creada en Drive. Ingresa el enlace manualmente.</p>') +
+        '</div>';
+    })() +
     '<div class="campo"><label>Enlaces adicionales (uno por línea)</label>' +
       '<textarea id="entrega-links-extra" rows="3" placeholder="Etiqueta|URL">' + esc(c.EntregaLinksExtra || '') + '</textarea>' +
       '<p class="form-hint">Formato opcional: Etiqueta|URL, uno por línea.</p></div>' +
