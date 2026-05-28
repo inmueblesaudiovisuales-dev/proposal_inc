@@ -834,6 +834,7 @@ function accionObtenerPortal1(e) {
     }),
     totalAbonado     : totalAbonado,
     pdfContratoUrl   : contrato.PdfContratoUrl    || '',
+    carpetaProyectoId: contrato.CarpetaProyectoID || '',
     entregaDriveLink : contrato.EntregaDriveLink  || '',
     entregaLinksExtra: contrato.EntregaLinksExtra || '',
     entregaRevocada  : contrato.EntregaRevocada   || '',
