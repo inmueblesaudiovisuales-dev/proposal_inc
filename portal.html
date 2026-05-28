@@ -935,14 +935,7 @@ function bloquePago(monto, concepto) {
       '</div>' +
     '</div>' +
 
-    '<a class="btn btn-wa" style="margin-top:14px" href="' + esc(waComprobante()) + '" target="_blank" rel="noopener">Enviar comprobante por WhatsApp</a>' +
   '</div>';
-}
-
-function waComprobante() {
-  const base = datos.waLink || 'https://wa.me/5218115080778';
-  const texto = 'Hola, soy ' + (datos.nombre || '') + ' (folio ' + datos.folio + '). Te envío mi comprobante de pago.';
-  return base + (base.indexOf('?') !== -1 ? '&' : '?') + 'text=' + encodeURIComponent(texto);
 }
 
 // ── COMPROBANTE DE PAGO ──
