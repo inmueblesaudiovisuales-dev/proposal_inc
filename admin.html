@@ -119,6 +119,9 @@
     .tabla-card tr:last-child td { border-bottom: none; }
     .tabla-card tbody tr:hover td { background: var(--gold-pale); cursor: pointer; }
     .tabla-card tbody tr.activo td { background: #FEF9ED; }
+    .tabla-card tbody tr.seleccionado td { background: #FAF6EC; }
+    .td-select { width: 36px; text-align: center; }
+    .check-masivo { width: 16px; height: 16px; cursor: pointer; accent-color: var(--gold); }
     .td-folio { font-size: 11px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.04em; font-family: 'Courier New', monospace; }
     .td-nombre { font-weight: 600; }
     .td-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
@@ -367,6 +370,17 @@
     .paq-tabla th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--border); }
     .paq-tabla td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
     .paq-tabla tr:last-child td { border-bottom: none; }
+    .bulk-bar {
+      display: none; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--onyx); color: white; border-radius: var(--r);
+      padding: 10px 12px; margin: -4px 0 12px;
+    }
+    .bulk-bar.visible { display: flex; }
+    .bulk-bar-text { font-size: 12px; font-weight: 700; }
+    .bulk-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bulk-bar button { border-color: rgba(255,255,255,0.22); color: white; background: transparent; }
+    .bulk-bar button:hover { border-color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.08); }
+    .bulk-bar .danger { color: #FCA5A5; border-color: rgba(252,165,165,0.5); }
     .paq-inactivo { opacity: .45; }
     .badge-addon { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; background:var(--gold-pale); color:var(--gold); letter-spacing:.4px; }
 
@@ -536,13 +550,22 @@
           <input type="date" id="filtro-fecha-hasta" onchange="filtrarContratos()" style="width:auto" title="Creado hasta">
         </div>
       </div>
+      <div class="bulk-bar" id="bulk-bar">
+        <div class="bulk-bar-text" id="bulk-bar-text">0 seleccionados</div>
+        <div class="bulk-bar-actions">
+          <button class="btn-secundario btn-sm" onclick="seleccionarContratosVisibles()">Seleccionar visibles</button>
+          <button class="btn-secundario btn-sm" onclick="limpiarSeleccionMasiva()">Limpiar</button>
+          <button class="btn-secundario btn-sm" onclick="archivarContratosSeleccionados()"><i class="ti ti-archive"></i> Archivar</button>
+          <button class="btn-secundario btn-sm danger" onclick="eliminarContratosSeleccionados()"><i class="ti ti-trash"></i> Eliminar</button>
+        </div>
+      </div>
       <div class="tabla-card">
         <table>
           <thead>
-            <tr><th>Folio</th><th>Cliente</th><th>Paquete</th><th>Evento</th><th>Estatus</th><th>Total</th><th>Saldo</th></tr>
+            <tr><th class="td-select"><input type="checkbox" id="check-todos-visibles" class="check-masivo" onchange="toggleSeleccionVisible(this)" title="Seleccionar visibles"></th><th>Folio</th><th>Cliente</th><th>Paquete</th><th>Evento</th><th>Estatus</th><th>Total</th><th>Saldo</th></tr>
           </thead>
           <tbody id="tabla-body">
-            <tr><td colspan="7" class="tabla-vacio">Cargando...</td></tr>
+            <tr><td colspan="8" class="tabla-vacio">Cargando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -881,6 +904,8 @@ let contratoActivoData = null;
 let precioManual       = false;
 let anticipoManual = false;
 let filtroCiclo    = 'abiertos';
+let contratosVisibles = [];
+let tokensSeleccionados = {};
 
 // ── LOGIN ──
 function intentarLogin() {
@@ -1137,7 +1162,7 @@ function verificarRestriccion() {
 
 // ── CONTRATOS ──
 async function cargarContratos() {
-  document.getElementById('tabla-body').innerHTML = '<tr><td colspan="7" class="tabla-vacio">Cargando...</td></tr>';
+  document.getElementById('tabla-body').innerHTML = '<tr><td colspan="8" class="tabla-vacio">Cargando...</td></tr>';
   try {
     const dataC = await apiGet({ action: 'listarContratos' });
     if (!dataC.ok) throw new Error(dataC.error || 'Error desconocido');
@@ -1145,7 +1170,7 @@ async function cargarContratos() {
     filtrarContratos();
   } catch (e) {
     document.getElementById('tabla-body').innerHTML =
-      '<tr><td colspan="6" style="color:var(--danger);padding:24px;text-align:center">Error: ' + esc(e.message) + '</td></tr>';
+      '<tr><td colspan="8" style="color:var(--danger);padding:24px;text-align:center">Error: ' + esc(e.message) + '</td></tr>';
     return;
   }
   try {
@@ -1229,18 +1254,23 @@ function diasEnEstatus(c) {
 }
 function renderTabla(lista) {
   const tbody = document.getElementById('tabla-body');
+  contratosVisibles = lista.map(function(c) { return c.token; });
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="tabla-vacio">Sin contratos que mostrar.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="tabla-vacio">Sin contratos que mostrar.</td></tr>';
+    actualizarBarraSeleccionMasiva();
     return;
   }
   const ahora = Date.now();
   tbody.innerHTML = lista.map(function(c) {
     const activo = tokenActivo === c.token ? 'activo' : '';
+    const seleccionado = tokensSeleccionados[c.token] ? ' seleccionado' : '';
+    const checked = tokensSeleccionados[c.token] ? ' checked' : '';
     const dias   = diasEnEstatus(c);
     const horas  = c.fechaCreacion ? (ahora - new Date(c.fechaCreacion).getTime()) / 3600000 : 0;
     const alerta = c.estatus === 'Pendiente firma' && horas > 60;
     const eventoTxt = c.fechaEvento ? fmxnFechaCorta(c.fechaEvento) + (c.horaEvento ? ' · ' + formatHora(c.horaEvento) : '') : '—';
-    return '<tr class="' + activo + '" onclick="abrirPanel(\'' + c.token + '\')">' +
+    return '<tr class="' + activo + seleccionado + '" onclick="abrirPanel(\'' + c.token + '\')">' +
+      '<td class="td-select"><input type="checkbox" class="check-masivo check-contrato" data-token="' + esc(c.token) + '"' + checked + ' onclick="event.stopPropagation()" onchange="toggleSeleccionContrato(this)"></td>' +
       '<td class="td-folio">' + (esc(c.folio) || '—') + '</td>' +
       '<td><div class="td-nombre">' + esc(c.nombreCliente) +
         (c.estatus === 'Pendiente firma' && c.avisoSinFirmaEnviado
@@ -1258,6 +1288,86 @@ function renderTabla(lista) {
         (c.saldoPendiente > 0 ? fmxn(c.saldoPendiente) : '<i class="ti ti-check" style="color:var(--success)"></i>') + '</td>' +
       '</tr>';
   }).join('');
+  actualizarBarraSeleccionMasiva();
+}
+
+function getTokensSeleccionados() {
+  return Object.keys(tokensSeleccionados).filter(function(token) { return tokensSeleccionados[token]; });
+}
+function toggleSeleccionContrato(input) {
+  const token = input.dataset.token;
+  if (!token) return;
+  if (input.checked) tokensSeleccionados[token] = true;
+  else delete tokensSeleccionados[token];
+  actualizarBarraSeleccionMasiva();
+  const tr = input.closest('tr');
+  if (tr) tr.classList.toggle('seleccionado', input.checked);
+}
+function toggleSeleccionVisible(input) {
+  if (input.checked) seleccionarContratosVisibles();
+  else {
+    contratosVisibles.forEach(function(token) { delete tokensSeleccionados[token]; });
+    renderTablaDesdeFiltrosActuales();
+  }
+}
+function seleccionarContratosVisibles() {
+  contratosVisibles.forEach(function(token) {
+    if (token) tokensSeleccionados[token] = true;
+  });
+  renderTablaDesdeFiltrosActuales();
+}
+function limpiarSeleccionMasiva() {
+  tokensSeleccionados = {};
+  renderTablaDesdeFiltrosActuales();
+}
+function renderTablaDesdeFiltrosActuales() {
+  filtrarContratos();
+}
+function actualizarBarraSeleccionMasiva() {
+  const tokens = getTokensSeleccionados();
+  const bar = document.getElementById('bulk-bar');
+  const txt = document.getElementById('bulk-bar-text');
+  const checkTodos = document.getElementById('check-todos-visibles');
+  if (txt) txt.textContent = tokens.length + ' seleccionado' + (tokens.length === 1 ? '' : 's');
+  if (bar) bar.classList.toggle('visible', tokens.length > 0);
+  if (checkTodos) {
+    const visiblesSeleccionados = contratosVisibles.length > 0 && contratosVisibles.every(function(token) {
+      return !!tokensSeleccionados[token];
+    });
+    checkTodos.checked = visiblesSeleccionados;
+    checkTodos.indeterminate = !visiblesSeleccionados && contratosVisibles.some(function(token) {
+      return !!tokensSeleccionados[token];
+    });
+  }
+}
+async function archivarContratosSeleccionados() {
+  const tokens = getTokensSeleccionados();
+  if (!tokens.length) return;
+  if (!confirm('¿Archivar ' + tokens.length + ' contrato' + (tokens.length === 1 ? '' : 's') + '? Desaparecerán de la lista, pero se conservan en el Sheets.')) return;
+  await ejecutarAccionMasiva('ocultarContratosMasivo', tokens, 'Archivando...');
+}
+async function eliminarContratosSeleccionados() {
+  const tokens = getTokensSeleccionados();
+  if (!tokens.length) return;
+  if (!confirm('Vas a eliminar permanentemente ' + tokens.length + ' contrato' + (tokens.length === 1 ? '' : 's') + ', junto con sus abonos y tokens. Esta acción no se puede deshacer.')) return;
+  const confirmacion = prompt('Para confirmar el borrado permanente, escribe BORRAR');
+  if (confirmacion !== 'BORRAR') return;
+  await ejecutarAccionMasiva('eliminarContratosMasivo', tokens, 'Eliminando...');
+}
+async function ejecutarAccionMasiva(action, tokens, textoCarga) {
+  const barText = document.getElementById('bulk-bar-text');
+  if (barText) barText.textContent = textoCarga;
+  try {
+    const data = await apiPost({ action: action, tokens: tokens });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    tokens.forEach(function(token) { delete tokensSeleccionados[token]; });
+    await cargarContratos();
+    const errores = data.errores && data.errores.length ? ' Algunos no se procesaron porque ya no existían.' : '';
+    alert('Procesados: ' + (data.procesados || 0) + '.' + errores);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    actualizarBarraSeleccionMasiva();
+  }
 }
 
 async function descargarCSV() {
