@@ -1639,7 +1639,7 @@ function renderPanel(data) {
       : '') +
     '<p style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:18px">Ingresa el enlace de Drive con el material terminado. Se enviará un correo al cliente.</p>' +
     (function() {
-      const carpetaId  = c.carpetaProyectoId ? String(c.carpetaProyectoId).trim() : '';
+      const carpetaId  = c.CarpetaProyectoID ? String(c.CarpetaProyectoID).trim() : '';
       const urlAuto    = carpetaId ? 'https://drive.google.com/drive/folders/' + carpetaId : '';
       const valorFinal = c.EntregaDriveLink ? esc(c.EntregaDriveLink) : esc(urlAuto);
       const tieneAuto  = !!(carpetaId && !c.EntregaDriveLink);
