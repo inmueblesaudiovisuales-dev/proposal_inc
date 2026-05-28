@@ -81,6 +81,30 @@ function formatMXN1(valor) {
   return (entero < 0 ? '-$' : '$') + conComas + ' MXN';
 }
 
+function calcularTiempoEntregaStats1(contratos, enPeriodo) {
+  const dias = [];
+  contratos.forEach(function(c) {
+    if (!enPeriodo(c.FechaEvento)) return;
+    const fechaEvento  = parseFecha1(c.FechaEvento);
+    const fechaEntrega = parseFecha1(c.FechaEntrega);
+    if (!fechaEvento || !fechaEntrega) return;
+    const diffDias = Math.max(0, Math.round((fechaEntrega.getTime() - fechaEvento.getTime()) / 86400000));
+    dias.push(diffDias);
+  });
+
+  if (!dias.length) {
+    return { promedioDias: 0, totalEntregas: 0, minimoDias: 0, maximoDias: 0 };
+  }
+
+  const suma = dias.reduce(function(acc, d) { return acc + d; }, 0);
+  return {
+    promedioDias: Math.round(suma / dias.length),
+    totalEntregas: dias.length,
+    minimoDias: Math.min.apply(null, dias),
+    maximoDias: Math.max.apply(null, dias),
+  };
+}
+
 // Folio base del día del evento. Ejemplo: "PI-2605.21".
 function folioBase1(fechaEvento) {
   const d  = parseFecha1(fechaEvento) || new Date();
@@ -264,6 +288,7 @@ const COLS_CONTRATOS1 = [
   'Descuento','AvisoSinFirmaEnviado','EncuestaEnviada','OrigenCliente',
   'EventoCalendarioID','FechaReagendamiento',
   'RecordatorioSaldoEnviado','AlertaBrunoEnviada','EventoEntregaCalendarioID',
+  'UltimoRecordatorioPagoEnviado',
 ];
 
 function crearFilaContrato1(datos) {
@@ -430,6 +455,7 @@ function doGet(e) {
 const ACCIONES_ADMIN1 = {
   crearContrato: true, registrarAbono: true, guardarEntrega: true,
   actualizarEstatus: true, ocultarContrato: true, eliminarContrato: true,
+  ocultarContratosMasivo: true, eliminarContratosMasivo: true,
   guardarNotasInternas: true, marcarSesionCompletada: true,
   guardarProduccion: true, revocarEntrega: true,
   crearPaquete: true, actualizarPaquete: true, togglePaquete: true,
@@ -475,6 +501,8 @@ function doPost(e) {
     if (accion === 'guardarNotasInternas')   return accionGuardarNotasInternas1(body);
     if (accion === 'ocultarContrato')        return accionOcultarContrato1(body);
     if (accion === 'eliminarContrato')       return accionEliminarContrato1(body);
+    if (accion === 'ocultarContratosMasivo')  return accionOcultarContratosMasivo1(body);
+    if (accion === 'eliminarContratosMasivo') return accionEliminarContratosMasivo1(body);
     if (accion === 'crearPaquete')           return accionCrearPaquete1(body);
     if (accion === 'actualizarPaquete')      return accionActualizarPaquete1(body);
     if (accion === 'togglePaquete')          return accionTogglePaquete1(body);
@@ -910,6 +938,13 @@ function accionManejarFirmaCliente1(body) {
       ? Math.round(precioFinal * ratioAnticipo)
       : parseFloat(contrato.Anticipo) || 0;
 
+    // I3: si el anticipo original ya cubria el precio base completo (ratio=1) y el
+    // cliente agrego add-ons, no escalar el anticipo al nuevo precio total para que
+    // exista saldo pendiente por los add-ons.
+    if (precioAddons > 0 && anticipoFinal >= precioFinal) {
+      anticipoFinal = parseFloat(contrato.Anticipo) || 0;
+    }
+
     actualizarContrato1(tokenData.contratoID, {
       AdicionalesJSON    : JSON.stringify(addonsAceptados),
       Precio             : precioFinal,
@@ -972,7 +1007,9 @@ function accionManejarFirmaCliente1(body) {
     try {
       const carpetaId = crearCarpetaProyecto1(contratoFinal);
       if (carpetaId) {
-        actualizarContrato1(contratoFinal.Token, { CarpetaProyectoID: carpetaId });
+        // C3: verificar el retorno para detectar fallo silencioso de Sheets.
+        const guardadoOkCarpeta = actualizarContrato1(contratoFinal.Token, { CarpetaProyectoID: carpetaId });
+        if (!guardadoOkCarpeta) Logger.log('manejarFirmaCliente: no se pudo persistir CarpetaProyectoID para ' + contratoFinal.Token);
         contratoFinal.CarpetaProyectoID = carpetaId;
       }
     } catch (err) {
@@ -1085,6 +1122,12 @@ function accionRegistrarAbono1(body) {
 
   const contratoFinal = obtenerContrato1(token);
 
+  // I9: si Sheets devolvio null por error transitorio, retornar exito con los datos calculados.
+  if (!contratoFinal) {
+    Logger.log('registrarAbono: no se pudo releer el contrato tras el abono para token ' + token);
+    return jsonResponse1({ ok: true, totalAbonado: totalAbonado, saldoPendiente: saldoNuevo, estatus: estatusNuevo });
+  }
+
   // Recibo al cliente.
   if (contratoFinal.CorreoCliente && String(contratoFinal.CorreoCliente).trim()) {
     try {
@@ -1171,6 +1214,29 @@ function accionActualizarEstatus1(body) {
 
   if (estatus === 'En produccion') {
     crearEventoEntregaSiCorresponde1(token);
+  }
+
+  // C1: si Bruno mueve el estatus manualmente a Reservado, crear carpeta de Drive
+  // y evento de Calendar si aun no existen, igual que hace confirmarReservacion.
+  if (estatus === 'Reservado') {
+    if (!String(contrato.CarpetaProyectoID || '').trim()) {
+      try {
+        const carpetaId = crearCarpetaProyecto1(contrato);
+        if (carpetaId) {
+          actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
+          contrato.CarpetaProyectoID = carpetaId;
+        }
+      } catch (err) {
+        Logger.log('actualizarEstatus Reservado - carpeta: ' + err.message);
+      }
+    }
+    if (!String(contrato.EventoCalendarioID || '').trim()) {
+      try {
+        crearEventoCalendario1(contrato);
+      } catch (err) {
+        Logger.log('actualizarEstatus Reservado - calendario: ' + err.message);
+      }
+    }
   }
 
   return jsonResponse1({ ok: true, estatus: estatus });
@@ -1281,6 +1347,28 @@ function accionMarcarSesionCompletada1(body) {
     SesionCompletada: sello,
     Estatus         : 'En produccion',
   });
+
+  // C2: si el contrato no pasó por confirmarReservacion (carpeta o evento ausentes),
+  // crearlos ahora para que la edicion tenga Drive y Calendar disponibles.
+  if (!String(contrato.CarpetaProyectoID || '').trim()) {
+    try {
+      const carpetaId = crearCarpetaProyecto1(contrato);
+      if (carpetaId) {
+        actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
+        contrato.CarpetaProyectoID = carpetaId;
+      }
+    } catch (err) {
+      Logger.log('marcarSesionCompletada - carpeta: ' + err.message);
+    }
+  }
+  if (!String(contrato.EventoCalendarioID || '').trim()) {
+    try {
+      crearEventoCalendario1(contrato);
+    } catch (err) {
+      Logger.log('marcarSesionCompletada - calendario: ' + err.message);
+    }
+  }
+
   crearEventoEntregaSiCorresponde1(token);
   Logger.log('Sesión completada: ' + contrato.NombreCliente);
   return jsonResponse1({ ok: true });
@@ -1366,6 +1454,9 @@ function accionEnviarRecordatorioPago1(body) {
     enviarCorreo1(correo,
       'Recordatorio de pago — ' + (contrato.Folio || 'Proposal Inc'),
       correoRecordatorioPago1(contrato), []);
+    // I1: registrar la fecha del envio para trazabilidad y evitar duplicados en rafaga.
+    asegurarColumnaContratos1('UltimoRecordatorioPagoEnviado');
+    actualizarContrato1(token, { UltimoRecordatorioPagoEnviado: new Date().toISOString() });
     Logger.log('enviarRecordatorioPago: enviado a ' + contrato.NombreCliente);
     return jsonResponse1({ ok: true });
   } catch (err) {
@@ -1452,13 +1543,19 @@ function accionReagendarContrato1(body) {
   // Notificar al cliente del cambio de fecha y hora.
   if (contrato.CorreoCliente && String(contrato.CorreoCliente).trim()) {
     try {
-      const contratoActualizado = obtenerContrato1(token) || contrato;
-      enviarCorreo1(
-        contratoActualizado.CorreoCliente,
-        'Tu evento fue reagendado — Proposal Inc',
-        correoReagendamiento1(contratoActualizado, fechaAnterior),
-        []
-      );
+      // M1: sin fallback al objeto stale. Si Sheets falla, omitir el correo
+      // en lugar de enviar la fecha antigua.
+      const contratoActualizado = obtenerContrato1(token);
+      if (!contratoActualizado) {
+        Logger.log('reagendarContrato: no se pudo releer el contrato para el correo, token ' + token);
+      } else {
+        enviarCorreo1(
+          contratoActualizado.CorreoCliente,
+          'Tu evento fue reagendado — Proposal Inc',
+          correoReagendamiento1(contratoActualizado, fechaAnterior),
+          []
+        );
+      }
     } catch (err) {
       Logger.log('reagendarContrato: error enviando correo al cliente: ' + err.message);
     }
@@ -1511,23 +1608,40 @@ function accionActualizarMeta1(body) {
 
 // === Endpoint: ocultarContrato (borrado suave) ===
 
+function normalizarTokensMasivos1(tokens) {
+  const origen = Array.isArray(tokens) ? tokens : String(tokens || '').split(',');
+  const vistos = {};
+  const salida = [];
+  origen.forEach(function(token) {
+    const limpio = String(token || '').trim();
+    if (!limpio || vistos[limpio]) return;
+    vistos[limpio] = true;
+    salida.push(limpio);
+  });
+  return salida;
+}
+
+function ocultarContratoPorToken1(token) {
+  const contrato = obtenerContrato1(token);
+  if (!contrato) return { ok: false, token: token, error: 'Contrato no encontrado' };
+  actualizarContrato1(token, { Oculto: true });
+  Logger.log('Contrato archivado: ' + contrato.NombreCliente);
+  return { ok: true, token: token, nombre: contrato.NombreCliente };
+}
+
 function accionOcultarContrato1(body) {
   const token = body.token || '';
   if (!token) return jsonResponse1({ error: 'Token requerido' });
-  const contrato = obtenerContrato1(token);
-  if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
-  actualizarContrato1(token, { Oculto: true });
-  Logger.log('Contrato archivado: ' + contrato.NombreCliente);
+  const resultado = ocultarContratoPorToken1(token);
+  if (!resultado.ok) return jsonResponse1({ error: resultado.error });
   return jsonResponse1({ ok: true });
 }
 
 // === Endpoint: eliminarContrato (borrado permanente en cascada) ===
 
-function accionEliminarContrato1(body) {
-  const token = body.token || '';
-  if (!token) return jsonResponse1({ error: 'Token requerido' });
+function eliminarContratoPorToken1(token) {
   const contrato = obtenerContrato1(token);
-  if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
+  if (!contrato) return { ok: false, token: token, error: 'Contrato no encontrado' };
 
   // Se borra de abajo hacia arriba para que deleteRow no desplace los índices.
   eliminarFilasPorColumna1(getContratosSheet1(), 'Token', token);
@@ -1536,7 +1650,47 @@ function accionEliminarContrato1(body) {
   eliminarFilasPorColumna1(getTokensSheet1(),    'ContratoID', token);
 
   Logger.log('Contrato eliminado: ' + contrato.NombreCliente);
+  return { ok: true, token: token, nombre: contrato.NombreCliente };
+}
+
+function accionEliminarContrato1(body) {
+  const token = body.token || '';
+  if (!token) return jsonResponse1({ error: 'Token requerido' });
+  const resultado = eliminarContratoPorToken1(token);
+  if (!resultado.ok) return jsonResponse1({ error: resultado.error });
   return jsonResponse1({ ok: true });
+}
+
+function accionOcultarContratosMasivo1(body) {
+  const tokens = normalizarTokensMasivos1(body.tokens);
+  if (!tokens.length) return jsonResponse1({ error: 'Selecciona al menos un contrato.' });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const resultados = tokens.map(function(token) { return ocultarContratoPorToken1(token); });
+    const procesados = resultados.filter(function(r) { return r.ok; }).length;
+    const errores    = resultados.filter(function(r) { return !r.ok; });
+    return jsonResponse1({ ok: true, procesados: procesados, errores: errores });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function accionEliminarContratosMasivo1(body) {
+  const tokens = normalizarTokensMasivos1(body.tokens);
+  if (!tokens.length) return jsonResponse1({ error: 'Selecciona al menos un contrato.' });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const resultados = tokens.map(function(token) { return eliminarContratoPorToken1(token); });
+    const procesados = resultados.filter(function(r) { return r.ok; }).length;
+    const errores    = resultados.filter(function(r) { return !r.ok; });
+    return jsonResponse1({ ok: true, procesados: procesados, errores: errores });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function eliminarFilasPorColumna1(hoja, columna, valor) {
@@ -2003,6 +2157,8 @@ function accionListarStats1(e) {
     .sort(function(a, b) { return b.total - a.total; })
     .slice(0, 5);
 
+  const tiempoEntrega = calcularTiempoEntregaStats1(contratos, enPeriodo);
+
   // Facturación y cobranza de los últimos 6 meses.
   const mesesLabel = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const porMes = [];
@@ -2033,6 +2189,7 @@ function accionListarStats1(e) {
     ok: true, periodo: periodo, facturado: facturado, cobrado: cobrado,
     porCobrar: porCobrar, numContratos: numContratos, ticketPromedio: ticketPromedio,
     porEstatus: porEstatus, topClientes: topClientes, porMes: porMes,
+    tiempoEntrega: tiempoEntrega,
   });
 }
 
@@ -2589,6 +2746,16 @@ function asegurarColumnaReservacion1() {
   }
 }
 
+// Garantiza que una columna arbitraria exista en el encabezado de Contratos1.
+// Usada para columnas nuevas que se agregan en versiones posteriores del script.
+function asegurarColumnaContratos1(nombre) {
+  const hoja = getContratosSheet1();
+  const enc  = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  if (enc.indexOf(nombre) === -1) {
+    hoja.getRange(1, hoja.getLastColumn() + 1).setValue(nombre);
+  }
+}
+
 // Formatea un valor de hora (Date o string HH:MM) en formato 12 h con a.m./p.m.
 function formatHoraCorreo1(val) {
   if (!val) return '';
@@ -2766,42 +2933,53 @@ function accionConfirmarReservacion1(body) {
   const espacio = String(body.espacio || '').trim();
   if (!token)   return jsonResponse1({ error: 'Token requerido' });
   if (!espacio) return jsonResponse1({ error: 'El espacio de la locación es obligatorio' });
-  const contrato = obtenerContrato1(token);
-  if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
-  // Bloqueada solo si ya tiene AMBOS: confirmacion y evento de Calendar.
-  // Si falta el evento (fallo previo de Calendar), se permite reintentar solo esa parte.
-  const eventoIdExistente = String(contrato.EventoCalendarioID || '').trim();
-  if (contrato.ReservacionConfirmada && eventoIdExistente) {
-    return jsonResponse1({ error: 'La reservación ya fue confirmada anteriormente.' });
-  }
-  const esReintento = !!(contrato.ReservacionConfirmada && !eventoIdExistente);
 
-  let ahora = String(contrato.ReservacionConfirmada || '');
+  // I5: candado para evitar que dos clics simultaneos creen dos eventos de Calendar.
+  let esReintento = false;
+  let ahora = '';
 
-  if (!esReintento) {
-    // Primera confirmacion: validar estatus y restricciones.
-    // Previene degradar un contrato que ya avanzó más allá de Anticipo recibido.
-    const ESTATUSES_CONFIRMABLES = ['Firmado', 'Anticipo recibido'];
-    if (ESTATUSES_CONFIRMABLES.indexOf(contrato.Estatus) === -1) {
-      return jsonResponse1({ error: 'La reservación no puede confirmarse en el estatus actual: ' + contrato.Estatus });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const contrato = obtenerContrato1(token);
+    if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
+
+    // Bloqueada solo si ya tiene AMBOS: confirmacion y evento de Calendar.
+    // Si falta el evento (fallo previo de Calendar), se permite reintentar solo esa parte.
+    const eventoIdExistente = String(contrato.EventoCalendarioID || '').trim();
+    if (contrato.ReservacionConfirmada && eventoIdExistente) {
+      return jsonResponse1({ error: 'La reservación ya fue confirmada anteriormente.' });
     }
+    esReintento = !!(contrato.ReservacionConfirmada && !eventoIdExistente);
+    ahora = String(contrato.ReservacionConfirmada || '');
 
-    // Aplicar la misma restricción de Isla-sábado que valida accionCrearContrato1.
-    const diaEventoConf = parseFecha1(contrato.FechaEvento);
-    if (diaEventoConf && diaEventoConf.getDay() === 6 &&
-        sinAcentos1(contrato.Locacion || '').includes('rincon') &&
-        sinAcentos1(espacio).includes('isla')) {
-      return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
+    if (!esReintento) {
+      // Primera confirmacion: validar estatus y restricciones.
+      // Previene degradar un contrato que ya avanzó más allá de Anticipo recibido.
+      const ESTATUSES_CONFIRMABLES = ['Firmado', 'Anticipo recibido'];
+      if (ESTATUSES_CONFIRMABLES.indexOf(contrato.Estatus) === -1) {
+        return jsonResponse1({ error: 'La reservación no puede confirmarse en el estatus actual: ' + contrato.Estatus });
+      }
+
+      // Aplicar la misma restricción de Isla-sábado que valida accionCrearContrato1.
+      const diaEventoConf = parseFecha1(contrato.FechaEvento);
+      if (diaEventoConf && diaEventoConf.getDay() === 6 &&
+          sinAcentos1(contrato.Locacion || '').includes('rincon') &&
+          sinAcentos1(espacio).includes('isla')) {
+        return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
+      }
+
+      asegurarColumnaReservacion1();
+      ahora = new Date().toISOString();
+      actualizarContrato1(token, {
+        EspacioLocacion      : espacio,
+        ReservacionConfirmada: ahora,
+        Estatus              : 'Reservado',
+      });
+      SpreadsheetApp.flush();
     }
-
-    asegurarColumnaReservacion1();
-    ahora = new Date().toISOString();
-    actualizarContrato1(token, {
-      EspacioLocacion      : espacio,
-      ReservacionConfirmada: ahora,
-      Estatus              : 'Reservado',
-    });
-    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
   }
 
   const contratoActualizado = obtenerContrato1(token);
