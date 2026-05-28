@@ -334,7 +334,7 @@
     #overlay { display: none; position: fixed; inset: 0; background: rgba(28,28,30,0.4); z-index: 190; }
     #overlay.visible { display: block; }
 
-    .met-cards-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .met-cards-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 10px; margin-bottom: 20px; }
     .met-bottom-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 14px; }
 
     .bottom-nav {
@@ -2187,11 +2187,16 @@ async function cargarMetricas() {
 }
 function renderMetricas(s) {
   const labelPeriodo = { mes: 'este mes', trimestre: 'este trimestre', anio: 'este año', todo: 'acumulado' }[s.periodo] || '';
+  const entrega = s.tiempoEntrega || { promedioDias: 0, totalEntregas: 0, minimoDias: 0, maximoDias: 0 };
+  const subEntrega = entrega.totalEntregas
+    ? entrega.totalEntregas + ' entregas medidas · rápida ' + entrega.minimoDias + ' d · lenta ' + entrega.maximoDias + ' d'
+    : 'sin entregas medidas';
   const cards = [
     { label: 'Facturado',       valor: fmxn(s.facturado),      sub: s.numContratos + ' contratos', color: 'var(--gold)' },
     { label: 'Cobrado',         valor: fmxn(s.cobrado),        sub: labelPeriodo,                  color: 'var(--success)' },
     { label: 'Por cobrar',      valor: fmxn(s.porCobrar),      sub: 'contratos abiertos',          color: 'var(--warn)' },
     { label: 'Ticket promedio', valor: fmxn(s.ticketPromedio), sub: labelPeriodo,                  color: 'var(--ink-1)' },
+    { label: 'Tiempo de entrega', valor: entrega.totalEntregas ? entrega.promedioDias + ' días' : '—', sub: subEntrega, color: 'var(--ink-1)' },
   ];
   let html = '<div class="met-cards-grid">' + cards.map(function(c) {
     return '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px">' +
