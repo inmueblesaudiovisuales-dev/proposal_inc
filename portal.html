@@ -971,6 +971,20 @@ function htmlComprobante(total, abonado, saldo) {
         '<tr><td class="ct-et">Servicio</td><td class="ct-vl">' + esc(d.paqueteNombre || 'Servicio personalizado') + '</td></tr>' +
       '</table>' +
       '<div class="comprobante-montos">' +
+        (function() {
+          var lineas = '';
+          // Add-ons aceptados al firmar.
+          var firmados = d.adicionales || [];
+          firmados.forEach(function(a) {
+            lineas += '<div class="precio-fila sub"><span>' + esc(a.nombre) + '</span><span>' + fmxn(a.precio) + '</span></div>';
+          });
+          // Servicios agregados post-firma.
+          var extras = d.addonsExtra || [];
+          extras.forEach(function(a) {
+            lineas += '<div class="precio-fila sub"><span>' + esc(a.nombre) + '</span><span>' + fmxn(a.precio) + '</span></div>';
+          });
+          return lineas;
+        })() +
         '<div class="precio-fila sub"><span>Total del contrato</span><span>' + fmxn(total) + '</span></div>' +
         '<div class="precio-fila sub" style="color:var(--success)"><span>Total pagado</span><span>' + fmxn(abonado) + '</span></div>' +
         '<div class="precio-fila total"><span>Saldo pendiente</span><span>' + fmxn(saldo) + '</span></div>' +
