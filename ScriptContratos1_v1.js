@@ -55,7 +55,13 @@ const ESTATUSES_VALIDOS1 = [
 // para evitar el desfase de un día por zona horaria. Previene el fallo conocido 3.
 function parseFecha1(valor) {
   if (!valor) return null;
-  if (valor instanceof Date) return isNaN(valor) ? null : valor;
+  if (valor instanceof Date) {
+    if (isNaN(valor)) return null;
+    // getValues() devuelve Date objects con medianoche UTC para columnas de fecha.
+    // Se normaliza a mediodia en zona Monterrey para evitar el desfase de un dia.
+    const s = Utilities.formatDate(valor, 'America/Monterrey', 'yyyy-MM-dd');
+    return new Date(s + 'T12:00:00');
+  }
   const s = String(valor).trim();
   if (!s) return null;
   const d = new Date(s.indexOf('T') !== -1 ? s : s + 'T12:00:00');
@@ -1602,6 +1608,13 @@ function accionReagendarContrato1(body) {
           );
           const duracion = evento.getEndTime() - evento.getStartTime();
           evento.setTime(inicio, new Date(inicio.getTime() + duracion));
+        } else {
+          // El evento fue borrado manualmente en Calendar. Crear uno nuevo con la fecha actualizada.
+          const contratoConNuevaFecha = Object.assign({}, contrato, {
+            FechaEvento: nuevaFecha,
+            HoraEvento : nuevaHora || contrato.HoraEvento,
+          });
+          crearEventoCalendario1(contratoConNuevaFecha);
         }
       } catch (err) {
         Logger.log('reagendarContrato: error actualizando Calendar: ' + err.message);
@@ -2538,9 +2551,6 @@ function avisoSinFirma1() {
     '<p style="color:#9B9B9F;font-size:12px">Considera hacer seguimiento por WhatsApp.</p>' +
     '</div>';
 
-  enviarCorreo1(CONFIG1.EMAIL_ADMIN,
-    'Seguimiento: contratos sin firmar — Proposal Inc', cuerpo, []);
-
   pendientes.forEach(function(c) {
     try {
       actualizarContrato1(c.Token, { AvisoSinFirmaEnviado: new Date().toISOString() });
@@ -2548,6 +2558,9 @@ function avisoSinFirma1() {
       Logger.log('avisoSinFirma1: error marcando aviso para ' + c.Token + ': ' + err.message);
     }
   });
+
+  enviarCorreo1(CONFIG1.EMAIL_ADMIN,
+    'Seguimiento: contratos sin firmar — Proposal Inc', cuerpo, []);
   Logger.log('avisoSinFirma1: aviso enviado por ' + pendientes.length + ' contrato(s)');
 }
 
@@ -2602,6 +2615,7 @@ function recordatorio24h1() {
       const recordatorioSaldo = c.RecordatorioSaldoEnviado && String(c.RecordatorioSaldoEnviado).trim();
       if (saldoPendiente > 0 && dias === 3 && !recordatorioSaldo) {
         try {
+          actualizarContrato1(c.Token, { RecordatorioSaldoEnviado: new Date().toISOString() });
           MailApp.sendEmail({
             to     : CONFIG1.EMAIL_ADMIN,
             subject: 'Cobro pendiente en 3 días — ' + c.Folio + ' — ' + c.NombreCliente,
@@ -2613,7 +2627,6 @@ function recordatorio24h1() {
               'Portal: '             + CONFIG1.BASE_URL_PORTAL + '?token=' + c.Token,
             ].join('\n'),
           });
-          actualizarContrato1(c.Token, { RecordatorioSaldoEnviado: new Date().toISOString() });
           Logger.log('recordatorio24h1: alerta cobro 3 días enviada para ' + c.Folio);
         } catch (err) {
           Logger.log('recordatorio24h1: error alerta cobro para ' + c.Token + ': ' + err.message);
@@ -2638,12 +2651,12 @@ function recordatorio24h1() {
             adicionales,
             'Saldo pendiente: ' + formatMXN1(saldo),
           ].filter(Boolean).join('\n');
+          actualizarContrato1(c.Token, { AlertaBrunoEnviada: new Date().toISOString() });
           MailApp.sendEmail({
             to     : CONFIG1.EMAIL_ADMIN,
             subject: 'Evento en 2 días — ' + c.Folio + ' — ' + c.NombreCliente,
             body   : cuerpo,
           });
-          actualizarContrato1(c.Token, { AlertaBrunoEnviada: new Date().toISOString() });
           Logger.log('recordatorio24h1: alerta 2 días enviada para ' + c.Folio);
         } catch (err) {
           Logger.log('recordatorio24h1: error alerta 2 días para ' + c.Token + ': ' + err.message);
