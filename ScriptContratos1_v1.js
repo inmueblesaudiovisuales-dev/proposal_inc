@@ -2579,15 +2579,12 @@ function recordatorio24h1() {
       const fechaEventoStr = Utilities.formatDate(fechaEvento, 'America/Monterrey', 'yyyy-MM-dd');
 
       // Recordatorio 24 h al cliente.
+      // Guard binario: cualquier valor en RecordatorioEnviado bloquea el reenvio.
+      // El flag se guarda antes de enviar para garantizar envio unico incluso si Gmail falla.
       if (fechaEventoStr === fechaOk) {
-        const recEnviado = c.RecordatorioEnviado
-          ? Utilities.formatDate(new Date(c.RecordatorioEnviado), 'America/Monterrey', 'yyyy-MM-dd')
-          : '';
-        if (recEnviado !== fechaOk) {
+        if (!c.RecordatorioEnviado) {
           try {
-            // El flag se guarda antes de enviar: si el correo falla,
-            // el trigger no reintenta (preferimos no enviar a enviar repetido).
-            actualizarContrato1(c.Token, { RecordatorioEnviado: fechaOk });
+            actualizarContrato1(c.Token, { RecordatorioEnviado: new Date().toISOString() });
             enviarCorreo1(c.CorreoCliente,
               'Recordatorio: tu evento es mañana — Proposal Inc',
               correoRecordatorio24h1(c, c.Token), []);
