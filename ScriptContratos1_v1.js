@@ -277,7 +277,7 @@ const COLS_CONFIGURACION1 = ['Mes','PresupuestoAnuncios','MetaMensual'];
 
 const COLS_CONTRATOS1 = [
   'Token','Folio','TipoContrato','NombreCliente','CorreoCliente',
-  'TelefonoCliente','PaqueteClave','PaqueteNombre','AdicionalesJSON','AddonsOfrecidosJSON','Locacion',
+  'TelefonoCliente','PaqueteClave','PaqueteNombre','AdicionalesJSON','AddonsOfrecidosJSON','AddonsExtraJSON','Locacion',
   'EspacioLocacion','DescripcionServicio','Precio','Anticipo','SaldoPendiente',
   'Estatus','FechaCreacion','FechaEvento','HoraEvento','FechaFirma',
   'FechaUltimoAbono','FechaEntrega','FirmaBase64URL','PdfContratoUrl','EntregaDriveLink',
@@ -467,6 +467,7 @@ const ACCIONES_ADMIN1 = {
   actualizarMeta: true,
   disponibilidadGuardar: true,
   enviarRecordatorioPago: true,
+  agregarAddonPostFirma: true,
 };
 
 function doPost(e) {
@@ -514,6 +515,7 @@ function doPost(e) {
     if (accion === 'actualizarMeta')           return accionActualizarMeta1(body);
     if (accion === 'disponibilidadGuardar')    return accionDisponibilidadGuardar1(body);
     if (accion === 'enviarRecordatorioPago')   return accionEnviarRecordatorioPago1(body);
+    if (accion === 'agregarAddonPostFirma')    return accionAgregarAddonPostFirma1(body);
     return jsonResponse1({ error: 'Acción POST no reconocida: ' + accion });
   } catch (err) {
     Logger.log('ERROR doPost [' + accion + ']: ' + err.message);
@@ -714,12 +716,16 @@ function accionObtenerContrato1(e) {
   const abonos       = obtenerAbonos1(token);
   const totalAbonado = abonos.reduce(function(s, a) { return s + (parseFloat(a.Monto) || 0); }, 0);
 
-  let adicionales = [];
-  try { adicionales = JSON.parse(contrato.AdicionalesJSON || '[]'); } catch (err) { adicionales = []; }
-  const adicionalesDetalle = adicionales.map(function(clave) {
+  let adicionalesClaves = [];
+  try { adicionalesClaves = JSON.parse(contrato.AdicionalesJSON || '[]'); } catch (err) { adicionalesClaves = []; }
+  const adicionalesDetalle = adicionalesClaves.map(function(clave) {
     const p = obtenerPaquete1ByClave(clave);
     return { clave: clave, nombre: p ? p.Nombre : clave, precio: p ? p.Precio : 0 };
   });
+
+  let addonsExtra = [];
+  try { addonsExtra = JSON.parse(contrato.AddonsExtraJSON || '[]'); } catch (err) { addonsExtra = []; }
+  if (!Array.isArray(addonsExtra)) addonsExtra = [];
 
   return jsonResponse1({
     ok          : true,
@@ -729,6 +735,7 @@ function accionObtenerContrato1(e) {
     }),
     totalAbonado: totalAbonado,
     adicionales : adicionalesDetalle,
+    addonsExtra : addonsExtra,
     urlPortal   : CONFIG1.BASE_URL_PORTAL + '?token=' + token,
   });
 }
@@ -757,8 +764,17 @@ function accionObtenerPortal1(e) {
   const abonos       = obtenerAbonos1(tokenData.contratoID);
   const totalAbonado = abonos.reduce(function(s, a) { return s + (parseFloat(a.Monto) || 0); }, 0);
 
-  let adicionales = [];
-  try { adicionales = JSON.parse(contrato.AdicionalesJSON || '[]'); } catch (err) { adicionales = []; }
+  let adicionalesClaves = [];
+  try { adicionalesClaves = JSON.parse(contrato.AdicionalesJSON || '[]'); } catch (err) { adicionalesClaves = []; }
+  // Expandir claves a objetos {clave, nombre, precio} para que el portal pueda mostrar desglose.
+  const adicionales = adicionalesClaves.map(function(clave) {
+    const p = obtenerPaquete1ByClave(clave);
+    return { clave: clave, nombre: p ? p.Nombre : clave, precio: p ? p.Precio : 0 };
+  });
+
+  let addonsExtra = [];
+  try { addonsExtra = JSON.parse(contrato.AddonsExtraJSON || '[]'); } catch (err) { addonsExtra = []; }
+  if (!Array.isArray(addonsExtra)) addonsExtra = [];
 
   // addonsOfrecidos viene de AddonsOfrecidosJSON, que nunca se sobreescribe.
   // AdicionalesJSON cambia al firmar (queda con lo que el cliente aceptó), por lo que
@@ -828,6 +844,7 @@ function accionObtenerPortal1(e) {
     anticipo         : parseFloat(contrato.Anticipo) || 0,
     saldoPendiente   : parseFloat(contrato.SaldoPendiente) || 0,
     adicionales      : adicionales,
+    addonsExtra      : addonsExtra,
     addonsDisponibles: addonsDisponibles,
     abonos           : abonos.map(function(a) {
       return { monto: a.Monto, metodo: a.Metodo, fecha: a.Fecha };
@@ -1139,22 +1156,6 @@ function accionRegistrarAbono1(body) {
     }
   }
 
-  // Alerta interna de abono recibido (Plan 3 Task 3).
-  try {
-    MailApp.sendEmail({
-      to     : CONFIG1.EMAIL_ADMIN,
-      subject: 'Abono registrado — ' + contratoFinal.Folio + ' — ' + contratoFinal.NombreCliente,
-      body   : [
-        'Folio: '           + contratoFinal.Folio,
-        'Cliente: '         + contratoFinal.NombreCliente,
-        'Abono: '           + formatMXN1(monto),
-        'Saldo pendiente: ' + formatMXN1(saldoNuevo),
-        'Estatus: '         + estatusNuevo,
-      ].join('\n'),
-    });
-  } catch (err) {
-    Logger.log('Error enviando alerta de abono al admin: ' + err.message);
-  }
 
   Logger.log('Abono registrado: ' + contratoFinal.NombreCliente +
              ' | monto: ' + monto + ' | saldo: ' + saldoNuevo);
@@ -1462,6 +1463,64 @@ function accionEnviarRecordatorioPago1(body) {
   } catch (err) {
     Logger.log('enviarRecordatorioPago: error para ' + token + ': ' + err.message);
     return jsonResponse1({ error: 'Error al enviar el correo: ' + err.message });
+  }
+}
+
+// === Endpoint: agregarAddonPostFirma ===
+
+function accionAgregarAddonPostFirma1(body) {
+  const token = String(body.token || '').trim();
+  if (!token) return jsonResponse1({ error: 'Token requerido' });
+
+  const ESTATUSES_PERMITIDOS = ['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'];
+
+  let nombreItem = '';
+  let precioItem = 0;
+
+  if (body.clave) {
+    // Item del catálogo de add-ons.
+    const paquete = obtenerPaquete1ByClave(String(body.clave).trim());
+    if (!paquete || !paquete.EsAdicional) {
+      return jsonResponse1({ error: 'Add-on no encontrado en el catálogo: ' + body.clave });
+    }
+    nombreItem = paquete.Nombre;
+    precioItem = paquete.Precio;
+  } else {
+    nombreItem = String(body.nombre || '').trim();
+    precioItem = parseFloat(body.precio) || 0;
+    if (!nombreItem) return jsonResponse1({ error: 'El nombre del servicio es obligatorio.' });
+    if (precioItem <= 0) return jsonResponse1({ error: 'El precio debe ser mayor a cero.' });
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const contrato = obtenerContrato1(token);
+    if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
+    if (ESTATUSES_PERMITIDOS.indexOf(contrato.Estatus) === -1) {
+      return jsonResponse1({ error: 'Solo se pueden agregar servicios a contratos firmados y no entregados.' });
+    }
+
+    // Garantizar que la columna exista en la hoja antes de escribir.
+    asegurarColumnaContratos1('AddonsExtraJSON');
+
+    let extras = [];
+    try { extras = JSON.parse(contrato.AddonsExtraJSON || '[]'); } catch (e) { extras = []; }
+    if (!Array.isArray(extras)) extras = [];
+    extras.push({ nombre: nombreItem, precio: precioItem });
+
+    const precioNuevo = (parseFloat(contrato.Precio) || 0) + precioItem;
+    const saldoNuevo  = (parseFloat(contrato.SaldoPendiente) || 0) + precioItem;
+
+    actualizarContrato1(token, {
+      AddonsExtraJSON: JSON.stringify(extras),
+      Precio         : precioNuevo,
+      SaldoPendiente : saldoNuevo,
+    });
+    Logger.log('Addon post-firma agregado: ' + nombreItem + ' (' + precioItem + ') a ' + contrato.NombreCliente);
+    return jsonResponse1({ ok: true, nombre: nombreItem, precio: precioItem });
+  } finally {
+    lock.releaseLock();
   }
 }
 
