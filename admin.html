@@ -1537,6 +1537,52 @@ function renderPanel(data) {
         '<button id="btn-reagendar" onclick="abrirReagendamiento()" class="btn-secundario btn-sm" style="width:100%;margin-bottom:8px">Reagendar evento</button>'
       : '') +
     '<div class="info-fila"><span class="etiq">Add-ons</span><span class="val">' + addHtml + '</span></div>' +
+    (function() {
+      const ESTATUSES_POST_FIRMA = ['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'];
+      if (ESTATUSES_POST_FIRMA.indexOf(c.Estatus) === -1) return '';
+      const extras = data.addonsExtra || [];
+      const extrasHtml = extras.length
+        ? extras.map(function(a) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">' +
+              '<span>' + esc(a.nombre) + '</span>' +
+              '<span style="font-weight:700;color:var(--gold)">' + fmxn(a.precio) + '</span>' +
+            '</div>';
+          }).join('')
+        : '<p style="font-size:12px;color:var(--ink-3);margin:4px 0 8px">Sin servicios extra agregados.</p>';
+
+      const paquetesAddons = (paquetes || []).filter(function(p) { return p.EsAdicional && p.Activo; });
+      const opcionesSelect = paquetesAddons.map(function(p) {
+        return '<option value="' + esc(p.Clave) + '">' + esc(p.Nombre) + ' — ' + fmxn(p.Precio) + '</option>';
+      }).join('');
+
+      return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">' +
+        '<p class="sec-label" style="margin-bottom:6px">Servicios adicionales post-firma</p>' +
+        '<div id="addons-extra-lista">' + extrasHtml + '</div>' +
+        '<div style="margin-top:10px">' +
+          '<div class="campo" style="margin-bottom:6px"><label>Tipo</label>' +
+            '<select id="addon-extra-tipo" onchange="toggleAddonExtraTipo()" style="width:100%;border:1px solid var(--border2);border-radius:var(--r);padding:6px 8px;font-size:13px;background:var(--page);color:var(--ink-1)">' +
+              '<option value="catalogo">Del catálogo (add-on o combo)</option>' +
+              '<option value="personalizado">Personalizado</option>' +
+            '</select>' +
+          '</div>' +
+          '<div id="addon-extra-catalogo">' +
+            '<div class="campo" style="margin-bottom:6px"><label>Add-on o combo</label>' +
+              '<select id="addon-extra-clave" style="width:100%;border:1px solid var(--border2);border-radius:var(--r);padding:6px 8px;font-size:13px;background:var(--page);color:var(--ink-1)">' +
+                (opcionesSelect || '<option value="">Sin add-ons en catálogo</option>') +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div id="addon-extra-personalizado" style="display:none">' +
+            '<div class="fila-2" style="margin-bottom:6px">' +
+              '<div class="campo campo-sm"><label>Nombre</label><input type="text" id="addon-extra-nombre" placeholder="Descripción del servicio"></div>' +
+              '<div class="campo campo-sm"><label>Precio (MXN)</label><input type="number" id="addon-extra-precio" placeholder="0" min="1"></div>' +
+            '</div>' +
+          '</div>' +
+          '<button class="btn-primario gold btn-sm" style="width:100%" onclick="agregarAddonPostFirma()"><i class="ti ti-plus"></i> Agregar servicio</button>' +
+          '<div class="form-msg" id="msg-addon-extra"></div>' +
+        '</div>' +
+      '</div>';
+    })() +
     (c.DescripcionServicio ? '<div style="font-size:12px;color:var(--ink-2);padding:9px 0;border-bottom:1px solid var(--border)">' + esc(c.DescripcionServicio) + '</div>' : '') +
     (c.NotasContrato ? '<div class="info-fila"><span class="etiq">Notas</span><span class="val">' + esc(c.NotasContrato) + '</span></div>' : '') +
     (function() {
@@ -1719,6 +1765,48 @@ function renderPanel(data) {
 }
 
 // ── ACCIONES DEL PANEL ──
+function toggleAddonExtraTipo() {
+  const tipo = document.getElementById('addon-extra-tipo').value;
+  document.getElementById('addon-extra-catalogo').style.display    = tipo === 'catalogo'    ? '' : 'none';
+  document.getElementById('addon-extra-personalizado').style.display = tipo === 'personalizado' ? '' : 'none';
+}
+
+async function agregarAddonPostFirma() {
+  const msg  = document.getElementById('msg-addon-extra');
+  const tipo = document.getElementById('addon-extra-tipo').value;
+  setMsg('msg-addon-extra', '', '');
+
+  let payload = { action: 'agregarAddonPostFirma', token: tokenActivo };
+
+  if (tipo === 'catalogo') {
+    const clave = document.getElementById('addon-extra-clave').value;
+    if (!clave) { setMsg('msg-addon-extra', 'Selecciona un add-on del catálogo.', 'error'); return; }
+    payload.clave = clave;
+  } else {
+    const nombre = (document.getElementById('addon-extra-nombre').value || '').trim();
+    const precio = parseFloat(document.getElementById('addon-extra-precio').value);
+    if (!nombre) { setMsg('msg-addon-extra', 'El nombre es obligatorio.', 'error'); return; }
+    if (!precio || precio <= 0) { setMsg('msg-addon-extra', 'El precio debe ser mayor a cero.', 'error'); return; }
+    payload.nombre = nombre;
+    payload.precio = precio;
+  }
+
+  try {
+    const data = await apiPost(payload);
+    if (!data.ok) { setMsg('msg-addon-extra', data.error || 'Error al agregar.', 'error'); return; }
+    setMsg('msg-addon-extra', 'Servicio agregado correctamente.', 'ok');
+    // Limpiar campos.
+    if (tipo === 'personalizado') {
+      document.getElementById('addon-extra-nombre').value = '';
+      document.getElementById('addon-extra-precio').value = '';
+    }
+    // Recargar el sidepanel para reflejar el nuevo saldo y la lista actualizada.
+    setTimeout(function() { abrirPanel(tokenActivo); }, 800);
+  } catch (e) {
+    setMsg('msg-addon-extra', 'Error de conexión.', 'error');
+  }
+}
+
 async function registrarAbono(opts) {
   opts = opts || {};
   const monto = parseFloat(opts.monto !== undefined ? opts.monto : document.getElementById('abono-monto').value);
