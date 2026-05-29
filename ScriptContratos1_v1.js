@@ -1540,87 +1540,98 @@ function accionReagendarContrato1(body) {
     return jsonResponse1({ error: 'La nueva fecha no puede ser anterior a hoy.', codigoError: 'FECHA_PASADA' });
   }
 
-  const contrato = obtenerContrato1(token);
-  if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
-
-  // Solo se puede reagendar si el contrato está en un estatus con evento confirmado.
-  const ESTATUSES_REAGENDABLES1 = ['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'];
-  if (ESTATUSES_REAGENDABLES1.indexOf(contrato.Estatus) === -1) {
-    return jsonResponse1({ error: 'No se puede reagendar un contrato en estatus "' + contrato.Estatus + '".' });
+  // Previene ejecuciones concurrentes que actualizarían Calendar y enviarían correo dos veces.
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(0)) {
+    Logger.log('reagendarContrato: otra instancia en curso para token ' + token);
+    return jsonResponse1({ error: 'Operación en curso, intenta nuevamente.' });
   }
 
-  // Validar restricciones de locación con la nueva fecha.
-  const diaEvento = parseFecha1(nuevaFecha);
-  if (diaEvento) {
-    const dia = diaEvento.getDay();
-    if (dia === 6 &&
-        sinAcentos1(contrato.Locacion || '').includes('rincon') &&
-        sinAcentos1(contrato.EspacioLocacion || '').includes('isla')) {
-      return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
+  let fechaAnterior = '';
+  let nombreCliente = '';
+  try {
+    const contrato = obtenerContrato1(token);
+    if (!contrato) return jsonResponse1({ error: 'Contrato no encontrado' });
+
+    // Solo se puede reagendar si el contrato está en un estatus con evento confirmado.
+    const ESTATUSES_REAGENDABLES1 = ['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'];
+    if (ESTATUSES_REAGENDABLES1.indexOf(contrato.Estatus) === -1) {
+      return jsonResponse1({ error: 'No se puede reagendar un contrato en estatus "' + contrato.Estatus + '".' });
     }
-  }
 
-  // Guardar la fecha anterior antes de sobrescribir.
-  const fechaAnterior = String(contrato.FechaEvento || '').trim();
-  const cambios = {
-    FechaEvento       : nuevaFecha,
-    FechaReagendamiento: fechaAnterior,
-  };
-  if (nuevaHora) cambios.HoraEvento = nuevaHora;
+    // Validar restricciones de locación con la nueva fecha.
+    const diaEvento = parseFecha1(nuevaFecha);
+    if (diaEvento) {
+      const dia = diaEvento.getDay();
+      if (dia === 6 &&
+          sinAcentos1(contrato.Locacion || '').includes('rincon') &&
+          sinAcentos1(contrato.EspacioLocacion || '').includes('isla')) {
+        return jsonResponse1({ error: 'La Isla de Rincón de Santiago no está disponible los sábados.' });
+      }
+    }
 
-  // Si hay un evento de Calendar guardado, actualizarlo.
-  const eventoId = String(contrato.EventoCalendarioID || '').trim();
-  if (eventoId) {
-    try {
-      const evento = CalendarApp.getEventById(eventoId);
-      if (evento) {
-        const partes = nuevaFecha.split('-');
-        // Parsear hora con regex para evitar NaN cuando nuevaHora no tiene formato HH:MM.
-        let horaH = evento.getStartTime().getHours();
-        let horaM = evento.getStartTime().getMinutes();
-        if (nuevaHora) {
-          const matchHora = String(nuevaHora).match(/^(\d{1,2}):(\d{2})$/);
-          if (matchHora) { horaH = parseInt(matchHora[1], 10); horaM = parseInt(matchHora[2], 10); }
+    fechaAnterior = String(contrato.FechaEvento || '').trim();
+    nombreCliente = String(contrato.NombreCliente || '');
+
+    const cambios = {
+      FechaEvento        : nuevaFecha,
+      FechaReagendamiento: fechaAnterior,
+    };
+    if (nuevaHora) cambios.HoraEvento = nuevaHora;
+
+    // Si hay un evento de Calendar guardado, actualizarlo.
+    const eventoId = String(contrato.EventoCalendarioID || '').trim();
+    if (eventoId) {
+      try {
+        const evento = CalendarApp.getEventById(eventoId);
+        if (evento) {
+          const partes = nuevaFecha.split('-');
+          // Parsear hora con regex para evitar NaN cuando nuevaHora no tiene formato HH:MM.
+          let horaH = evento.getStartTime().getHours();
+          let horaM = evento.getStartTime().getMinutes();
+          if (nuevaHora) {
+            const matchHora = String(nuevaHora).match(/^(\d{1,2}):(\d{2})$/);
+            if (matchHora) { horaH = parseInt(matchHora[1], 10); horaM = parseInt(matchHora[2], 10); }
+          }
+          const inicio = new Date(
+            parseInt(partes[0]),
+            parseInt(partes[1]) - 1,
+            parseInt(partes[2]),
+            horaH,
+            horaM
+          );
+          const duracion = evento.getEndTime() - evento.getStartTime();
+          evento.setTime(inicio, new Date(inicio.getTime() + duracion));
         }
-        const inicio = new Date(
-          parseInt(partes[0]),
-          parseInt(partes[1]) - 1,
-          parseInt(partes[2]),
-          horaH,
-          horaM
-        );
-        const duracion = evento.getEndTime() - evento.getStartTime();
-        evento.setTime(inicio, new Date(inicio.getTime() + duracion));
+      } catch (err) {
+        Logger.log('reagendarContrato: error actualizando Calendar: ' + err.message);
       }
-    } catch (err) {
-      Logger.log('reagendarContrato: error actualizando Calendar: ' + err.message);
     }
+
+    actualizarContrato1(token, cambios);
+  } finally {
+    lock.releaseLock();
   }
 
-  actualizarContrato1(token, cambios);
-
-  // Notificar al cliente del cambio de fecha y hora.
-  if (contrato.CorreoCliente && String(contrato.CorreoCliente).trim()) {
+  // Notificar al cliente del cambio de fecha y hora. Se re-lee el contrato para usar
+  // los datos ya guardados, no el objeto previo al lock.
+  const contratoActualizado = obtenerContrato1(token);
+  if (!contratoActualizado) {
+    Logger.log('reagendarContrato: no se pudo releer el contrato para el correo, token ' + token);
+  } else if (String(contratoActualizado.CorreoCliente || '').trim()) {
     try {
-      // M1: sin fallback al objeto stale. Si Sheets falla, omitir el correo
-      // en lugar de enviar la fecha antigua.
-      const contratoActualizado = obtenerContrato1(token);
-      if (!contratoActualizado) {
-        Logger.log('reagendarContrato: no se pudo releer el contrato para el correo, token ' + token);
-      } else {
-        enviarCorreo1(
-          contratoActualizado.CorreoCliente,
-          'Tu evento fue reagendado — Proposal Inc',
-          correoReagendamiento1(contratoActualizado, fechaAnterior),
-          []
-        );
-      }
+      enviarCorreo1(
+        contratoActualizado.CorreoCliente,
+        'Tu evento fue reagendado — Proposal Inc',
+        correoReagendamiento1(contratoActualizado, fechaAnterior),
+        []
+      );
     } catch (err) {
       Logger.log('reagendarContrato: error enviando correo al cliente: ' + err.message);
     }
   }
 
-  Logger.log('Contrato reagendado: ' + contrato.NombreCliente + ' de ' + fechaAnterior + ' a ' + nuevaFecha);
+  Logger.log('Contrato reagendado: ' + nombreCliente + ' de ' + fechaAnterior + ' a ' + nuevaFecha);
   return jsonResponse1({ ok: true, fechaAnterior: fechaAnterior });
 }
 
@@ -1641,7 +1652,8 @@ function correoReagendamiento1(contrato, fechaAnterior) {
         (contrato.HoraEvento
           ? _filaCorreo1('Hora', formatHoraCorreo1(contrato.HoraEvento)) : '') +
         _filaCorreo1('Locación', contrato.Locacion) +
-        (contrato.EspacioLocacion ? _filaCorreo1('Espacio', contrato.EspacioLocacion) : '') +
+        (contrato.EspacioLocacion && !sinAcentos1(contrato.Locacion || '').includes('safi')
+          ? _filaCorreo1('Espacio', contrato.EspacioLocacion) : '') +
       '</table>' +
       '<p style="font-size:13px;color:#444;margin:0">' +
         'Cualquier duda, escríbenos por WhatsApp.</p>' +
@@ -2540,91 +2552,108 @@ function avisoSinFirma1() {
 }
 
 function recordatorio24h1() {
-  try { avisoSinFirma1(); } catch (err) {
-    Logger.log('recordatorio24h1: error en avisoSinFirma1: ' + err.message);
+  // Solo ejecutar entre 9 AM y 9 PM hora Monterrey para evitar correos en madrugada.
+  const horaActual = parseInt(Utilities.formatDate(new Date(), 'America/Monterrey', 'H'), 10);
+  if (horaActual < 9 || horaActual >= 21) return;
+
+  // Previene ejecuciones concurrentes que causan correos duplicados.
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(0)) {
+    Logger.log('recordatorio24h1: otra instancia en curso, se omite esta ejecucion');
+    return;
   }
-  const manana  = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const fechaOk = Utilities.formatDate(manana, 'America/Monterrey', 'yyyy-MM-dd');
+  try {
+    try { avisoSinFirma1(); } catch (err) {
+      Logger.log('recordatorio24h1: error en avisoSinFirma1: ' + err.message);
+    }
+    const manana  = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const fechaOk = Utilities.formatDate(manana, 'America/Monterrey', 'yyyy-MM-dd');
 
-  const contratos = leerContratos1();
-  contratos.forEach(function(c) {
-    if (esSi1(c.Oculto)) return;
-    if (['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'].indexOf(c.Estatus) === -1) return;
+    const contratos = leerContratos1();
+    contratos.forEach(function(c) {
+      if (esSi1(c.Oculto)) return;
+      if (['Firmado','Anticipo recibido','Reservado','Liquidado','En produccion'].indexOf(c.Estatus) === -1) return;
 
-    const fechaEvento = parseFecha1(c.FechaEvento);
-    if (!fechaEvento) return;
-    const fechaEventoStr = Utilities.formatDate(fechaEvento, 'America/Monterrey', 'yyyy-MM-dd');
+      const fechaEvento = parseFecha1(c.FechaEvento);
+      if (!fechaEvento) return;
+      const fechaEventoStr = Utilities.formatDate(fechaEvento, 'America/Monterrey', 'yyyy-MM-dd');
 
-    // Recordatorio 24 h al cliente.
-    if (fechaEventoStr === fechaOk) {
-      if (String(c.RecordatorioEnviado || '').substring(0, 10) !== fechaOk) {
-        try {
-          enviarCorreo1(c.CorreoCliente,
-            'Recordatorio: tu evento es mañana — Proposal Inc',
-            correoRecordatorio24h1(c, c.Token), []);
-          actualizarContrato1(c.Token, { RecordatorioEnviado: fechaOk });
-          Logger.log('recordatorio24h1: enviado a ' + c.NombreCliente);
-        } catch (err) {
-          Logger.log('recordatorio24h1: error para ' + c.Token + ': ' + err.message);
+      // Recordatorio 24 h al cliente.
+      if (fechaEventoStr === fechaOk) {
+        const recEnviado = c.RecordatorioEnviado
+          ? Utilities.formatDate(new Date(c.RecordatorioEnviado), 'America/Monterrey', 'yyyy-MM-dd')
+          : '';
+        if (recEnviado !== fechaOk) {
+          try {
+            enviarCorreo1(c.CorreoCliente,
+              'Recordatorio: tu evento es mañana — Proposal Inc',
+              correoRecordatorio24h1(c, c.Token), []);
+            actualizarContrato1(c.Token, { RecordatorioEnviado: fechaOk });
+            Logger.log('recordatorio24h1: enviado a ' + c.NombreCliente);
+          } catch (err) {
+            Logger.log('recordatorio24h1: error para ' + c.Token + ': ' + err.message);
+          }
         }
       }
-    }
 
-    const dias = diasHastaEvento1(fechaEventoStr);
+      const dias = diasHastaEvento1(fechaEventoStr);
 
-    // Recordatorio de cobro 3 días antes (Plan 3 Task 4).
-    const saldoPendiente  = parseFloat(c.SaldoPendiente || 0);
-    const recordatorioSaldo = c.RecordatorioSaldoEnviado && String(c.RecordatorioSaldoEnviado).trim();
-    if (saldoPendiente > 0 && dias === 3 && !recordatorioSaldo) {
-      try {
-        MailApp.sendEmail({
-          to     : CONFIG1.EMAIL_ADMIN,
-          subject: 'Cobro pendiente en 3 días — ' + c.Folio + ' — ' + c.NombreCliente,
-          body   : [
-            'Folio: '              + c.Folio,
-            'Cliente: '            + c.NombreCliente,
-            'Fecha del evento: '   + fechaEventoStr,
-            'Saldo pendiente: '    + formatMXN1(saldoPendiente),
-            'Portal: '             + CONFIG1.BASE_URL_PORTAL + '?token=' + c.Token,
-          ].join('\n'),
-        });
-        actualizarContrato1(c.Token, { RecordatorioSaldoEnviado: new Date().toISOString() });
-        Logger.log('recordatorio24h1: alerta cobro 3 días enviada para ' + c.Folio);
-      } catch (err) {
-        Logger.log('recordatorio24h1: error alerta cobro para ' + c.Token + ': ' + err.message);
+      // Recordatorio de cobro 3 días antes (Plan 3 Task 4).
+      const saldoPendiente  = parseFloat(c.SaldoPendiente || 0);
+      const recordatorioSaldo = c.RecordatorioSaldoEnviado && String(c.RecordatorioSaldoEnviado).trim();
+      if (saldoPendiente > 0 && dias === 3 && !recordatorioSaldo) {
+        try {
+          MailApp.sendEmail({
+            to     : CONFIG1.EMAIL_ADMIN,
+            subject: 'Cobro pendiente en 3 días — ' + c.Folio + ' — ' + c.NombreCliente,
+            body   : [
+              'Folio: '              + c.Folio,
+              'Cliente: '            + c.NombreCliente,
+              'Fecha del evento: '   + fechaEventoStr,
+              'Saldo pendiente: '    + formatMXN1(saldoPendiente),
+              'Portal: '             + CONFIG1.BASE_URL_PORTAL + '?token=' + c.Token,
+            ].join('\n'),
+          });
+          actualizarContrato1(c.Token, { RecordatorioSaldoEnviado: new Date().toISOString() });
+          Logger.log('recordatorio24h1: alerta cobro 3 días enviada para ' + c.Folio);
+        } catch (err) {
+          Logger.log('recordatorio24h1: error alerta cobro para ' + c.Token + ': ' + err.message);
+        }
       }
-    }
 
-    // Alerta general 2 días antes (Plan 3 Task 4).
-    const estatusAlerta = ['Reservado', 'Liquidado'];
-    const alertaBruno   = c.AlertaBrunoEnviada && String(c.AlertaBrunoEnviada).trim();
-    if (estatusAlerta.indexOf(c.Estatus) !== -1 && dias === 2 && !alertaBruno) {
-      try {
-        const saldo     = parseFloat(c.SaldoPendiente || 0);
-        const adicionales = formatearAdicionalesTexto(c.AdicionalesJSON);
-        const cuerpo = [
-          'Folio: '    + c.Folio,
-          'Cliente: '  + c.NombreCliente,
-          (c.NombrePareja ? 'Pareja: ' + c.NombrePareja : ''),
-          'Fecha: '    + fechaEventoStr,
-          'Hora: '     + formatHoraCorreo1(c.HoraEvento || ''),
-          'Locación: ' + (c.Locacion || '') + (c.EspacioLocacion ? ' — ' + c.EspacioLocacion : ''),
-          'Paquete: '  + (c.PaqueteClave || ''),
-          adicionales,
-          'Saldo pendiente: ' + formatMXN1(saldo),
-        ].filter(Boolean).join('\n');
-        MailApp.sendEmail({
-          to     : CONFIG1.EMAIL_ADMIN,
-          subject: 'Evento en 2 días — ' + c.Folio + ' — ' + c.NombreCliente,
-          body   : cuerpo,
-        });
-        actualizarContrato1(c.Token, { AlertaBrunoEnviada: new Date().toISOString() });
-        Logger.log('recordatorio24h1: alerta 2 días enviada para ' + c.Folio);
-      } catch (err) {
-        Logger.log('recordatorio24h1: error alerta 2 días para ' + c.Token + ': ' + err.message);
+      // Alerta general 2 días antes (Plan 3 Task 4).
+      const estatusAlerta = ['Reservado', 'Liquidado'];
+      const alertaBruno   = c.AlertaBrunoEnviada && String(c.AlertaBrunoEnviada).trim();
+      if (estatusAlerta.indexOf(c.Estatus) !== -1 && dias === 2 && !alertaBruno) {
+        try {
+          const saldo     = parseFloat(c.SaldoPendiente || 0);
+          const adicionales = formatearAdicionalesTexto(c.AdicionalesJSON);
+          const cuerpo = [
+            'Folio: '    + c.Folio,
+            'Cliente: '  + c.NombreCliente,
+            (c.NombrePareja ? 'Pareja: ' + c.NombrePareja : ''),
+            'Fecha: '    + fechaEventoStr,
+            'Hora: '     + formatHoraCorreo1(c.HoraEvento || ''),
+            'Locación: ' + (c.Locacion || '') + (c.EspacioLocacion ? ' — ' + c.EspacioLocacion : ''),
+            'Paquete: '  + (c.PaqueteClave || ''),
+            adicionales,
+            'Saldo pendiente: ' + formatMXN1(saldo),
+          ].filter(Boolean).join('\n');
+          MailApp.sendEmail({
+            to     : CONFIG1.EMAIL_ADMIN,
+            subject: 'Evento en 2 días — ' + c.Folio + ' — ' + c.NombreCliente,
+            body   : cuerpo,
+          });
+          actualizarContrato1(c.Token, { AlertaBrunoEnviada: new Date().toISOString() });
+          Logger.log('recordatorio24h1: alerta 2 días enviada para ' + c.Folio);
+        } catch (err) {
+          Logger.log('recordatorio24h1: error alerta 2 días para ' + c.Token + ': ' + err.message);
+        }
       }
-    }
-  });
+    });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // === Trigger: detectarPDFsAtascados ===
@@ -2673,13 +2702,57 @@ function limpiarTokensViejos1() {
   Logger.log('limpiarTokensViejos1: ' + eliminados + ' tokens huérfanos eliminados');
 }
 
+// === Trigger: respaldarSheets ===
+// Semanal. Copia el Sheets completo a la carpeta 04. Respaldos y elimina copias
+// con más de 4 semanas.
+
+function respaldarSheets1() {
+  try {
+    const carpetaSistema   = DriveApp.getFolderById(CONFIG1.CARPETA_SISTEMA_ID);
+    const carpetaRespaldos = buscarOCrearCarpeta1('04. Respaldos', carpetaSistema);
+    const nombre = 'Respaldo — ' + Utilities.formatDate(new Date(), 'America/Monterrey', 'yyyy-MM-dd');
+    DriveApp.getFileById(CONFIG1.SHEET_ID).makeCopy(nombre, carpetaRespaldos);
+    Logger.log('respaldarSheets1: respaldo creado: ' + nombre);
+  } catch (err) {
+    Logger.log('respaldarSheets1: error creando respaldo: ' + err.message);
+    try {
+      MailApp.sendEmail(
+        CONFIG1.EMAIL_ADMIN,
+        'Error en respaldo automático — Proposal Inc',
+        'El respaldo automático del Sheets falló el ' +
+        Utilities.formatDate(new Date(), 'America/Monterrey', 'yyyy-MM-dd HH:mm') +
+        '.\n\nError: ' + err.message
+      );
+    } catch (e) {
+      Logger.log('respaldarSheets1: no se pudo enviar alerta al admin: ' + e);
+    }
+    return;
+  }
+
+  // Limpieza de respaldos con más de 4 semanas. Un fallo aquí no invalida el respaldo creado.
+  try {
+    const limite = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+    const carpetaSistema   = DriveApp.getFolderById(CONFIG1.CARPETA_SISTEMA_ID);
+    const carpetaRespaldos = buscarOCrearCarpeta1('04. Respaldos', carpetaSistema);
+    const iter = carpetaRespaldos.getFiles();
+    while (iter.hasNext()) {
+      const archivo = iter.next();
+      if (archivo.getName().indexOf('Respaldo — ') === 0 && archivo.getDateCreated() < limite) {
+        archivo.setTrashed(true);
+      }
+    }
+  } catch (errLimpieza) {
+    Logger.log('respaldarSheets1: error en limpieza de respaldos viejos: ' + errLimpieza.message);
+  }
+}
+
 // === Instalador de triggers ===
 // Ejecutar UNA vez desde el editor de Apps Script después de desplegar.
 
 function instalarTriggers1() {
   const FUNCIONES = [
     'procesarPDFsPendientes1', 'recordatorio24h1', 'detectarPDFsAtascados1',
-    'limpiarTokensViejos1',
+    'limpiarTokensViejos1', 'respaldarSheets1',
   ];
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (FUNCIONES.indexOf(t.getHandlerFunction()) !== -1) {
@@ -2690,9 +2763,12 @@ function instalarTriggers1() {
   ScriptApp.newTrigger('procesarPDFsPendientes1').timeBased().everyMinutes(1).create();
   ScriptApp.newTrigger('recordatorio24h1').timeBased().everyHours(1).create();
   ScriptApp.newTrigger('detectarPDFsAtascados1').timeBased().everyDays(1).atHour(9).create();
-  ScriptApp.newTrigger('limpiarTokensViejos1').timeBased().everyWeeks(1).create();
+  ScriptApp.newTrigger('limpiarTokensViejos1').timeBased()
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(3).create();
+  ScriptApp.newTrigger('respaldarSheets1').timeBased()
+    .onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(9).create();
 
-  Logger.log('instalarTriggers1: 4 triggers instalados');
+  Logger.log('instalarTriggers1: 5 triggers instalados');
 }
 
 // === Plantillas de correo ===
@@ -2786,7 +2862,8 @@ function correoRecordatorio24h1(contrato, token) {
         _filaCorreo1('Fecha', formatFechaEspanol1(contrato.FechaEvento)) +
         (contrato.HoraEvento ? _filaCorreo1('Horario', formatHoraCorreo1(contrato.HoraEvento)) : '') +
         _filaCorreo1('Locación', contrato.Locacion) +
-        (contrato.EspacioLocacion ? _filaCorreo1('Espacio', contrato.EspacioLocacion) : '') +
+        (contrato.EspacioLocacion && !sinAcentos1(contrato.Locacion || '').includes('safi')
+          ? _filaCorreo1('Espacio', contrato.EspacioLocacion) : '') +
       '</table>' +
       '<p style="font-size:12px;color:#9B9B9F;margin:0">' +
         '¿Necesitas algo? Escríbenos por <a href="' + CONFIG1.WA_LINK +
@@ -2979,6 +3056,8 @@ function correoReservacionConfirmada1(contrato) {
         (contrato.HoraEvento
           ? _filaCorreo1('Hora', formatHoraCorreo1(contrato.HoraEvento)) : '') +
         _filaCorreo1('Locación', contrato.Locacion) +
+        (contrato.EspacioLocacion && !sinAcentos1(contrato.Locacion || '').includes('safi')
+          ? _filaCorreo1('Espacio', contrato.EspacioLocacion) : '') +
       '</table>' +
       '<p style="font-size:13px;color:#444;margin:0">' +
         'Cualquier duda, escríbenos por WhatsApp.</p>' +
