@@ -2585,10 +2585,12 @@ function recordatorio24h1() {
           : '';
         if (recEnviado !== fechaOk) {
           try {
+            // El flag se guarda antes de enviar: si el correo falla,
+            // el trigger no reintenta (preferimos no enviar a enviar repetido).
+            actualizarContrato1(c.Token, { RecordatorioEnviado: fechaOk });
             enviarCorreo1(c.CorreoCliente,
               'Recordatorio: tu evento es mañana — Proposal Inc',
               correoRecordatorio24h1(c, c.Token), []);
-            actualizarContrato1(c.Token, { RecordatorioEnviado: fechaOk });
             Logger.log('recordatorio24h1: enviado a ' + c.NombreCliente);
           } catch (err) {
             Logger.log('recordatorio24h1: error para ' + c.Token + ': ' + err.message);
