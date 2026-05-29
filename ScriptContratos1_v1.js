@@ -277,7 +277,7 @@ const COLS_CONFIGURACION1 = ['Mes','PresupuestoAnuncios','MetaMensual'];
 
 const COLS_CONTRATOS1 = [
   'Token','Folio','TipoContrato','NombreCliente','CorreoCliente',
-  'TelefonoCliente','PaqueteClave','PaqueteNombre','AdicionalesJSON','AddonsOfrecidosJSON','AddonsExtraJSON','Locacion',
+  'TelefonoCliente','PaqueteClave','PaqueteNombre','AdicionalesJSON','AddonsOfrecidosJSON','Locacion',
   'EspacioLocacion','DescripcionServicio','Precio','Anticipo','SaldoPendiente',
   'Estatus','FechaCreacion','FechaEvento','HoraEvento','FechaFirma',
   'FechaUltimoAbono','FechaEntrega','FirmaBase64URL','PdfContratoUrl','EntregaDriveLink',
