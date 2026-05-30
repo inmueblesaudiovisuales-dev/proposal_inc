@@ -655,7 +655,7 @@ function resolverYActualizar() {
   let addTotal = 0;
   seleccionActual.forEach(function(clave) {
     const a = addonMap[clave];
-    if (a) addTotal += a.precio;
+    if (a) addTotal += parseFloat(a.precio) || 0;
   });
   const total    = base + addTotal;
   // Si el cliente agrega add-ons, el anticipo se recalcula manteniendo la misma
@@ -844,6 +844,7 @@ async function firmarContrato() {
     if (!d.ok) throw new Error(d.error || 'No se pudo procesar la firma.');
     fill.style.width = '100%';
     mostrarConfirmacionFirma();
+    enviando = false;
   } catch (e) {
     enviando = false;
     btn.disabled = false;
@@ -953,9 +954,11 @@ function htmlComprobante(total, abonado, saldo) {
     : '<p style="font-size:12px;color:var(--ink-3)">Sin pagos registrados.</p>';
 
   // Clonar el logo completo del encabezado para que el comprobante muestre el wordmark entero.
+  // Se usa XMLSerializer para preservar namespaces SVG en Firefox.
   // La CSS .comprobante-encabezado .comp-logo svg path { fill:white } maneja el color.
   const svgEl = document.querySelector('.top-logo svg');
-  const logoHtml = svgEl ? '<div class="comp-logo">' + svgEl.outerHTML + '</div>' : '';
+  const svgStr = svgEl ? (new XMLSerializer().serializeToString(svgEl)) : '';
+  const logoHtml = svgStr ? '<div class="comp-logo">' + svgStr + '</div>' : '';
 
   return '<div class="comprobante-encabezado">' +
       logoHtml +
@@ -999,6 +1002,7 @@ function htmlComprobante(total, abonado, saldo) {
 }
 
 // Abre el acordeon del comprobante (si aplica) y llama window.print().
+// Espera un frame + 50ms para que el navegador pinte el acordeon antes del snapshot de impresion.
 function imprimirComprobante(acordeonId) {
   var eraAbierto = true;
   var cuerpo = acordeonId ? document.getElementById(acordeonId) : null;
@@ -1006,11 +1010,14 @@ function imprimirComprobante(acordeonId) {
     eraAbierto = cuerpo.classList.contains('abierto');
     if (!eraAbierto) cuerpo.classList.add('abierto');
   }
-  window.print();
-  if (cuerpo && !eraAbierto) {
-    // Pequena pausa para que el dialogo de impresion se abra antes de cerrar.
-    setTimeout(function() { cuerpo.classList.remove('abierto'); }, 200);
-  }
+  requestAnimationFrame(function() {
+    setTimeout(function() {
+      window.print();
+      if (cuerpo && !eraAbierto) {
+        setTimeout(function() { cuerpo.classList.remove('abierto'); }, 200);
+      }
+    }, 50);
+  });
 }
 
 // ── ETAPA 2: FIRMADO, SIN PAGO ──
@@ -1176,7 +1183,8 @@ function fmxnHora(val) {
   if (s.indexOf('T') !== -1) {
     const d = new Date(s);
     if (!isNaN(d)) {
-      const h = d.getHours(), m = d.getMinutes();
+      // Usar UTC para evitar desfase por zona horaria cuando el backend emite 'Z'.
+      const h = d.getUTCHours(), m = d.getUTCMinutes();
       const ampm = h >= 12 ? 'p.m.' : 'a.m.';
       const h12 = h % 12 || 12;
       return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
@@ -1200,8 +1208,9 @@ function fmxnFecha(val) {
 }
 function fmxnFechaLarga(val) {
   if (!val) return '—';
-  const s = String(val).indexOf('T') !== -1 ? val : val + 'T12:00:00';
-  const d = new Date(s);
+  // Tomar solo YYYY-MM-DD y anclar al mediodia local para evitar desfase de dia en Safari iOS.
+  const solo = String(val).substring(0, 10);
+  const d = new Date(solo + 'T12:00:00');
   if (isNaN(d)) return String(val);
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -1218,12 +1227,16 @@ function setMsg(id, text, tipo) {
 
 function copiarTextoId(elementoId, btn) {
   var txt = (document.getElementById(elementoId) || {textContent:''}).textContent.trim();
-  navigator.clipboard.writeText(txt).catch(function() {});
-  if (!btn) return;
+  if (!btn) { navigator.clipboard.writeText(txt).catch(function() {}); return; }
   var orig = btn.textContent;
-  btn.textContent = 'Copiado';
-  btn.classList.add('copiado');
-  setTimeout(function() { btn.textContent = orig; btn.classList.remove('copiado'); }, 2500);
+  navigator.clipboard.writeText(txt).then(function() {
+    btn.textContent = 'Copiado';
+    btn.classList.add('copiado');
+    setTimeout(function() { btn.textContent = orig; btn.classList.remove('copiado'); }, 2500);
+  }).catch(function() {
+    btn.textContent = 'Copia manualmente';
+    setTimeout(function() { btn.textContent = orig; }, 2500);
+  });
 }
 
 init();
