@@ -133,40 +133,40 @@ function extraerApellido1(nombre) {
     .toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-// Decide el folio del contrato nuevo. Si ya hay un contrato ese día sin sufijo,
-// devuelve también la instrucción de actualizarlo para agregarle su apellido.
-// Esto evita reindexar números cuando llega un segundo evento el mismo día.
+// Convierte un indice 0-based en etiqueta de letra: 0->A, 1->B, ..., 25->Z, 26->AA, ...
+function etiquetaFolio1(indice) {
+  let s = '';
+  let i = indice + 1;
+  while (i > 0) {
+    const r = (i - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    i = Math.floor((i - 1) / 26);
+  }
+  return s;
+}
+
+// Decide el folio del contrato nuevo con sufijo de letra correlativa por dia:
+// PI-YYMM.DD-A, -B, -C, ... Cada contrato recibe su letra al crearse y nunca se
+// modifica despues, aunque lleguen mas eventos el mismo dia. Asi no hay que reescribir
+// folios ya emitidos (ni sus PDF ni sus carpetas de Drive) cuando se agrega otro evento.
 function asignarFolio1(fechaEvento, nombreCliente, contratos) {
   const base = folioBase1(fechaEvento);
-  const mismoDia = contratos.filter(function(c) {
+
+  // Sufijos ya usados ese dia. Un folio antiguo sin sufijo (formato anterior) se
+  // considera que ocupa la letra A para no colisionar con el nuevo esquema.
+  const usados = {};
+  contratos.forEach(function(c) {
     const f = String(c.Folio || '');
-    return f === base || f.indexOf(base + '-') === 0;
+    if (f === base) { usados['A'] = true; return; }
+    if (f.indexOf(base + '-') === 0) { usados[f.substring(base.length + 1)] = true; }
   });
 
-  if (mismoDia.length === 0) {
-    return { folioNuevo: base, actualizarAnterior: null };
-  }
+  // Primera etiqueta de letra disponible (A, B, ..., Z, AA, ...).
+  let idx = 0;
+  while (usados[etiquetaFolio1(idx)]) idx++;
 
-  const apellidoNuevo = extraerApellido1(nombreCliente) || 'CLIENTE';
-  let actualizarAnterior = null;
-
-  // Si el único contrato del día aún no tiene sufijo, hay que agregárselo.
-  if (mismoDia.length === 1 && String(mismoDia[0].Folio) === base) {
-    const apellidoPrevio = extraerApellido1(mismoDia[0].NombreCliente) || 'CLIENTE';
-    actualizarAnterior = { token: mismoDia[0].Token, folio: base + '-' + apellidoPrevio };
-  }
-
-  const foliosUsados = {};
-  mismoDia.forEach(function(c) { foliosUsados[String(c.Folio)] = true; });
-  if (actualizarAnterior) foliosUsados[actualizarAnterior.folio] = true;
-
-  let folioNuevo = base + '-' + apellidoNuevo;
-  let n = 2;
-  while (foliosUsados[folioNuevo]) {
-    folioNuevo = base + '-' + apellidoNuevo + n;
-    n++;
-  }
-  return { folioNuevo: folioNuevo, actualizarAnterior: actualizarAnterior };
+  // actualizarAnterior siempre es null: el esquema de letras no reescribe folios previos.
+  return { folioNuevo: base + '-' + etiquetaFolio1(idx), actualizarAnterior: null };
 }
 
 // === Helpers de infraestructura ===
