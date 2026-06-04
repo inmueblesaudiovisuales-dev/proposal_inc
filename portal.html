@@ -659,7 +659,7 @@ function resolverYActualizar() {
   });
   const total    = base + addTotal;
   // Si el cliente agrega add-ons, el anticipo se recalcula manteniendo la misma
-  // proporcion que Bruno configuro al crear el contrato (no forzar al 50%).
+  // proporcion configurada al crear el contrato (no forzar al 50%).
   const ratioAnticipoPortal = base > 0
     ? Math.min(1, (parseFloat(datos.anticipo) || 0) / base)
     : 0.5;
