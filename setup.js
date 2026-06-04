@@ -53,7 +53,7 @@ const CABECERAS_HOJAS = {
 
 const PAQUETES_INICIALES = [
 
-  // Paquetes base — Safi Metropolitan
+  // Paquetes base: Safi Metropolitan
 
   {
     clave: 'SAFI-MINIMALISTA', locacion: 'Safi Metropolitan', nombre: 'Safi Minimalista',
@@ -74,7 +74,7 @@ const PAQUETES_INICIALES = [
     entregables: 'Terraza exclusiva privada · Cena romántica a tres tiempos · Letras gigantes MARRY ME · Fotografía profesional · Video cinematográfico · Música personalizada durante la entrada',
   },
 
-  // Paquetes base — Rincón de Santiago
+  // Paquetes base: Rincón de Santiago
 
   {
     clave: 'RINCON-MINIMALISTA', locacion: 'Rincón de Santiago', nombre: 'Rincón Minimalista',
@@ -89,7 +89,7 @@ const PAQUETES_INICIALES = [
     entregables: 'Locación privada en Santiago, N.L. · Cena romántica a tres tiempos · Letras gigantes MARRY ME · Fotografía profesional · Video cinematográfico · Música personalizada durante la entrada',
   },
 
-  // Paquetes base — Propuestas de noviazgo
+  // Paquetes base: Propuestas de noviazgo
 
   {
     clave: 'NOV-CENA', locacion: 'Safi Metropolitan', nombre: 'Cena Romántica',
