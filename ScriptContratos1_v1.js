@@ -2209,20 +2209,38 @@ function accionListarStats1(e) {
     abonos.push(obj);
   }
 
+  // Facturado solo cuenta contratos firmados y con al menos un abono. Como el backend
+  // no permite registrar un abono en un contrato sin firmar, tener abonos implica firmado.
+  const abonadoPorToken = {};
+  abonos.forEach(function(a) {
+    const tok = String(a.ContratoToken || '');
+    if (!tok) return;
+    abonadoPorToken[tok] = (abonadoPorToken[tok] || 0) + (parseFloat(a.Monto) || 0);
+  });
+  function estaFacturado1(c) {
+    return (abonadoPorToken[String(c.Token)] || 0) > 0;
+  }
+
   const ESTATUSES_ACTIVOS = ['Pendiente firma','Firmado','Anticipo recibido','Reservado','En produccion','Entregado'];
-  let facturado = 0, numContratos = 0;
+  let facturado = 0, numContratos = 0, numFacturados = 0;
   const porEstatus = {};
   const porCliente = {};
 
   contratos.forEach(function(c) {
     if (!enPeriodo(c.FechaCreacion)) return;
     numContratos++;
-    const precio = parseFloat(c.Precio) || 0;
-    facturado += precio;
     const est = c.Estatus || 'Sin estatus';
     porEstatus[est] = (porEstatus[est] || 0) + 1;
-    const cliente = String(c.NombreCliente || '').trim();
-    if (cliente) porCliente[cliente] = (porCliente[cliente] || 0) + precio;
+    // Las metricas de dinero (facturado, ticket promedio, top clientes) solo cuentan
+    // contratos firmados y abonados. Las de pipeline (numContratos, porEstatus) siguen
+    // contando todos los contratos del periodo para no perder la vista del embudo.
+    if (estaFacturado1(c)) {
+      const precio = parseFloat(c.Precio) || 0;
+      facturado += precio;
+      numFacturados++;
+      const cliente = String(c.NombreCliente || '').trim();
+      if (cliente) porCliente[cliente] = (porCliente[cliente] || 0) + precio;
+    }
   });
 
   let cobrado = 0;
@@ -2234,7 +2252,7 @@ function accionListarStats1(e) {
     .filter(function(c) { return ESTATUSES_ACTIVOS.indexOf(c.Estatus) !== -1; })
     .reduce(function(s, c) { return s + (parseFloat(c.SaldoPendiente) || 0); }, 0);
 
-  const ticketPromedio = numContratos > 0 ? Math.round(facturado / numContratos) : 0;
+  const ticketPromedio = numFacturados > 0 ? Math.round(facturado / numFacturados) : 0;
 
   const topClientes = Object.keys(porCliente)
     .map(function(n) { return { nombre: n, total: porCliente[n] }; })
@@ -2261,6 +2279,7 @@ function accionListarStats1(e) {
     return porMes.filter(function(p) { return p.key === key; })[0] || null;
   }
   contratos.forEach(function(c) {
+    if (!estaFacturado1(c)) return;
     const slot = slotDe(c.FechaCreacion);
     if (slot) slot.facturado += parseFloat(c.Precio) || 0;
   });
