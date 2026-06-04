@@ -803,11 +803,19 @@ function initFirma() {
   firmaCtx = ctx;
   hayTrazo = false;
 
+  let anchoActual = 0, altoActual = 0;
   function ajustar() {
     const dpr  = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    canvas.width  = rect.width  * dpr;
-    canvas.height = rect.height * dpr;
+    const w = Math.round(rect.width  * dpr);
+    const h = Math.round(rect.height * dpr);
+    // Si el tamano real no cambio (caso tipico en movil: la barra del navegador
+    // aparece o desaparece y dispara el ResizeObserver), NO reinicializar el canvas:
+    // hacerlo borraria la firma que el cliente ya trazo.
+    if (w === anchoActual && h === altoActual) return;
+    anchoActual = w; altoActual = h;
+    canvas.width  = w;
+    canvas.height = h;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
