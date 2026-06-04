@@ -1219,10 +1219,6 @@ function accionActualizarEstatus1(body) {
   actualizarContrato1(token, { Estatus: estatus });
   Logger.log('Estatus actualizado: ' + contrato.NombreCliente + ' a ' + estatus);
 
-  if (estatus === 'En produccion') {
-    crearEventoEntregaSiCorresponde1(token);
-  }
-
   // C1: si Bruno mueve el estatus manualmente a Reservado, crear carpeta de Drive
   // y evento de Calendar si aun no existen, igual que hace confirmarReservacion.
   if (estatus === 'Reservado') {
@@ -1376,7 +1372,6 @@ function accionMarcarSesionCompletada1(body) {
     }
   }
 
-  crearEventoEntregaSiCorresponde1(token);
   Logger.log('Sesión completada: ' + contrato.NombreCliente);
   return jsonResponse1({ ok: true });
 }
@@ -2381,40 +2376,9 @@ function generarPDFContrato1(contrato, firmaBase64) {
   }
 }
 
-// Crea el evento de entrega en Calendar si el contrato pasó a En produccion y aún
-// no tiene EventoEntregaCalendarioID. Se llama desde actualizarEstatus y desde
-// marcarSesionCompletada para que ambos caminos generen el recordatorio.
-function crearEventoEntregaSiCorresponde1(token) {
-  try {
-    const c = obtenerContrato1(token);
-    if (!c || c.EventoEntregaCalendarioID) return;
-    const adicionalesJson = c.AdicionalesJSON || '[]';
-    let tieneExpress = false;
-    try {
-      const arr = JSON.parse(adicionalesJson);
-      tieneExpress = arr.some(function(a) {
-        return (typeof a === 'string' ? a : (a.clave || '')) === 'ADD-EXPRESS';
-      });
-    } catch (e) {}
-    const fechaBase = parseFecha1(c.FechaEvento);
-    if (!fechaBase) throw new Error('FechaEvento inválida: ' + c.FechaEvento);
-    const diasEntrega  = tieneExpress ? 1 : 21;
-    const fechaEntrega = new Date(fechaBase.getTime() + diasEntrega * 24 * 60 * 60 * 1000);
-    const tituloEntrega = 'Entrega — ' + c.Folio + ' — ' + c.NombreCliente;
-    const descEntrega = [
-      'Paquete: ' + (c.PaqueteClave || ''),
-      formatearAdicionalesTexto(adicionalesJson),
-      'Portal: ' + CONFIG1.BASE_URL_PORTAL + '?token=' + token,
-    ].filter(Boolean).join('\n');
-    const evento = CalendarApp.getDefaultCalendar().createAllDayEvent(
-      tituloEntrega, fechaEntrega, { description: descEntrega }
-    );
-    actualizarContrato1(token, { EventoEntregaCalendarioID: evento.getId() });
-    Logger.log('crearEventoEntregaSiCorresponde1: evento creado para ' + c.Folio);
-  } catch (err) {
-    Logger.log('crearEventoEntregaSiCorresponde1: ' + err.message);
-  }
-}
+// Nota: el evento-recordatorio de entrega en Calendar se elimino a peticion del dueno.
+// El calendario solo debe contener eventos reales (las pedidas de mano), no recordatorios.
+// La columna EventoEntregaCalendarioID se conserva en el esquema pero ya no se usa.
 
 // === Trigger: procesarPDFsPendientes ===
 // Cada minuto. Genera el PDF de los contratos firmados que aún no lo tienen.
