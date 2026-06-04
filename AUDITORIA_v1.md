@@ -13,10 +13,12 @@ Alcance: `ScriptContratos1_v1.js` (3,624 líneas), `admin.html`, `portal.html`, 
 
 | Severidad | Cantidad | IDs |
 |-----------|----------|-----|
-| Crítico | 3 | A-01, A-02, A-03 |
-| Importante | 7 | A-04, A-05, A-06, A-07, A-08, A-09, A-23 |
-| Menor | 8 | A-10 … A-17 |
+| Crítico | 4 | A-01, A-02, A-03, A-24 |
+| Importante | 10 | A-04, A-05, A-06, A-07, A-08, A-09, A-23, A-25, A-26, A-27 |
+| Menor | 11 | A-10 … A-17, A-29, A-30, A-31 |
 | Cosmético | 5 | A-18 … A-22 |
+
+> La sección 8 detalla la **segunda ronda de auditoría profunda** (A-24 a A-31), hecha después de las primeras correcciones, con revisión adversarial de los tres frontends y del backend.
 
 **Correcciones aplicadas en esta rama (6):** A-04 (race de doble evento de Calendar), A-05 (doble clic en confirmar reservación, frontend), A-11 (bypass de confirmación en borrado individual), y limpieza de reglas de escritura A-18 (em dash en comentarios), A-19 (emoji en pago.html), A-20 (nombre del dueño en comentario de portal.html).
 
@@ -264,3 +266,37 @@ Leyenda: ✓ coincide; ⚠ observación; ✗ problema.
 ## 7. Commits de esta rama
 
 Ver `git log`. Cada corrección va en un commit atómico con mensaje en español que explica el bug y el fix. Las correcciones que dependían de una decisión de negocio NO se aplicaron (quedan como preguntas abiertas).
+
+---
+
+## 8. Segunda ronda de auditoría profunda (post-correcciones)
+
+Revisión adversarial de `portal.html`, `admin.html`, `disponibilidad-admin.html`, `disponibilidad-rincon-admin.html` y del backend, buscando regresiones de las primeras correcciones y bugs nuevos en todo el workflow.
+
+### Corregidos en esta ronda
+
+- **A-24 (Crítico, CORREGIDO) — Regresión del optimizador de combos: regalaba servicios.** En `portal.html`, el optimizador nuevo expandía un combo a sus servicios y los re-preciaba. Si Bruno ofrecía un combo de forma directa sin ofrecer sus componentes sueltos, esos servicios no tenían precio individual y el optimizador los "compraba" a $0, dejando el combo gratis. Fix: un servicio que solo existe dentro de un combo ya no se puede comprar suelto (combinación marcada inviable). Verificado con simulación.
+- **A-25 (Importante, CORREGIDO) — La firma se borraba en móvil.** El `ResizeObserver` del canvas reinicializaba (y limpiaba) la firma cada vez que la barra del navegador móvil aparecía o desaparecía. Fix: solo se reinicializa si el tamaño real del canvas cambia.
+- **A-26 (Importante, CORREGIDO) — Doble envío de reagendar.** El botón Confirmar de reagendar no se deshabilitaba; un doble clic podía actualizar el evento de Calendar y reenviar el correo al cliente dos veces. Fix: se deshabilita durante la llamada (igual que confirmar reservación).
+- **A-27 (Importante, CORREGIDO) — Safi anunciaba días parciales como totalmente disponibles.** El mensaje de WhatsApp de Safi trataba `parcial` igual que `libre` ("disponible"). Fix: un día parcial se anuncia como "disponibilidad parcial" e indica la terraza libre.
+- **A-07 (Importante, CORREGIDO en esta ronda) — Isla-sábado en rama parcial de Rincón.** La regla "la Isla nunca está disponible los sábados" no se aplicaba en el estado `parcial`. Fix aplicado en `getEspaciosLibres`.
+- **A-29 (Menor, CORREGIDO) — Panel financiero NaN/división por cero.** Si la meta era 0 o faltaban datos, el panel mostraba "NaN%". Fix: guarda de división y `try/catch` de red, y valida `datos.ok`.
+- **A-30 (Menor, CORREGIDO) — Anticipo manual ignorado en contrato personalizado.** El anticipo tecleado a mano se respetaba solo en el formulario estándar. Fix: ahora también en el personalizado.
+- **A-31 (Menor/defensivo, CORREGIDO) — Búsqueda exhaustiva de combos sin tope.** Con muchísimos combos, `1 << n` desbordaba y vaciaba la selección. Fix: guarda de tamaño y fallback que conserva la selección previa.
+
+### Evaluados y NO corregidos (riesgo bajo / por diseño / ya mitigados)
+
+- **Cliente puede enviar `adicionales` arbitrarios en el POST de firma.** Mitigado por el backend: solo acepta claves ofrecidas o combos derivados de componentes ofrecidos, y toma los precios de `Paquetes1`, no del request. No es explotable para inflar/regalar.
+- **`data-precio` y `href` (pdf/entrega/whatsapp) sin sanear protocolo en el portal.** Los precios son numéricos del Sheet y las URLs provienen del sistema/admin de confianza. Riesgo real bajo. Recomendado endurecer (validar `https?:`) si algún dato pasa a ser editable por terceros.
+- **Firma trivial (micro-trazo de 1px).** El guard exige trazo pero no un mínimo de longitud. Mejora opcional.
+- **Acoplamiento al texto del backend para "ya fue firmado".** Si cambia el wording, el mensaje degrada a genérico; el backend igual rechaza la re-firma. Bajo impacto.
+- **Disponibilidad: concurrencia last-write-wins, login compartido entre paneles, `data.procesados` no verificado, estados desconocidos del backend.** Propios de la arquitectura simple de los paneles internos. Documentados; sin impacto en el flujo de contratos.
+
+### Verificaciones del backend sin hallazgos nuevos
+
+- Invariante de dinero `Precio − sum(Abonos) = SaldoPendiente` se mantiene en abono, exceso y add-on post-firma.
+- Transiciones de estatus no retroceden ni saltan precondiciones; abono y confirmación no degradan estatus avanzados.
+- Folio con letra correlativa asignado bajo `LockService`: sin colisiones en creación concurrente.
+- `confirmarReservacion` mantiene el lock durante la creación de carpeta y evento (idempotente), correos fuera del lock; sin rutas que omitan la liberación del lock.
+- Borrado en cascada (Contratos1, Abonos1, Tokens1 por Token y ContratoID) sin referencias colgantes.
+- Parseo de POST (JSON y form-encoded) y de JSON en celdas con `try/catch` y fallback.
