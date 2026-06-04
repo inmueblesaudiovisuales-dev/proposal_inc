@@ -3084,9 +3084,14 @@ function accionConfirmarReservacion1(body) {
   if (!token)   return jsonResponse1({ error: 'Token requerido' });
   if (!espacio) return jsonResponse1({ error: 'El espacio de la locación es obligatorio' });
 
-  // I5: candado para evitar que dos clics simultaneos creen dos eventos de Calendar.
+  // I5: el candado cubre la actualizacion de estatus, la creacion de la carpeta y
+  // la creacion del evento de Calendar. Antes la carpeta y el evento se creaban fuera
+  // del lock, por lo que dos confirmaciones casi simultaneas podian pasar el guard de
+  // reintento (ReservacionConfirmada ya escrita pero EventoCalendarioID aun vacio) y
+  // crear dos eventos de Calendar duplicados. Mantener todo bajo el mismo lock lo evita.
   let esReintento = false;
   let ahora = '';
+  let contratoActualizado = null;
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -3128,33 +3133,37 @@ function accionConfirmarReservacion1(body) {
       });
       SpreadsheetApp.flush();
     }
+
+    contratoActualizado = obtenerContrato1(token);
+    if (!contratoActualizado) {
+      return jsonResponse1({ error: 'No se pudo releer el contrato tras la actualización. Intenta de nuevo.' });
+    }
+
+    // Crear carpeta solo si no existe aún (idempotente).
+    if (!String(contratoActualizado.CarpetaProyectoID || '').trim()) {
+      try {
+        const carpetaId = crearCarpetaProyecto1(contratoActualizado);
+        if (carpetaId) {
+          actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
+          contratoActualizado.CarpetaProyectoID = carpetaId;
+        }
+      } catch (err) {
+        Logger.log('confirmarReservacion - carpeta: ' + err.message);
+      }
+    }
+
+    // Crear evento de Calendar solo si aun no existe (idempotente). Si una confirmacion
+    // previa fallo al crearlo, este reintento lo crea. El guard impide duplicados cuando
+    // dos confirmaciones llegan casi a la vez.
+    if (!String(contratoActualizado.EventoCalendarioID || '').trim()) {
+      try {
+        crearEventoCalendario1(contratoActualizado);
+      } catch (err) {
+        Logger.log('confirmarReservacion - calendario: ' + err.message);
+      }
+    }
   } finally {
     lock.releaseLock();
-  }
-
-  const contratoActualizado = obtenerContrato1(token);
-  if (!contratoActualizado) {
-    return jsonResponse1({ error: 'No se pudo releer el contrato tras la actualización. Intenta de nuevo.' });
-  }
-
-  // Crear carpeta solo si no existe aún (idempotente).
-  if (!String(contratoActualizado.CarpetaProyectoID || '').trim()) {
-    try {
-      const carpetaId = crearCarpetaProyecto1(contratoActualizado);
-      if (carpetaId) {
-        actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
-        contratoActualizado.CarpetaProyectoID = carpetaId;
-      }
-    } catch (err) {
-      Logger.log('confirmarReservacion - carpeta: ' + err.message);
-    }
-  }
-
-  // Crear evento de Calendar (se intenta siempre — sea primera vez o reintento).
-  try {
-    crearEventoCalendario1(contratoActualizado);
-  } catch (err) {
-    Logger.log('confirmarReservacion - calendario: ' + err.message);
   }
 
   // Correos: solo en la primera confirmacion, no en reintentos.
@@ -3388,7 +3397,7 @@ function accionDisponibilidadGuardar1(body) {
         notaAnterior   = String(datos[filaIdx][colNota]   || '').trim();
       }
 
-      // Sin cambio real en estado ni nota — omitir.
+      // Sin cambio real en estado ni nota. Omitir.
       if (estadoAnterior === estado && notaAnterior === nota) return;
 
       if (estado === 'libre') {
