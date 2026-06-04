@@ -946,7 +946,16 @@ function copiarRespuesta() {
     if (d.fecha < hoy) return;
     const estado = getEstado(d.fecha);
     if (estado === 'bloqueada') return;
-    lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + parseInt(d.fecha.split('-')[2]) + ': disponible.');
+    const dd = parseInt(d.fecha.split('-')[2]);
+    if (estado === 'parcial') {
+      // No anunciar un dia parcial como totalmente disponible: indicar que es parcial
+      // y, si se registro, cual terraza queda libre.
+      const terraza = getNota(d.fecha);
+      lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + dd + ': disponibilidad parcial' +
+        (terraza ? ' (solo Terraza ' + terraza + ')' : '') + '.');
+    } else {
+      lineas.push('- ' + DIAS_LARGO[d.dow] + ' ' + dd + ': disponible.');
+    }
   });
   if (!lineas.length) { mostrarToast('No hay fechas futuras en este mes.', true); return; }
   const msg =
