@@ -28,8 +28,24 @@
 | Video teaser vertical | $1,000 | $0 | lo hace el equipo |
 | Video con drone | $1,500 | $0 | lo hace el equipo |
 
+## Precios a corregir en el admin (confirmado: el flyer es el precio actual)
+
+El precio que se cobra al cliente sale de la hoja Paquetes1 (se edita en el admin),
+no del codigo. Estos 4 precios en el sistema estan viejos y hay que actualizarlos al
+valor del flyer para no cobrar de mas:
+
+| Item en el admin | Componentes | Precio viejo (sistema) | Precio correcto (flyer) |
+|---|---|---|---|
+| Combo "Drone + Ambiente" | Drone + Pétalos + Teaser vertical | $3,200 | **$2,000** |
+| Combo "Camino de recuerdos + Entrega Express" | Recuerdos + Express | $3,000 | **$2,500** |
+| Combo "Todo Incluido" | Drone + Pétalos + Teaser + Recuerdos + Express | $5,500 | **$3,000** |
+| Add-on "Pétalos adicionales y velas" | (individual) | $1,500 | **$1,000** |
+
+Los demas add-ons del flyer (Camino de recuerdos $1,500, Entrega Express $2,000,
+Video teaser $1,000, Video con drone $1,500, Saxofonista $4,500) ya coinciden.
+
 ## Notas para tener en cuenta
 
 - **El panel financiero usa el CostoVariable del paquete base**, no suma automáticamente el costo de los add-ons. Por eso, cuando un contrato lleve saxofonista (que sí cuesta $3,000), conviene registrar ese costo en el campo "Gastos variables" del contrato para que el margen quede real.
 - **Foto y video** ya vienen incluidos en todos los paquetes y no cuestan extra (los hace el equipo).
-- **Pendiente por confirmar (precios de combos):** los combos en el sistema podrían tener precios viejos distintos a los del flyer actual (Drone+Ambiente $2,000, Recuerdos+Express $2,500, Todo Incluido $3,000). Revisar que el panel de admin coincida con el flyer para no cobrar de más al cliente.
+- **Combo y add-ons de Foto/Video:** en el flyer ya no aparecen el combo "Audiovisual" (Foto+Video) ni los add-ons individuales de Fotografía y Video, porque ya vienen incluidos en todos los paquetes. Si en el admin siguen activos, conviene desactivarlos para que no se ofrezcan por separado. (Pendiente de confirmar por el dueño.)
