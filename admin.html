@@ -843,7 +843,7 @@
       <select id="modal-res-espacio"></select>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px">
-      <button class="btn-primario gold" style="flex:1" onclick="ejecutarConfirmarReservacion()">Confirmar</button>
+      <button id="btn-confirmar-reservacion" class="btn-primario gold" style="flex:1" onclick="ejecutarConfirmarReservacion()">Confirmar</button>
       <button class="btn-secundario" style="flex:1" onclick="cerrarModalReservacion()">Cancelar</button>
     </div>
     <div id="modal-res-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
@@ -2044,10 +2044,16 @@ async function eliminarContrato() {
   if (!tokenActivo) return;
   const c = todosContratos.filter(function(x) { return x.token === tokenActivo; })[0];
   const nombre = c ? c.nombreCliente : null;
-  const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\nEscribe el nombre del cliente para confirmar:');
+  // Si el contrato esta cargado, se confirma con el nombre del cliente. Si no se pudo
+  // resolver el nombre (lista filtrada o estado parcial), se exige escribir BORRAR para
+  // no degradar la confirmacion a cualquier texto no vacio en una accion irreversible.
+  const instruccion = nombre
+    ? 'Escribe el nombre del cliente para confirmar:'
+    : 'Escribe BORRAR para confirmar:';
+  const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\n' + instruccion);
   if (conf === null) return;
   if (!nombre) {
-    if (!conf.trim()) { alert('Escribe algo para confirmar la eliminación.'); return; }
+    if (conf.trim() !== 'BORRAR') { alert('Escribe BORRAR para confirmar la eliminación.'); return; }
   } else if (conf.trim().toLowerCase() !== nombre.trim().toLowerCase()) {
     alert('El nombre no coincide. No se eliminó nada.');
     return;
@@ -2397,6 +2403,10 @@ async function ejecutarConfirmarReservacion() {
     errEl.style.display = 'block';
     return;
   }
+  // Deshabilitar el boton durante la llamada para evitar doble envio. Confirmar dos
+  // veces dispararia dos veces la creacion de carpeta, evento de Calendar y correo.
+  const btn = document.getElementById('btn-confirmar-reservacion');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirmando...'; }
   try {
     const data = await apiPost({
       action : 'confirmarReservacion',
@@ -2411,6 +2421,8 @@ async function ejecutarConfirmarReservacion() {
   } catch (e) {
     errEl.textContent = 'Error: ' + e.message;
     errEl.style.display = 'block';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
   }
 }
 
@@ -2530,7 +2542,7 @@ function fmxnFechaLarga(val) {
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 // BUG-000: normaliza un valor de hora (string HH:MM, ISO, o Date de 1899)
-// y retorna el formato de 12 horas con a.m./p.m. Si el valor no es parseable, retorna '—'.
+// y retorna el formato de 12 horas con a.m./p.m. Si el valor no es parseable, retorna un guion.
 function formatHora(val) {
   if (!val) return '—';
   const s = String(val);
