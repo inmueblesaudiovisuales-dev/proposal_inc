@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pruebas E2E — Proposal Inc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --onyx:#1C1C1E; --onyx2:#2A2A2D; --gold:#C9A84C; --gold-soft:#f4ecd4;
+    --page:#FAFAFA; --ink-1:#1C1C1E; --ink-2:#5A5A5E; --ink-3:#9B9B9F;
+    --border:#E8E8EA; --ok:#3a7d44; --warn:#b9831f; --danger:#b3403a;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Montserrat',Arial,sans-serif;background:var(--page);color:var(--ink-1);line-height:1.5}
+  header{position:sticky;top:0;z-index:10;background:var(--onyx);color:#fff;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  header h1{margin:0;font-size:16px;font-weight:700;letter-spacing:1px}
+  header p{margin:2px 0 0;font-size:12px;color:#bdbdbf}
+  .barra-prog{margin-top:10px;height:8px;background:#3a3a3d;border-radius:8px;overflow:hidden}
+  .barra-prog > div{height:100%;width:0;background:var(--gold);transition:width .25s}
+  .prog-txt{font-size:12px;color:var(--gold);margin-top:6px;font-weight:600}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 14px 60px}
+  .aviso{background:var(--gold-soft);border:1px solid var(--gold);border-radius:var(--r);padding:12px 14px;font-size:13px;margin-bottom:18px}
+  .aviso b{color:#7a5e12}
+  .test{background:#fff;border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+  .test.done{opacity:.62}
+  .test-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer}
+  .test-head input{margin-top:3px;width:20px;height:20px;accent-color:var(--gold);flex:0 0 auto;cursor:pointer}
+  .test-num{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+  .test-titulo{font-size:15px;font-weight:700;margin:1px 0 3px}
+  .test.done .test-titulo{text-decoration:line-through;text-decoration-color:var(--ink-3)}
+  .test-sit{font-size:13px;color:var(--ink-2)}
+  .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;vertical-align:middle}
+  .b-edge{background:#fdecec;color:var(--danger)}
+  .b-feliz{background:#e7f3ea;color:var(--ok)}
+  .test-body{padding:0 16px 16px;border-top:1px solid var(--border);margin-top:2px}
+  .seccion{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--ink-3);text-transform:uppercase;margin:14px 0 6px}
+  .datos{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--page);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 11px;font-size:12.5px}
+  .chip .et{color:var(--ink-3);font-size:10px;font-weight:700;text-transform:uppercase}
+  .chip .val{font-weight:600}
+  .cbtn{border:none;background:var(--onyx);color:#fff;border-radius:14px;font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer;font-family:inherit}
+  .cbtn:active{transform:scale(.95)}
+  .cbtn.ok{background:var(--ok)}
+  .kv{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;margin:2px 0}
+  .kv b{color:var(--ink-1)}
+  .kv span{color:var(--ink-2)}
+  ol.pasos{margin:4px 0 0;padding-left:20px;font-size:13px;color:var(--ink-1)}
+  ol.pasos li{margin-bottom:5px}
+  .exp{background:#eef6f0;border-left:3px solid var(--ok);padding:8px 10px;border-radius:6px;font-size:12.5px;margin-top:8px}
+  .exp b{color:var(--ok)}
+  .ver{background:#f3f1fb;border-left:3px solid #6c5ce7;padding:8px 10px;border-radius:6px;font-size:12.5px;margin-top:8px}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar button{border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink-2)}
+  .add{font-size:12.5px;color:var(--ink-2)}
+  .add b{color:var(--gold)}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--onyx);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>PROPOSAL INC — PRUEBAS E2E</h1>
+  <p>Lista de pruebas de punta a punta. Marca cada prueba al terminarla; tu avance se guarda solo.</p>
+  <div class="barra-prog"><div id="barra"></div></div>
+  <div class="prog-txt" id="progTxt">0 de 0 pruebas completadas</div>
+</header>
+
+<div class="wrap">
+  <div class="aviso">
+    <b>Antes de empezar:</b> (1) despliega el backend más reciente en Apps Script (cambios de folio con letra, título de calendario y sin recordatorio de entrega); (2) captura los costos en Paquetes; (3) ten abiertos el admin, Gmail, Drive y Calendar para verificar. Todos los correos usan <b>proposalincmx+alias@gmail.com</b>, así que te llegan a tu bandeja.
+  </div>
+
+  <div class="toolbar">
+    <button onclick="toggleAll(true)">Abrir todo</button>
+    <button onclick="toggleAll(false)">Cerrar todo</button>
+    <button onclick="resetProg()">Reiniciar avance</button>
+  </div>
+
+  <div id="lista"></div>
+</div>
+
+<div class="toast" id="toast">Copiado</div>
+
+<script>
+// ─── Datos de las pruebas ───
+const PRUEBAS = [
+  {
+    id:'p1', titulo:'Flujo completo feliz (Safi, anticipo 50%)', tipo:'feliz',
+    situacion:'El caso ideal de principio a fin: una clienta de Safi paga su anticipo, confirmas la reservación y entregas el material. Aquí verificas que todo el ciclo funcione y que el calendario, Drive y los correos queden bien.',
+    cliente:{nombre:'Ana López Ramírez', correo:'proposalincmx+ana@gmail.com', telefono:'8112345678'},
+    paquete:'Safi Corazón ($8,000)', addons:'Sin add-ons', fecha:'2026-06-26 (viernes)', hora:'19:00', anticipo:'Automático (50% = $4,000)',
+    pasos:[
+      'Crea el contrato (tipo Estándar) con estos datos.',
+      'Abre el portal desde el admin. Revisa que NO aparezca el nombre del hotel, solo locación neutral.',
+      'Firma en el portal (pareja: "Ana y Luis", traza la firma).',
+      'Espera 1-2 min a que llegue el PDF por correo.',
+      'Registra abono de $4,000.',
+      'Confirma reservación con hotel, espacio "Terraza Principal".',
+      'Registra otro abono de $4,000 para liquidar.',
+      'Producción: "Evento completado, iniciar edición".',
+      'Entrega: pega un link de Drive y envía.'
+    ],
+    esperado:'Folio <b>PI-2606.26-A</b>. Los estatus avanzan: Pendiente firma to Firmado to Anticipo recibido to Reservado to Liquidado to En producción to Entregado. Te llegan los correos: contrato firmado, PDF, recibo de abono (x2), confirmación de reservación y entrega.',
+    verificar:'En Calendar: UN evento a las 7pm con título <b>Safi Metropolitan · Terraza Principal · Safi Corazón · Ana López Ramírez</b> (el folio va en la descripción). En Drive: carpeta <b>PI-2606.26-A — Ana López Ramírez</b> con Fotos/Video. En Producción NO debe crearse un evento extra de "Entrega".'
+  },
+  {
+    id:'p2', titulo:'Anticipo = 0 (salto directo a producción)', tipo:'edge',
+    situacion:'Un evento de cortesía o ya pagado por fuera: pones anticipo 0. Al firmar, el contrato debe saltar directo a producción y crear la carpeta y el evento en ese momento, sin pasar por confirmar reservación.',
+    cliente:{nombre:'Beto García Sosa', correo:'proposalincmx+beto@gmail.com', telefono:'8113456789'},
+    paquete:'Safi Esencial ($7,000)', addons:'Sin add-ons', fecha:'2026-07-03 (viernes)', hora:'18:00', anticipo:'Escribe 0 manualmente',
+    pasos:['Crea el contrato con anticipo 0.','Abre el portal y firma.'],
+    esperado:'Al firmar, el estatus salta directo a <b>En producción</b>. Folio <b>PI-2607.03-A</b>.',
+    verificar:'Se crea la carpeta en Drive y el evento en Calendar al firmar (sin confirmar reservación).'
+  },
+  {
+    id:'p3', titulo:'Contrato personalizado + anticipo manual', tipo:'edge',
+    situacion:'Una locación fuera del catálogo (rooftop privado). Todo es manual: dirección, descripción y precio. Además pruebas que el anticipo escrito a mano se respete aunque cambies el precio después.',
+    cliente:{nombre:'Carla Méndez Ruiz', correo:'proposalincmx+carla@gmail.com', telefono:'8114567890'},
+    paquete:'PERSONALIZADO · dirección "Rooftop privado, San Pedro"', addons:'No aplica', fecha:'2026-07-10 (viernes)', hora:'20:00', anticipo:'Manual $7,500 (precio $15,000)',
+    pasos:[
+      'Crea contrato tipo Personalizado: dirección, descripción libre, precio $15,000.',
+      'Escribe el anticipo a mano: $7,500.',
+      'AHORA cambia el precio (ej. a $16,000) y observa el anticipo.',
+      'Abre el portal y revisa el resumen.'
+    ],
+    esperado:'El anticipo manual de $7,500 <b>NO debe regresar a 50%</b> al cambiar el precio. TipoContrato = personalizado.',
+    verificar:'El portal muestra el resumen SIN mencionar locaciones del catálogo.'
+  },
+  {
+    id:'p4', titulo:'Combos: dos combos chicos deben volverse el grande', tipo:'edge',
+    situacion:'El caso clave de combos. Al ofrecer varios add-ons y que el cliente elija combinaciones, el sistema siempre debe aplicar la opción MÁS BARATA. Antes había un bug; aquí lo confirmas.',
+    cliente:{nombre:'Diego Torres Vega', correo:'proposalincmx+diego@gmail.com', telefono:'8115678901'},
+    paquete:'Safi Letras ($10,000)', addons:'Ofrécele: Camino de recuerdos, Entrega Express, Drone, Pétalos y Teaser', fecha:'2026-07-04 (sábado)', hora:'19:00', anticipo:'Automático',
+    pasos:[
+      'Crea el contrato y, al crearlo, ofrece esos 5 add-ons.',
+      'En el portal, selecciona los DOS combos chicos: "Drone + Ambiente" y "Camino de recuerdos + Entrega Express".',
+      'Observa el total. Luego deselecciona y prueba marcando los 5 add-ons sueltos uno por uno.'
+    ],
+    esperado:'En ambos casos el sistema debe aplicar <b>"Todo Incluido" $3,000</b> (no $4,500 ni la suma individual) y mostrar el aviso de que se aplicó el combo más conveniente.',
+    verificar:'El desglose de precio en el portal muestra el combo grande, no los chicos.'
+  },
+  {
+    id:'p5', titulo:'Restricción: Isla en Rincón los sábados', tipo:'edge',
+    situacion:'La Isla de Rincón nunca está disponible los sábados. El sistema debe rechazar la creación si eliges Isla en sábado, y permitirla al cambiar el espacio o el día.',
+    cliente:{nombre:'Elena Soto Cano', correo:'proposalincmx+elena@gmail.com', telefono:'8116789012'},
+    paquete:'Rincón Esencial ($11,000)', addons:'Sin add-ons', fecha:'2026-07-11 (SÁBADO)', hora:'19:00', anticipo:'Automático',
+    pasos:[
+      'Intenta crear el contrato con locación Rincón, espacio Isla, fecha sábado 2026-07-11.',
+      'Luego cambia el espacio a "Terraza" (o el día a uno entre semana) y crea de nuevo.'
+    ],
+    esperado:'El primer intento debe <b>rechazarse</b>: "La Isla de Rincón de Santiago no está disponible los sábados." El segundo SÍ se crea.',
+    verificar:'No se crea fila en Contratos1 en el intento rechazado.'
+  },
+  {
+    id:'p6', titulo:'Reagendar evento (y sus bordes)', tipo:'edge',
+    situacion:'El cliente cambia de fecha. El evento de Calendar debe moverse (no duplicarse) y llegar un correo de aviso. Además pruebas que no deje reagendar a fechas pasadas ni mandar correos dobles.',
+    cliente:{nombre:'Fer Díaz Luna', correo:'proposalincmx+fer@gmail.com', telefono:'8117890123'},
+    paquete:'Safi Esencial ($7,000)', addons:'Sin add-ons', fecha:'2026-06-26 (viernes)', hora:'19:00', anticipo:'Automático (fírmalo y abónalo primero)',
+    pasos:[
+      'Crea, firma y abona el contrato.',
+      'Reagenda a 2026-07-04, hora 20:00.',
+      'EDGE 1: intenta reagendar a una fecha pasada (ej. 2026-05-01).',
+      'EDGE 2: haz doble clic rápido en el botón Confirmar del reagendamiento.'
+    ],
+    esperado:'El reagendamiento normal mueve el evento de Calendar (no crea otro) y llega "Tu evento fue reagendado". La fecha pasada se <b>rechaza</b>. El doble clic NO debe mandar dos correos (el botón se bloquea).',
+    verificar:'En Calendar, el mismo evento aparece en la nueva fecha/hora, no hay duplicado.'
+  },
+  {
+    id:'p7a', titulo:'Dos eventos el mismo día — Cliente A', tipo:'edge',
+    situacion:'Cuando hay dos pedidas el mismo día, cada folio lleva una letra (A, B, ...) desde que se crea y nunca cambia. Crea este PRIMERO.',
+    cliente:{nombre:'Gabriela Ríos', correo:'proposalincmx+gaby@gmail.com', telefono:'8118901234'},
+    paquete:'Safi Esencial ($7,000)', addons:'Sin add-ons', fecha:'2026-06-20 (sábado)', hora:'18:00', anticipo:'Automático',
+    pasos:['Crea este contrato.'],
+    esperado:'Folio <b>PI-2606.20-A</b>.',
+    verificar:'Anota el folio para compararlo en la prueba 7B.'
+  },
+  {
+    id:'p7b', titulo:'Dos eventos el mismo día — Cliente B', tipo:'edge',
+    situacion:'Crea este DESPUÉS del cliente A, mismo día. Verifica que recibe la letra B y que el folio del cliente A NO cambió (antes se reescribía).',
+    cliente:{nombre:'Hugo Lara Peña', correo:'proposalincmx+hugo@gmail.com', telefono:'8119012345'},
+    paquete:'Safi Esencial ($7,000)', addons:'Sin add-ons', fecha:'2026-06-20 (sábado)', hora:'20:00', anticipo:'Automático',
+    pasos:['Crea este contrato (mismo día que Gabriela).','Vuelve a revisar el folio de Gabriela.'],
+    esperado:'Hugo recibe <b>PI-2606.20-B</b>. Gabriela <b>sigue siendo PI-2606.20-A</b> (no cambió).',
+    verificar:'En Contratos1, los dos folios coexisten con sus letras.'
+  },
+  {
+    id:'p8', titulo:'Validaciones de dinero', tipo:'edge',
+    situacion:'Pruebas que el sistema no permita saldos imposibles: anticipo mayor al precio y abonos que exceden el saldo.',
+    cliente:{nombre:'(reutiliza cualquiera, ej. Ana o crea uno nuevo)', correo:'proposalincmx+dinero@gmail.com', telefono:'8110000000'},
+    paquete:'El que sea (ej. Safi Esencial $7,000)', addons:'Opcional', fecha:'Cualquiera futura', hora:'19:00', anticipo:'Ver pasos',
+    pasos:[
+      'Crea un contrato con precio $8,000 y anticipo $9,000.',
+      'En un contrato con saldo $4,000, intenta registrar un abono de $5,000.'
+    ],
+    esperado:'El anticipo > precio se <b>rechaza</b> ("El anticipo no puede ser mayor al precio"). El abono que excede saldo abre el <b>modal de exceso</b> (subir precio o ajustar al saldo).',
+    verificar:'En todo momento: Precio menos suma de abonos = Saldo.'
+  },
+  {
+    id:'p9', titulo:'Recordatorio de pago manual', tipo:'feliz',
+    situacion:'Cuando un cliente debe saldo, tú decides mandarle el recordatorio con los datos de pago. Es manual, con un botón.',
+    cliente:{nombre:'(usa un contrato con saldo pendiente)', correo:'—', telefono:'—'},
+    paquete:'Cualquiera con saldo > 0', addons:'—', fecha:'—', hora:'—', anticipo:'—',
+    pasos:['En el sidepanel General de un contrato con saldo, presiona "Enviar recordatorio de pago".'],
+    esperado:'Llega al correo del cliente un mensaje con folio, saldo, CLABE, tarjeta OXXO, titular y WhatsApp.',
+    verificar:'Solo se manda cuando tú lo presionas (no es automático al cliente).'
+  },
+  {
+    id:'p10', titulo:'Métricas: Facturado solo firmados y abonados', tipo:'edge',
+    situacion:'El número "Facturado" debe contar solo contratos firmados con al menos un abono, no los que están a medias. Y el panel financiero debe dar márgenes reales (con los costos capturados).',
+    cliente:{nombre:'(usa dos contratos)', correo:'—', telefono:'—'},
+    paquete:'—', addons:'—', fecha:'—', hora:'—', anticipo:'—',
+    pasos:['Ten 2 contratos: firma y abona SOLO uno.','Abre Análisis y revisa "Facturado".','Abre el panel financiero.'],
+    esperado:'"Facturado" cuenta <b>solo el firmado+abonado</b>. El panel financiero muestra márgenes creíbles (no inflados).',
+    verificar:'Si la columna de costos está vacía, el margen sale inflado: captura los costos primero.'
+  },
+  {
+    id:'p11', titulo:'Borrado individual y masivo', tipo:'edge',
+    situacion:'Borrar contratos de prueba sin riesgo de borrar de más. El individual pide el nombre del cliente; el masivo pide escribir BORRAR.',
+    cliente:{nombre:'(usa contratos de prueba)', correo:'—', telefono:'—'},
+    paquete:'—', addons:'—', fecha:'—', hora:'—', anticipo:'—',
+    pasos:['Individual: abre un contrato, Eliminar, escribe el nombre del cliente.','Masivo: selecciona 2 con checkboxes, Eliminar, confirma y escribe BORRAR.'],
+    esperado:'El individual borra solo si el nombre coincide. El masivo borra solo si escribes <b>BORRAR</b>. Se eliminan contrato, abonos y tokens.',
+    verificar:'Las filas desaparecen de Contratos1, Abonos1 y Tokens1.'
+  },
+  {
+    id:'p12', titulo:'Firma en celular (no se borra al mover pantalla)', tipo:'edge',
+    situacion:'En móvil, al aparecer/desaparecer la barra del navegador, la firma NO debe borrarse. Era un bug; aquí lo confirmas en tu teléfono.',
+    cliente:{nombre:'(abre el portal de cualquier contrato sin firmar en tu celular)', correo:'—', telefono:'—'},
+    paquete:'—', addons:'—', fecha:'—', hora:'—', anticipo:'—',
+    pasos:['Abre el portal en tu teléfono.','Traza la firma.','Haz scroll para que aparezca/desaparezca la barra del navegador.'],
+    esperado:'La firma <b>se mantiene</b>, no se borra.',
+    verificar:'El botón de firmar sigue habilitado tras mover la pantalla.'
+  },
+  {
+    id:'p13', titulo:'Disponibilidad (Safi parcial y Rincón Isla-sábado)', tipo:'edge',
+    situacion:'Los mensajes de WhatsApp de disponibilidad deben ser honestos: un día parcial no se anuncia como totalmente disponible, y la Isla no se ofrece en sábado.',
+    cliente:{nombre:'(paneles de disponibilidad)', correo:'—', telefono:'—'},
+    paquete:'—', addons:'—', fecha:'—', hora:'—', anticipo:'—',
+    pasos:['Safi: marca un día como Parcial con solo "Terraza Principal" libre y copia el mensaje.','Rincón: marca un sábado como Parcial y revisa las opciones de Isla.'],
+    esperado:'Safi dice <b>"disponibilidad parcial (solo Terraza Principal)"</b>, no "disponible" a secas. En Rincón la <b>Isla no aparece</b> como libre en sábado, ni en el mensaje.',
+    verificar:'El texto copiado al portapapeles refleja lo correcto.'
+  }
+];
+
+// ─── Render ───
+const KEY='pi_e2e_check_v1';
+let estado = {};
+try{ estado = JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){ estado = {}; }
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function chip(et, val){
+  return '<span class="chip"><span class="et">'+esc(et)+'</span><span class="val">'+esc(val)+'</span>'+
+    '<button class="cbtn" onclick="copiar(this, \''+esc(val).replace(/'/g,"\\'")+'\')">copiar</button></span>';
+}
+
+function render(){
+  const cont = document.getElementById('lista');
+  cont.innerHTML = PRUEBAS.map(function(p, i){
+    const done = !!estado[p.id];
+    const c = p.cliente;
+    const datos = (c.correo && c.correo!=='—')
+      ? '<div class="seccion">Datos del cliente</div><div class="datos">'+
+          chip('Nombre', c.nombre)+ (c.correo!=='—'?chip('Correo', c.correo):'') + (c.telefono!=='—'?chip('Teléfono', c.telefono):'')+
+        '</div>'
+      : '<div class="seccion">Cliente</div><div class="kv"><span>'+esc(c.nombre)+'</span></div>';
+    return ''+
+    '<div class="test'+(done?' done':'')+'" id="card-'+p.id+'">'+
+      '<div class="test-head" onclick="toggleBody(\''+p.id+'\', event)">'+
+        '<input type="checkbox" '+(done?'checked':'')+' onclick="event.stopPropagation()" onchange="marcar(\''+p.id+'\', this.checked)">'+
+        '<div>'+
+          '<div class="test-num">PRUEBA '+(i+1)+'<span class="badge '+(p.tipo==='feliz'?'b-feliz':'b-edge')+'">'+(p.tipo==='feliz'?'flujo feliz':'caso de borde')+'</span></div>'+
+          '<div class="test-titulo">'+esc(p.titulo)+'</div>'+
+          '<div class="test-sit">'+esc(p.situacion)+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="test-body" id="body-'+p.id+'" style="display:none">'+
+        datos+
+        '<div class="seccion">Qué usar</div>'+
+        '<div class="kv"><b>Paquete:</b> <span>'+esc(p.paquete)+'</span></div>'+
+        '<div class="kv"><b>Add-ons:</b> <span class="add">'+esc(p.addons)+'</span></div>'+
+        '<div class="kv"><b>Fecha:</b> <span>'+esc(p.fecha)+'</span> <b>Hora:</b> <span>'+esc(p.hora)+'</span></div>'+
+        '<div class="kv"><b>Anticipo:</b> <span>'+esc(p.anticipo)+'</span></div>'+
+        '<div class="seccion">Pasos</div>'+
+        '<ol class="pasos">'+p.pasos.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ol>'+
+        '<div class="exp"><b>Resultado esperado:</b> '+p.esperado+'</div>'+
+        '<div class="ver"><b>Verificar en:</b> '+p.verificar+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  actualizarProg();
+}
+
+function toggleBody(id, ev){
+  const b = document.getElementById('body-'+id);
+  if(!b) return;
+  b.style.display = b.style.display==='none' ? 'block' : 'none';
+}
+function toggleAll(abrir){
+  PRUEBAS.forEach(function(p){ const b=document.getElementById('body-'+p.id); if(b) b.style.display = abrir?'block':'none'; });
+}
+function marcar(id, val){
+  estado[id]=val;
+  localStorage.setItem(KEY, JSON.stringify(estado));
+  document.getElementById('card-'+id).classList.toggle('done', val);
+  actualizarProg();
+}
+function actualizarProg(){
+  const total = PRUEBAS.length;
+  const hechas = PRUEBAS.filter(function(p){return estado[p.id];}).length;
+  document.getElementById('barra').style.width = (total?Math.round(hechas/total*100):0)+'%';
+  document.getElementById('progTxt').textContent = hechas+' de '+total+' pruebas completadas';
+}
+function resetProg(){
+  if(!confirm('Reiniciar el avance de todas las pruebas?')) return;
+  estado={}; localStorage.removeItem(KEY); render();
+}
+function copiar(btn, texto){
+  const fin = function(){ btn.textContent='copiado'; btn.classList.add('ok'); mostrarToast('Copiado: '+texto); setTimeout(function(){btn.textContent='copiar';btn.classList.remove('ok');},1200); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(fin).catch(function(){ fallback(texto); fin(); });
+  } else { fallback(texto); fin(); }
+}
+function fallback(texto){
+  const ta=document.createElement('textarea'); ta.value=texto; ta.style.position='fixed'; ta.style.left='-9999px';
+  document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta);
+}
+let toastT=null;
+function mostrarToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},1400);
+}
+
+render();
+</script>
+</body>
+</html>
