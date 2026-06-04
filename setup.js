@@ -53,7 +53,7 @@ const CABECERAS_HOJAS = {
 
 const PAQUETES_INICIALES = [
 
-  // Paquetes base — Safi Metropolitan
+  // Paquetes base: Safi Metropolitan
 
   {
     clave: 'SAFI-MINIMALISTA', locacion: 'Safi Metropolitan', nombre: 'Safi Minimalista',
@@ -74,7 +74,7 @@ const PAQUETES_INICIALES = [
     entregables: 'Terraza exclusiva privada · Cena romántica a tres tiempos · Letras gigantes MARRY ME · Fotografía profesional · Video cinematográfico · Música personalizada durante la entrada',
   },
 
-  // Paquetes base — Rincón de Santiago
+  // Paquetes base: Rincón de Santiago
 
   {
     clave: 'RINCON-MINIMALISTA', locacion: 'Rincón de Santiago', nombre: 'Rincón Minimalista',
@@ -89,7 +89,7 @@ const PAQUETES_INICIALES = [
     entregables: 'Locación privada en Santiago, N.L. · Cena romántica a tres tiempos · Letras gigantes MARRY ME · Fotografía profesional · Video cinematográfico · Música personalizada durante la entrada',
   },
 
-  // Paquetes base — Propuestas de noviazgo
+  // Paquetes base: Propuestas de noviazgo
 
   {
     clave: 'NOV-CENA', locacion: 'Safi Metropolitan', nombre: 'Cena Romántica',
@@ -132,8 +132,8 @@ const PAQUETES_INICIALES = [
   },
   {
     clave: 'ADD-PETALOS', locacion: 'Todas', nombre: 'Pétalos adicionales y velas',
-    precio: 1500, esAdicional: true, activo: true, orden: 12,
-    componentesCombo: '', costoVariable: 500,
+    precio: 1000, esAdicional: true, activo: true, orden: 12,
+    componentesCombo: '', costoVariable: 300,
     entregables: 'Pétalos adicionales y velas para decoración del camino durante el evento',
   },
   {
@@ -172,21 +172,21 @@ const PAQUETES_INICIALES = [
     entregables: 'Fotografía profesional + Video cinematográfico del evento',
   },
   {
-    clave: 'COMBO-CINEMATOGRAFICO', locacion: 'Todas', nombre: 'Cinematográfico',
-    precio: 3200, esAdicional: true, activo: true, orden: 18,
-    componentesCombo: 'ADD-TEASER,ADD-DRONE,ADD-PETALOS', costoVariable: 500,
+    clave: 'COMBO-CINEMATOGRAFICO', locacion: 'Todas', nombre: 'Drone + Ambiente',
+    precio: 2000, esAdicional: true, activo: true, orden: 18,
+    componentesCombo: 'ADD-TEASER,ADD-DRONE,ADD-PETALOS', costoVariable: 300,
     entregables: 'Video teaser vertical + Video aéreo con drone + Pétalos adicionales y velas',
   },
   {
-    clave: 'COMBO-VIP', locacion: 'Todas', nombre: 'VIP',
-    precio: 3000, esAdicional: true, activo: true, orden: 19,
-    componentesCombo: 'ADD-RECUERDOS,ADD-EXPRESS', costoVariable: 550,
+    clave: 'COMBO-VIP', locacion: 'Todas', nombre: 'Camino de recuerdos + Entrega Express',
+    precio: 2500, esAdicional: true, activo: true, orden: 19,
+    componentesCombo: 'ADD-RECUERDOS,ADD-EXPRESS', costoVariable: 300,
     entregables: 'Camino de recuerdos (30 fotos impresas) + Entrega Express (24 horas)',
   },
   {
-    clave: 'COMBO-TOTAL', locacion: 'Todas', nombre: 'Experiencia Total',
-    precio: 5500, esAdicional: true, activo: true, orden: 20,
-    componentesCombo: 'ADD-TEASER,ADD-DRONE,ADD-PETALOS,ADD-RECUERDOS,ADD-EXPRESS', costoVariable: 1050,
+    clave: 'COMBO-TOTAL', locacion: 'Todas', nombre: 'Todo Incluido',
+    precio: 3000, esAdicional: true, activo: true, orden: 20,
+    componentesCombo: 'ADD-TEASER,ADD-DRONE,ADD-PETALOS,ADD-RECUERDOS,ADD-EXPRESS', costoVariable: 600,
     entregables: 'Video teaser vertical + Video aéreo con drone + Pétalos adicionales y velas + Camino de recuerdos (30 fotos impresas) + Entrega Express (24 horas)',
   },
 ];

@@ -954,7 +954,10 @@ function renderConsulta() {
 function getEspaciosLibres(dow, estado, notaStr) {
   if (estado === 'bloqueada') return [];
   if (estado === 'parcial') {
-    return (notaStr || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    return (notaStr || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+      // La Isla nunca esta disponible los sabados, aunque la nota guardada la incluya
+      // (dato heredado o marcado en otro dia). Se filtra tambien aqui, no solo en estado libre.
+      .filter(function(e) { return !(e === 'Isla' && dow === 6); });
   }
   return ESPACIOS.filter(function(e) { return !(e === 'Isla' && dow === 6); });
 }

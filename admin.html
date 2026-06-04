@@ -686,7 +686,7 @@
           <div class="fila-2">
             <div class="campo"><label>Precio total</label><input type="number" id="per-precio" placeholder="0" oninput="actualizarAnticipo('per')"></div>
             <div class="campo"><label>Descuento (MXN)</label><input type="number" id="per-descuento" placeholder="0" min="0" value="0" oninput="actualizarAnticipo('per')"><p style="font-size:11px;color:var(--ink-3);margin:3px 0 0" id="per-precio-final"></p></div>
-            <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="per-anticipo" placeholder="0"></div>
+            <div class="campo"><label>Anticipo (50% por defecto)</label><input type="number" id="per-anticipo" placeholder="0" oninput="anticipoManual=true"></div>
           </div>
           <div class="campo">
             <label>Notas del contrato <span style="font-weight:400;color:var(--ink-3)">(opcional, visible al cliente)</span></label>
@@ -843,7 +843,7 @@
       <select id="modal-res-espacio"></select>
     </div>
     <div style="display:flex;gap:10px;margin-top:20px">
-      <button class="btn-primario gold" style="flex:1" onclick="ejecutarConfirmarReservacion()">Confirmar</button>
+      <button id="btn-confirmar-reservacion" class="btn-primario gold" style="flex:1" onclick="ejecutarConfirmarReservacion()">Confirmar</button>
       <button class="btn-secundario" style="flex:1" onclick="cerrarModalReservacion()">Cancelar</button>
     </div>
     <div id="modal-res-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
@@ -1107,7 +1107,9 @@ function onLocacionChange(pref) {
   verificarRestriccion();
 }
 function actualizarAnticipo(pref) {
-  if (pref === 'est' && anticipoManual) return;
+  // Respeta el anticipo escrito a mano en ambos formularios (estandar y personalizado).
+  // anticipoManual se reinicia al abrir/limpiar el formulario de creacion.
+  if (anticipoManual) return;
   const precio     = parseFloat(document.getElementById(pref + '-precio').value) || 0;
   const descuentoEl = document.getElementById(pref + '-descuento');
   const descuento  = descuentoEl ? (parseFloat(descuentoEl.value) || 0) : 0;
@@ -1529,7 +1531,7 @@ function renderPanel(data) {
             '<input type="time" id="inp-hora-nueva" style="flex:1;border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px;font-size:13px;background:var(--page);color:var(--ink-1)">' +
           '</div>' +
           '<div style="display:flex;gap:6px">' +
-            '<button onclick="confirmarReagendamiento()" class="btn-primario gold btn-sm" style="flex:1">Confirmar</button>' +
+            '<button id="btn-confirmar-reagendar" onclick="confirmarReagendamiento()" class="btn-primario gold btn-sm" style="flex:1">Confirmar</button>' +
             '<button onclick="cancelarReagendamiento()" class="btn-secundario btn-sm" style="flex:1">Cancelar</button>' +
           '</div>' +
           '<div class="form-msg" id="msg-reagendar"></div>' +
@@ -2044,10 +2046,16 @@ async function eliminarContrato() {
   if (!tokenActivo) return;
   const c = todosContratos.filter(function(x) { return x.token === tokenActivo; })[0];
   const nombre = c ? c.nombreCliente : null;
-  const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\nEscribe el nombre del cliente para confirmar:');
+  // Si el contrato esta cargado, se confirma con el nombre del cliente. Si no se pudo
+  // resolver el nombre (lista filtrada o estado parcial), se exige escribir BORRAR para
+  // no degradar la confirmacion a cualquier texto no vacio en una accion irreversible.
+  const instruccion = nombre
+    ? 'Escribe el nombre del cliente para confirmar:'
+    : 'Escribe BORRAR para confirmar:';
+  const conf = prompt('ELIMINAR PERMANENTEMENTE\n\nBorra el contrato, sus abonos y tokens. No se puede deshacer.\n\n' + instruccion);
   if (conf === null) return;
   if (!nombre) {
-    if (!conf.trim()) { alert('Escribe algo para confirmar la eliminación.'); return; }
+    if (conf.trim() !== 'BORRAR') { alert('Escribe BORRAR para confirmar la eliminación.'); return; }
   } else if (conf.trim().toLowerCase() !== nombre.trim().toLowerCase()) {
     alert('El nombre no coincide. No se eliminó nada.');
     return;
@@ -2397,6 +2405,10 @@ async function ejecutarConfirmarReservacion() {
     errEl.style.display = 'block';
     return;
   }
+  // Deshabilitar el boton durante la llamada para evitar doble envio. Confirmar dos
+  // veces dispararia dos veces la creacion de carpeta, evento de Calendar y correo.
+  const btn = document.getElementById('btn-confirmar-reservacion');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirmando...'; }
   try {
     const data = await apiPost({
       action : 'confirmarReservacion',
@@ -2411,6 +2423,8 @@ async function ejecutarConfirmarReservacion() {
   } catch (e) {
     errEl.textContent = 'Error: ' + e.message;
     errEl.style.display = 'block';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
   }
 }
 
@@ -2530,7 +2544,7 @@ function fmxnFechaLarga(val) {
   return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 // BUG-000: normaliza un valor de hora (string HH:MM, ISO, o Date de 1899)
-// y retorna el formato de 12 horas con a.m./p.m. Si el valor no es parseable, retorna '—'.
+// y retorna el formato de 12 horas con a.m./p.m. Si el valor no es parseable, retorna un guion.
 function formatHora(val) {
   if (!val) return '—';
   const s = String(val);
@@ -2608,6 +2622,10 @@ async function confirmarReagendamiento() {
   if (!fechaNueva) { setMsg('msg-reagendar', 'Ingresa la nueva fecha.', 'error'); return; }
   const t = tokenActivo;
   if (!t) return;
+  // Deshabilitar el boton durante la llamada para evitar doble envio: reagendar dos
+  // veces puede actualizar el evento de Calendar y reenviar el correo al cliente dos veces.
+  const btn = document.getElementById('btn-confirmar-reagendar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Reagendando...'; }
   try {
     const data = await apiPost({ action: 'reagendarContrato', token: t, nuevaFecha: fechaNueva, nuevaHora: horaNueva });
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
@@ -2618,6 +2636,8 @@ async function confirmarReagendamiento() {
     setTimeout(cancelarReagendamiento, 1500);
   } catch (e) {
     setMsg('msg-reagendar', 'Error: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar'; }
   }
 }
 
@@ -2700,17 +2720,28 @@ async function cargarReportes() {
 
 // ── PANEL FINANCIERO (Plan 5) ──
 async function cargarPanelFinanciero() {
-  const datos = await apiGet({ action: 'obtenerPanelFinanciero' });
-  if (!datos || datos.error) return;
+  let datos;
+  try {
+    datos = await apiGet({ action: 'obtenerPanelFinanciero' });
+  } catch (e) {
+    const b = document.getElementById('pf-porcentaje');
+    if (b) b.textContent = 'No se pudo cargar el panel financiero.';
+    return;
+  }
+  if (!datos || !datos.ok || datos.error) return;
 
   const formatPeso = function(n) {
-    return '$' + Number(n).toLocaleString('es-MX') + ' MXN';
+    const num = Number(n);
+    return '$' + (isNaN(num) ? 0 : num).toLocaleString('es-MX') + ' MXN';
   };
 
   document.getElementById('pf-meta-valor').textContent = formatPeso(datos.meta_mensual);
   document.getElementById('pf-cobros').textContent     = formatPeso(datos.ganancia_mes);
 
-  const pct  = Math.min(100, Math.round((datos.ganancia_mes / datos.meta_mensual) * 100));
+  // Guarda contra division por cero o meta sin configurar: evita NaN%/Infinity en la barra.
+  const meta = Number(datos.meta_mensual) || 0;
+  const ganancia = Number(datos.ganancia_mes) || 0;
+  const pct = meta > 0 ? Math.min(100, Math.round((ganancia / meta) * 100)) : 0;
   const barra = document.getElementById('pf-barra');
   barra.style.width      = pct + '%';
   barra.style.background = pct >= 100 ? '#4CAF50' : '#C9A84C';

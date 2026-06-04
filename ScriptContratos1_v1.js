@@ -133,40 +133,40 @@ function extraerApellido1(nombre) {
     .toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-// Decide el folio del contrato nuevo. Si ya hay un contrato ese día sin sufijo,
-// devuelve también la instrucción de actualizarlo para agregarle su apellido.
-// Esto evita reindexar números cuando llega un segundo evento el mismo día.
+// Convierte un indice 0-based en etiqueta de letra: 0->A, 1->B, ..., 25->Z, 26->AA, ...
+function etiquetaFolio1(indice) {
+  let s = '';
+  let i = indice + 1;
+  while (i > 0) {
+    const r = (i - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    i = Math.floor((i - 1) / 26);
+  }
+  return s;
+}
+
+// Decide el folio del contrato nuevo con sufijo de letra correlativa por dia:
+// PI-YYMM.DD-A, -B, -C, ... Cada contrato recibe su letra al crearse y nunca se
+// modifica despues, aunque lleguen mas eventos el mismo dia. Asi no hay que reescribir
+// folios ya emitidos (ni sus PDF ni sus carpetas de Drive) cuando se agrega otro evento.
 function asignarFolio1(fechaEvento, nombreCliente, contratos) {
   const base = folioBase1(fechaEvento);
-  const mismoDia = contratos.filter(function(c) {
+
+  // Sufijos ya usados ese dia. Un folio antiguo sin sufijo (formato anterior) se
+  // considera que ocupa la letra A para no colisionar con el nuevo esquema.
+  const usados = {};
+  contratos.forEach(function(c) {
     const f = String(c.Folio || '');
-    return f === base || f.indexOf(base + '-') === 0;
+    if (f === base) { usados['A'] = true; return; }
+    if (f.indexOf(base + '-') === 0) { usados[f.substring(base.length + 1)] = true; }
   });
 
-  if (mismoDia.length === 0) {
-    return { folioNuevo: base, actualizarAnterior: null };
-  }
+  // Primera etiqueta de letra disponible (A, B, ..., Z, AA, ...).
+  let idx = 0;
+  while (usados[etiquetaFolio1(idx)]) idx++;
 
-  const apellidoNuevo = extraerApellido1(nombreCliente) || 'CLIENTE';
-  let actualizarAnterior = null;
-
-  // Si el único contrato del día aún no tiene sufijo, hay que agregárselo.
-  if (mismoDia.length === 1 && String(mismoDia[0].Folio) === base) {
-    const apellidoPrevio = extraerApellido1(mismoDia[0].NombreCliente) || 'CLIENTE';
-    actualizarAnterior = { token: mismoDia[0].Token, folio: base + '-' + apellidoPrevio };
-  }
-
-  const foliosUsados = {};
-  mismoDia.forEach(function(c) { foliosUsados[String(c.Folio)] = true; });
-  if (actualizarAnterior) foliosUsados[actualizarAnterior.folio] = true;
-
-  let folioNuevo = base + '-' + apellidoNuevo;
-  let n = 2;
-  while (foliosUsados[folioNuevo]) {
-    folioNuevo = base + '-' + apellidoNuevo + n;
-    n++;
-  }
-  return { folioNuevo: folioNuevo, actualizarAnterior: actualizarAnterior };
+  // actualizarAnterior siempre es null: el esquema de letras no reescribe folios previos.
+  return { folioNuevo: base + '-' + etiquetaFolio1(idx), actualizarAnterior: null };
 }
 
 // === Helpers de infraestructura ===
@@ -2209,20 +2209,38 @@ function accionListarStats1(e) {
     abonos.push(obj);
   }
 
+  // Facturado solo cuenta contratos firmados y con al menos un abono. Como el backend
+  // no permite registrar un abono en un contrato sin firmar, tener abonos implica firmado.
+  const abonadoPorToken = {};
+  abonos.forEach(function(a) {
+    const tok = String(a.ContratoToken || '');
+    if (!tok) return;
+    abonadoPorToken[tok] = (abonadoPorToken[tok] || 0) + (parseFloat(a.Monto) || 0);
+  });
+  function estaFacturado1(c) {
+    return (abonadoPorToken[String(c.Token)] || 0) > 0;
+  }
+
   const ESTATUSES_ACTIVOS = ['Pendiente firma','Firmado','Anticipo recibido','Reservado','En produccion','Entregado'];
-  let facturado = 0, numContratos = 0;
+  let facturado = 0, numContratos = 0, numFacturados = 0;
   const porEstatus = {};
   const porCliente = {};
 
   contratos.forEach(function(c) {
     if (!enPeriodo(c.FechaCreacion)) return;
     numContratos++;
-    const precio = parseFloat(c.Precio) || 0;
-    facturado += precio;
     const est = c.Estatus || 'Sin estatus';
     porEstatus[est] = (porEstatus[est] || 0) + 1;
-    const cliente = String(c.NombreCliente || '').trim();
-    if (cliente) porCliente[cliente] = (porCliente[cliente] || 0) + precio;
+    // Las metricas de dinero (facturado, ticket promedio, top clientes) solo cuentan
+    // contratos firmados y abonados. Las de pipeline (numContratos, porEstatus) siguen
+    // contando todos los contratos del periodo para no perder la vista del embudo.
+    if (estaFacturado1(c)) {
+      const precio = parseFloat(c.Precio) || 0;
+      facturado += precio;
+      numFacturados++;
+      const cliente = String(c.NombreCliente || '').trim();
+      if (cliente) porCliente[cliente] = (porCliente[cliente] || 0) + precio;
+    }
   });
 
   let cobrado = 0;
@@ -2234,7 +2252,7 @@ function accionListarStats1(e) {
     .filter(function(c) { return ESTATUSES_ACTIVOS.indexOf(c.Estatus) !== -1; })
     .reduce(function(s, c) { return s + (parseFloat(c.SaldoPendiente) || 0); }, 0);
 
-  const ticketPromedio = numContratos > 0 ? Math.round(facturado / numContratos) : 0;
+  const ticketPromedio = numFacturados > 0 ? Math.round(facturado / numFacturados) : 0;
 
   const topClientes = Object.keys(porCliente)
     .map(function(n) { return { nombre: n, total: porCliente[n] }; })
@@ -2261,6 +2279,7 @@ function accionListarStats1(e) {
     return porMes.filter(function(p) { return p.key === key; })[0] || null;
   }
   contratos.forEach(function(c) {
+    if (!estaFacturado1(c)) return;
     const slot = slotDe(c.FechaCreacion);
     if (slot) slot.facturado += parseFloat(c.Precio) || 0;
   });
@@ -3084,9 +3103,14 @@ function accionConfirmarReservacion1(body) {
   if (!token)   return jsonResponse1({ error: 'Token requerido' });
   if (!espacio) return jsonResponse1({ error: 'El espacio de la locación es obligatorio' });
 
-  // I5: candado para evitar que dos clics simultaneos creen dos eventos de Calendar.
+  // I5: el candado cubre la actualizacion de estatus, la creacion de la carpeta y
+  // la creacion del evento de Calendar. Antes la carpeta y el evento se creaban fuera
+  // del lock, por lo que dos confirmaciones casi simultaneas podian pasar el guard de
+  // reintento (ReservacionConfirmada ya escrita pero EventoCalendarioID aun vacio) y
+  // crear dos eventos de Calendar duplicados. Mantener todo bajo el mismo lock lo evita.
   let esReintento = false;
   let ahora = '';
+  let contratoActualizado = null;
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -3128,33 +3152,37 @@ function accionConfirmarReservacion1(body) {
       });
       SpreadsheetApp.flush();
     }
+
+    contratoActualizado = obtenerContrato1(token);
+    if (!contratoActualizado) {
+      return jsonResponse1({ error: 'No se pudo releer el contrato tras la actualización. Intenta de nuevo.' });
+    }
+
+    // Crear carpeta solo si no existe aún (idempotente).
+    if (!String(contratoActualizado.CarpetaProyectoID || '').trim()) {
+      try {
+        const carpetaId = crearCarpetaProyecto1(contratoActualizado);
+        if (carpetaId) {
+          actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
+          contratoActualizado.CarpetaProyectoID = carpetaId;
+        }
+      } catch (err) {
+        Logger.log('confirmarReservacion - carpeta: ' + err.message);
+      }
+    }
+
+    // Crear evento de Calendar solo si aun no existe (idempotente). Si una confirmacion
+    // previa fallo al crearlo, este reintento lo crea. El guard impide duplicados cuando
+    // dos confirmaciones llegan casi a la vez.
+    if (!String(contratoActualizado.EventoCalendarioID || '').trim()) {
+      try {
+        crearEventoCalendario1(contratoActualizado);
+      } catch (err) {
+        Logger.log('confirmarReservacion - calendario: ' + err.message);
+      }
+    }
   } finally {
     lock.releaseLock();
-  }
-
-  const contratoActualizado = obtenerContrato1(token);
-  if (!contratoActualizado) {
-    return jsonResponse1({ error: 'No se pudo releer el contrato tras la actualización. Intenta de nuevo.' });
-  }
-
-  // Crear carpeta solo si no existe aún (idempotente).
-  if (!String(contratoActualizado.CarpetaProyectoID || '').trim()) {
-    try {
-      const carpetaId = crearCarpetaProyecto1(contratoActualizado);
-      if (carpetaId) {
-        actualizarContrato1(token, { CarpetaProyectoID: carpetaId });
-        contratoActualizado.CarpetaProyectoID = carpetaId;
-      }
-    } catch (err) {
-      Logger.log('confirmarReservacion - carpeta: ' + err.message);
-    }
-  }
-
-  // Crear evento de Calendar (se intenta siempre — sea primera vez o reintento).
-  try {
-    crearEventoCalendario1(contratoActualizado);
-  } catch (err) {
-    Logger.log('confirmarReservacion - calendario: ' + err.message);
   }
 
   // Correos: solo en la primera confirmacion, no en reintentos.
@@ -3388,7 +3416,7 @@ function accionDisponibilidadGuardar1(body) {
         notaAnterior   = String(datos[filaIdx][colNota]   || '').trim();
       }
 
-      // Sin cambio real en estado ni nota — omitir.
+      // Sin cambio real en estado ni nota. Omitir.
       if (estadoAnterior === estado && notaAnterior === nota) return;
 
       if (estado === 'libre') {
