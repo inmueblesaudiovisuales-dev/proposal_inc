@@ -579,36 +579,87 @@ function resolverYActualizar() {
   const addonMap = {};
   addons.forEach(function(a) { addonMap[a.clave] = a; });
 
-  // Combos ordenados de mayor a menor componentes para que el mas grande tenga prioridad.
-  const combos = addons
-    .filter(function(a) { return a.componentes && a.componentes.length > 0; })
-    .slice()
-    .sort(function(a, b) { return b.componentes.length - a.componentes.length; });
+  // Combos disponibles (items con componentes).
+  const combos = addons.filter(function(a) { return a.componentes && a.componentes.length > 0; });
 
-  // Auto-upgrade: si todos los componentes de un combo estan en seleccionActual
-  // como add-ons INDIVIDUALES DIRECTOS (no como partes expandidas de otro combo),
-  // reemplazarlos por el combo. Esto evita que seleccionar un combo mayor
-  // active automaticamente los sub-combos que cubre.
-  let huboUpgrade = true;
-  let mensajesUpgrade = [];
-  while (huboUpgrade) {
-    huboUpgrade = false;
-    combos.forEach(function(combo) {
-      if (seleccionActual.has(combo.clave)) return;
-      const todosDirectos = combo.componentes.every(function(c) {
-        return seleccionActual.has(c);
-      });
-      if (!todosDirectos) return;
-      combo.componentes.forEach(function(c) { seleccionActual.delete(c); });
-      seleccionActual.add(combo.clave);
-      mensajesUpgrade.push(combo.nombre);
-      huboUpgrade = true;
-    });
+  // Lo que el cliente tenia marcado antes de optimizar, para avisar si se aplica un combo.
+  const seleccionPrevia = new Set(seleccionActual);
+
+  function precioDe(clave) {
+    const a = addonMap[clave];
+    return a ? (parseFloat(a.precio) || 0) : 0;
   }
 
-  // Determina que items quedan cubiertos por los combos seleccionados:
-  // sus componentes individuales y los sub-combos cuyos componentes
-  // estan todos dentro del combo mayor.
+  // 1) Expandir la seleccion al conjunto de servicios individuales deseados. Un combo
+  //    seleccionado aporta sus componentes; un add-on individual se aporta a si mismo.
+  const deseados = new Set();
+  seleccionActual.forEach(function(clave) {
+    const a = addonMap[clave];
+    if (!a) return;
+    if (a.componentes && a.componentes.length) {
+      a.componentes.forEach(function(c) { deseados.add(c); });
+    } else {
+      deseados.add(clave);
+    }
+  });
+
+  // 2) Elegir la combinacion de MENOR COSTO (combos + individuales) que cubra EXACTAMENTE
+  //    los servicios deseados, sin agregar servicios que el cliente no pidio. Asi, si el
+  //    cliente marca dos combos chicos que juntos equivalen a uno grande mas barato, se
+  //    aplica el combo grande (antes el combo grande quedaba bloqueado por error). Un combo
+  //    solo es candidato si TODOS sus componentes estan entre los deseados.
+  const combosValidos = combos.filter(function(combo) {
+    return combo.componentes.every(function(c) { return deseados.has(c); });
+  });
+
+  let mejorSeleccion = null;
+  let mejorCosto = Infinity;
+  const nCombos = combosValidos.length;
+  for (let mask = 0; mask < (1 << nCombos); mask++) {
+    const cubiertosPorCombos = new Set();
+    const elegidos = [];
+    let costo = 0;
+    let solapa = false;
+    for (let i = 0; i < nCombos && !solapa; i++) {
+      if (!(mask & (1 << i))) continue;
+      const combo = combosValidos[i];
+      // No combinar combos que compartan un servicio (evita doble cobro).
+      for (let k = 0; k < combo.componentes.length; k++) {
+        if (cubiertosPorCombos.has(combo.componentes[k])) { solapa = true; break; }
+        cubiertosPorCombos.add(combo.componentes[k]);
+      }
+      if (solapa) break;
+      elegidos.push(combo.clave);
+      costo += precioDe(combo.clave);
+    }
+    if (solapa) continue;
+    // Los servicios deseados que ningun combo cubre se compran individuales.
+    const seleccion = new Set(elegidos);
+    deseados.forEach(function(serv) {
+      if (!cubiertosPorCombos.has(serv)) {
+        seleccion.add(serv);
+        costo += precioDe(serv);
+      }
+    });
+    if (costo < mejorCosto) {
+      mejorCosto = costo;
+      mejorSeleccion = seleccion;
+    }
+  }
+
+  seleccionActual = mejorSeleccion || new Set();
+
+  // Combos que aplico la optimizacion y que el cliente no tenia marcados: se avisan.
+  const mensajesUpgrade = [];
+  seleccionActual.forEach(function(clave) {
+    const a = addonMap[clave];
+    if (a && a.componentes && a.componentes.length && !seleccionPrevia.has(clave)) {
+      mensajesUpgrade.push(a.nombre);
+    }
+  });
+
+  // 3) Determinar que items quedan cubiertos por la seleccion (sus componentes y los
+  //    combos cuyos componentes esten todos cubiertos) para deshabilitarlos en la UI.
   const cubiertos = new Set();
   seleccionActual.forEach(function(clave) {
     const a = addonMap[clave];
