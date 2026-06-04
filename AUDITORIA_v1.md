@@ -232,6 +232,18 @@ Leyenda: ✓ coincide; ⚠ observación; ✗ problema.
 
 ## 6. Preguntas abiertas para el dueño
 
+### Estado actualizado (decisiones tomadas con el dueño)
+
+- **P-01 (costos):** RESUELTA. El dueño proporcionó los costos. Guardados en `COSTOS_PAQUETES_v1.md`. Pendiente de su parte: capturarlos en el admin. Precios de combos y de pétalos corregidos al catálogo actual (commit de precios).
+- **P-02 (páginas huérfanas):** RESUELTA. `aceptar.html`, `pago.html` y `terminos.html` eliminadas del repo por decisión del dueño.
+- **P-03 (zona horaria):** RESUELTA. El dueño confirma que los eventos de Calendar ya salen con la hora correcta. La zona del proyecto está bien. Sin acción. (A-06 deja de ser un riesgo en la práctica.)
+- **P-04 (seguridad admin):** RESUELTA. Se deja la clave `framedock` como está, por ser un equipo pequeño de confianza. A endurecer en el futuro si crece el equipo.
+- **P-05 (Facturado):** RESUELTA y APLICADA. "Facturado", ticket promedio, top clientes y la gráfica mensual ahora solo cuentan contratos firmados y abonados. Las métricas de pipeline siguen contando todos.
+- **P-06 (aviso domingos Safi):** RESUELTA. El dueño lo seguirá manejando por WhatsApp. Sin cambio.
+- **P-07 (folio re-foliado en PDF):** Sin decisión por ahora. Se deja como está (no se regenera el PDF). El dueño puede retomarlo después.
+
+### Detalle original de las preguntas
+
 - **P-01 (CostoVariable — bloquea el panel financiero):** ¿Con qué valor de `CostoVariable` debe quedar cada paquete y add-on en `Paquetes1` de producción? Existen dos juegos de números sin confirmar: el de `setup.js` (`SAFI-MINIMALISTA 3350`, `SAFI-CORAZON 3350`, `SAFI-LETRAS 5350`, `RINCON-MINIMALISTA 5500`, `RINCON-LETRAS 9500`, `NOV-CENA 3350`, `NOV-CORAZON 3350`, `NOV-LETRAS 7850`, add-ons varios) y el mencionado en el prompt (`3850, 3650, 5650, ...`). No se inventó ningún número. Una vez confirmados, se poblará la columna `CostoVariable` en `Paquetes1`.
 - **P-02 (páginas huérfanas):** ¿`aceptar.html` y `pago.html` siguen en uso? El backend no tiene sus endpoints (`datoPago`, ni handler sin `action`) y su `SCRIPT_URL` es `PENDIENTE`. Opciones: (a) eliminarlas del repo; (b) reconectarlas (requiere crear endpoints y darme los datos bancarios reales). Lo mismo aplica a `terminos.html`, cuyas cláusulas no coinciden con el contrato real (A-22).
 - **P-03 (zona horaria):** ¿La zona del proyecto de Apps Script es `America/Monterrey`? Si no, los eventos de Calendar saldrán con la hora corrida (A-06). Recomendación: fijarla a `America/Monterrey`.
