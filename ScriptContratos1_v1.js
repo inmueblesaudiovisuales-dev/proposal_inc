@@ -3007,6 +3007,7 @@ function testDriveCrearYBorrar1() {
 // Usada tanto al crear el evento como al actualizarlo.
 function buildDescripcionEvento1(contrato) {
   const lineas = [
+    'Folio: '    + (contrato.Folio           || ''),
     'Cliente: '  + (contrato.NombreCliente   || ''),
     'Pareja: '   + (contrato.NombrePareja    || ''),
     'Paquete: '  + (contrato.PaqueteNombre   || ''),
@@ -3057,9 +3058,14 @@ function crearEventoCalendario1(contrato) {
   const inicio  = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), h, m, 0);
   const fin     = new Date(inicio.getTime() + 2 * 60 * 60 * 1000);
   const espacio = String(contrato.EspacioLocacion || '').trim();
-  const titulo  = (contrato.Folio || '') + ' — ' + (contrato.Locacion || '') +
-                  (espacio ? ' · ' + espacio : '') +
-                  (contrato.PaqueteNombre ? ' · ' + contrato.PaqueteNombre : '');
+  // Titulo del evento: ubicacion, espacio (terraza), paquete y nombre del cliente,
+  // en ese orden. El folio no va en el titulo; aparece en la descripcion del evento.
+  const titulo  = [
+    contrato.Locacion      || '',
+    espacio,
+    contrato.PaqueteNombre || '',
+    contrato.NombreCliente || '',
+  ].filter(Boolean).join(' · ');
   const ubicacion = DIRECCIONES_LOCACION1[contrato.Locacion] || contrato.Locacion || '';
   const desc = buildDescripcionEvento1(contrato);
   const evento = CalendarApp.getDefaultCalendar().createEvent(titulo, inicio, fin, {
