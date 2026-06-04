@@ -42,7 +42,7 @@ Convención de cada paso: **Acción** (qué hacer) · **Dato** (qué usar) · **
 - Acción: en `admin.html` (clave `framedock`), Crear contrato > tipo Estándar.
 - Dato: nombre `Cliente Prueba Uno`, correo (el tuyo de prueba), teléfono `8112345678`, paquete `Safi Corazón`, fecha del evento dentro de 30 días, hora `19:00`, anticipo dejar en automático (50%), origen `WhatsApp`.
 - Esperado: aparece un enlace de portal y un enlace de WhatsApp; el contrato queda en `Pendiente firma`.
-- Verificar en: `Contratos1` (fila nueva, `Estatus = Pendiente firma`, `Precio = 8000`, `SaldoPendiente = 8000`, `Anticipo = 4000`, `Folio = PI-YYMM.DD`). `Tokens1` tiene una fila con `Expira` a 72 h.
+- Verificar en: `Contratos1` (fila nueva, `Estatus = Pendiente firma`, `Precio = 8000`, `SaldoPendiente = 8000`, `Anticipo = 4000`, `Folio = PI-YYMM.DD-A` (letra correlativa por día; un segundo evento ese día sería `-B`, etc.)). `Tokens1` tiene una fila con `Expira` a 72 h.
 
 **1.2 Abrir el portal como cliente**
 - Acción: abrir el enlace del portal.
