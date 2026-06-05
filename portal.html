@@ -527,7 +527,16 @@ function renderEtapa1() {
       '<div class="msg" id="msg-firma"></div>' +
     '</div>';
 
+  // Pre-seleccionar los add-ons pactados con el cliente (los que el equipo dejo
+  // acordados de antemano). El cliente puede destildarlos o subir de combo. Solo se
+  // pre-marcan los que existen en el menu disponible del portal.
   seleccionActual = new Set();
+  const clavesMenu = {};
+  (d.addonsDisponibles || []).forEach(function(a) { clavesMenu[a.clave] = true; });
+  (d.adicionales || []).forEach(function(a) {
+    const clave = (a && a.clave) ? a.clave : a;
+    if (clavesMenu[clave]) seleccionActual.add(clave);
+  });
   resolverYActualizar();
   initFirma();
 }

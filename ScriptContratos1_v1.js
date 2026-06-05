@@ -558,7 +558,8 @@ function accionCrearContrato1(body) {
   let paqueteNombre  = '';
   let descripcion    = '';
   let precio         = 0;
-  let adicionales    = [];
+  let adicionales    = [];   // pactados: vienen pre-seleccionados en el portal
+  let ofrecidos      = [];   // menu completo: lo que el cliente ve como opciones
 
   if (tipo === 'estandar') {
     paqueteClave = String(body.paqueteClave || '').trim();
@@ -570,13 +571,24 @@ function accionCrearContrato1(body) {
     // El precio del catálogo se autocompleta, pero Bruno puede editarlo.
     precio = (body.precio !== undefined && body.precio !== '')
       ? parseFloat(body.precio) || 0 : paquete.Precio;
-    // AdicionalesJSON guarda solo las claves de add-ons que Bruno ofrece.
+    // El menu (addonsOfrecidos) es lo que el cliente vera como opciones en el portal.
+    // adicionales (pactados) son los que vienen pre-seleccionados; subconjunto del menu.
+    if (Array.isArray(body.addonsOfrecidos)) {
+      ofrecidos = body.addonsOfrecidos.filter(function(clave) {
+        const p = obtenerPaquete1ByClave(clave);
+        return p && p.EsAdicional;
+      });
+    }
     if (Array.isArray(body.adicionales)) {
       adicionales = body.adicionales.filter(function(clave) {
         const p = obtenerPaquete1ByClave(clave);
         return p && p.EsAdicional;
       });
     }
+    // Compatibilidad: si no llega el menu, se usa lo que venga en adicionales como menu.
+    if (!ofrecidos.length && adicionales.length) ofrecidos = adicionales.slice();
+    // Los pactados deben estar dentro del menu ofrecido.
+    adicionales = adicionales.filter(function(clave) { return ofrecidos.indexOf(clave) !== -1; });
   } else {
     // Contrato personalizado: todo manual, sin paquete ni add-ons.
     paqueteNombre = 'Personalizado';
@@ -635,7 +647,7 @@ function accionCrearContrato1(body) {
       PaqueteClave       : paqueteClave,
       PaqueteNombre      : paqueteNombre,
       AdicionalesJSON    : JSON.stringify(adicionales),
-      AddonsOfrecidosJSON: JSON.stringify(adicionales),
+      AddonsOfrecidosJSON: JSON.stringify(ofrecidos),
       Locacion           : locacion,
       EspacioLocacion    : espacio,
       DescripcionServicio: descripcion,

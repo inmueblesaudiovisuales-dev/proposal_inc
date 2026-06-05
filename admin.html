@@ -602,9 +602,18 @@
             <select id="est-paquete" onchange="onPaqueteSelect()"><option value="">Cargando...</option></select>
           </div>
           <div class="campo" id="campo-adicionales">
-            <label>Add-ons a ofrecer al cliente</label>
-            <p class="form-hint" style="margin-bottom:8px">Los marcados aparecerán como opciones en el portal. El cliente decide cuáles acepta al firmar.</p>
-            <div class="add-lista" id="lista-adicionales"></div>
+            <div onclick="toggleAddonsAcc()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <label style="margin:0;cursor:pointer">Add-ons pactados con el cliente (opcional)</label>
+              <span id="acc-addons-ico" style="font-size:20px;color:var(--ink-3);line-height:1">+</span>
+            </div>
+            <div id="acc-addons-body" style="display:none;margin-top:8px">
+              <p class="form-hint" style="margin-bottom:8px">Marca solo los add-ons que el cliente ya acordó: vienen pre-seleccionados en su portal. El cliente verá los demás como opciones y podrá agregarlos o subir de combo.</p>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(true)">Marcar todos</button>
+                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(false)">Limpiar</button>
+              </div>
+              <div class="add-lista" id="lista-adicionales"></div>
+            </div>
           </div>
           <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
           <div class="campo">
@@ -1065,6 +1074,23 @@ function renderFormEstandar() {
 }
 function onAddonChange(cb) {
   // Sin exclusion mutua: en admin se puede seleccionar cualquier combinacion.
+}
+// Acordeon de add-ons pactados.
+function toggleAddonsAcc() {
+  const b = document.getElementById('acc-addons-body');
+  const ico = document.getElementById('acc-addons-ico');
+  if (!b) return;
+  const abierto = b.style.display === 'none';
+  b.style.display = abierto ? 'block' : 'none';
+  if (ico) ico.textContent = abierto ? '−' : '+';
+}
+// Marca o limpia todos los add-ons aplicables (ignora los ocultos que no aplican al paquete).
+function marcarTodosAddons(val) {
+  document.querySelectorAll('#lista-adicionales input[type="checkbox"]').forEach(function(cb) {
+    const l = cb.closest('label');
+    if (l && l.style.display === 'none') return;
+    cb.checked = val;
+  });
 }
 // Add-ons que no aplican a pedidas de mano porque esos paquetes ya incluyen foto y video.
 const ADDONS_SOLO_NOVIAZGO = ['ADD-FOTO', 'ADD-VIDEO', 'COMBO-AUDIOVISUAL'];
@@ -2102,13 +2128,16 @@ async function crearContrato(tipo) {
   if (isEst) {
     const paqueteClave = document.getElementById('est-paquete').value;
     if (!paqueteClave) { setMsg(msgId, 'Selecciona un paquete.', 'error'); return; }
-    const adicionales = Array.prototype.slice.call(
-      document.querySelectorAll('#lista-adicionales input[type="checkbox"]:checked')
-    ).map(function(cb) { return cb.value; });
+    // Menu = todos los add-ons aplicables (visibles) que el cliente vera como opciones.
+    // adicionales (pactados) = solo los marcados, que vienen pre-seleccionados en el portal.
+    const cbsAdd = Array.prototype.slice.call(document.querySelectorAll('#lista-adicionales input[type="checkbox"]'));
+    const visiblesAdd = cbsAdd.filter(function(cb) { const l = cb.closest('label'); return !l || l.style.display !== 'none'; });
+    const addonsOfrecidos = visiblesAdd.map(function(cb) { return cb.value; });
+    const adicionales = visiblesAdd.filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
     body = {
       action: 'crearContrato', tipoContrato: 'estandar',
       nombreCliente: nombre, correoCliente: correo, telefonoCliente: telefono,
-      paqueteClave: paqueteClave, adicionales: adicionales,
+      paqueteClave: paqueteClave, adicionales: adicionales, addonsOfrecidos: addonsOfrecidos,
       locacion: document.getElementById('est-locacion').value,
       espacioLocacion: document.getElementById('est-espacio').value,
       fechaEvento: fecha, horaEvento: hora,
