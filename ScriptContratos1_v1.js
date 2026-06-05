@@ -68,6 +68,21 @@ function parseFecha1(valor) {
   return isNaN(d) ? null : d;
 }
 
+// Normaliza la hora del evento a string "HH:MM". Google Sheets a veces convierte
+// "18:00" en un Date ancla 1899; al serializarse a JSON sale en UTC y el portal
+// mostraba la hora corrida (ej. 6:00 p.m. -> 12:41 a.m., por el offset historico de
+// Monterrey -6:41). Formatear el Date en zona Monterrey cancela ese desfase.
+function horaHHMM1(val) {
+  if (val === null || val === undefined || val === '') return '';
+  if (val instanceof Date) {
+    if (isNaN(val)) return '';
+    return Utilities.formatDate(val, 'America/Monterrey', 'HH:mm');
+  }
+  const m = String(val).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return '';
+  return ('0' + m[1]).slice(-2) + ':' + m[2];
+}
+
 // Formatea una fecha en español, sin hora. Ejemplo: "sábado 21 de mayo de 2026".
 function formatFechaEspanol1(valor) {
   const dias  = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -705,7 +720,7 @@ function accionListarContratos1(e) {
       estatus         : c.Estatus,
       fechaCreacion   : c.FechaCreacion,
       fechaEvento     : c.FechaEvento,
-      horaEvento      : c.HoraEvento,
+      horaEvento      : horaHHMM1(c.HoraEvento),
       fechaFirma      : c.FechaFirma || '',
       fechaUltimoAbono: c.FechaUltimoAbono || '',
       fechaEntrega    : c.FechaEntrega || '',
@@ -857,7 +872,7 @@ function accionObtenerPortal1(e) {
     espacioLocacion  : contrato.EspacioLocacion,
     descripcion      : contrato.DescripcionServicio,
     fechaEvento      : contrato.FechaEvento,
-    horaEvento       : contrato.HoraEvento,
+    horaEvento       : horaHHMM1(contrato.HoraEvento),
     precio           : parseFloat(contrato.Precio) || 0,
     anticipo         : parseFloat(contrato.Anticipo) || 0,
     saldoPendiente   : parseFloat(contrato.SaldoPendiente) || 0,
@@ -2901,19 +2916,11 @@ function asegurarColumnaContratos1(nombre) {
 
 // Formatea un valor de hora (Date o string HH:MM) en formato 12 h con a.m./p.m.
 function formatHoraCorreo1(val) {
-  if (!val) return '';
-  if (val instanceof Date && !isNaN(val)) {
-    const h = val.getHours(), m = val.getMinutes();
-    const ampm = h >= 12 ? 'p.m.' : 'a.m.';
-    return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ampm;
-  }
-  const match = String(val).match(/(\d{1,2}):(\d{2})/);
-  if (match) {
-    const h = parseInt(match[1]), m = parseInt(match[2]);
-    const ampm = h >= 12 ? 'p.m.' : 'a.m.';
-    return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ampm;
-  }
-  return String(val);
+  const hhmm = horaHHMM1(val);
+  if (!hhmm) return val ? String(val) : '';
+  const h = parseInt(hhmm.slice(0, 2), 10), m = parseInt(hhmm.slice(3, 5), 10);
+  const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+  return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 
 // Verifica que CalendarApp tiene permiso y que el calendario por defecto es accesible.
@@ -3024,13 +3031,8 @@ function crearEventoCalendario1(contrato) {
   const fecha = parseFecha1(contrato.FechaEvento);
   if (!fecha) return;
   let h = 19, m = 0;
-  const horaRaw = contrato.HoraEvento;
-  if (horaRaw instanceof Date && !isNaN(horaRaw)) {
-    h = horaRaw.getHours(); m = horaRaw.getMinutes();
-  } else {
-    const match = String(horaRaw || '').match(/(\d{1,2}):(\d{2})/);
-    if (match) { h = parseInt(match[1]); m = parseInt(match[2]); }
-  }
+  const hhmm = horaHHMM1(contrato.HoraEvento);
+  if (hhmm) { h = parseInt(hhmm.slice(0, 2), 10); m = parseInt(hhmm.slice(3, 5), 10); }
   const inicio  = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), h, m, 0);
   const fin     = new Date(inicio.getTime() + 2 * 60 * 60 * 1000);
   const espacio = String(contrato.EspacioLocacion || '').trim();
