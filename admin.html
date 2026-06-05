@@ -187,6 +187,9 @@
     .add-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--gold); }
     .add-item-nombre { font-size: 13px; font-weight: 600; flex: 1; }
     .add-item-precio { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+    .add-ofrecer-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; margin: 0; cursor: pointer; }
+    .add-pactado-wrap { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11px; font-weight: 600; color: var(--ink-2); white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+    .add-pactado-wrap.off { opacity: .35; cursor: not-allowed; }
 
     .aviso-restriccion {
       display: none; background: #FEF3C7; border: 1px solid #FCD34D;
@@ -603,14 +606,14 @@
           </div>
           <div class="campo" id="campo-adicionales">
             <div onclick="toggleAddonsAcc()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <label style="margin:0;cursor:pointer">Add-ons pactados con el cliente (opcional)</label>
+              <label style="margin:0;cursor:pointer">Add-ons a ofrecer al cliente (opcional)</label>
               <span id="acc-addons-ico" style="font-size:20px;color:var(--ink-3);line-height:1">+</span>
             </div>
             <div id="acc-addons-body" style="display:none;margin-top:8px">
-              <p class="form-hint" style="margin-bottom:8px">Marca solo los add-ons que el cliente ya acordó: vienen pre-seleccionados en su portal. El cliente verá los demás como opciones y podrá agregarlos o subir de combo.</p>
+              <p class="form-hint" style="margin-bottom:8px"><b>Ofrecer</b>: aparece como opción en el portal del cliente. <b>Pre-seleccionado</b>: además viene ya palomeado (lo pactado). Por defecto se ofrecen todos y ninguno pre-seleccionado.</p>
               <div style="display:flex;gap:8px;margin-bottom:10px">
-                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(true)">Marcar todos</button>
-                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(false)">Limpiar</button>
+                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(true)">Ofrecer todos</button>
+                <button type="button" class="btn-secundario btn-sm" onclick="marcarTodosAddons(false)">No ofrecer ninguno</button>
               </div>
               <div class="add-lista" id="lista-adicionales"></div>
             </div>
@@ -1064,18 +1067,44 @@ function renderFormEstandar() {
     campoAdd.style.display = 'block';
     lista.innerHTML = adds.map(function(p) {
       const comps = p.ComponentesCombo ? ' data-componentes="' + esc(String(p.ComponentesCombo)) + '"' : '';
-      return '<label class="add-item">' +
-        '<input type="checkbox" value="' + esc(p.Clave) + '"' + comps + ' onchange="onAddonChange(this)">' +
-        '<span class="add-item-nombre">' + esc(p.Nombre) + '</span>' +
-        '<span class="add-item-precio">+' + fmxn(p.Precio) + '</span></label>';
+      const clave = esc(p.Clave);
+      return '<div class="add-item" id="add-row-' + clave + '">' +
+        '<label class="add-ofrecer-wrap">' +
+          '<input type="checkbox" class="add-ofrecer" value="' + clave + '"' + comps + ' checked onchange="onOfrecerChange(this)">' +
+          '<span class="add-item-nombre">' + esc(p.Nombre) + '</span>' +
+          '<span class="add-item-precio">+' + fmxn(p.Precio) + '</span>' +
+        '</label>' +
+        '<label class="add-pactado-wrap" title="Viene ya palomeado en el portal del cliente">' +
+          '<input type="checkbox" class="add-pactado" value="' + clave + '" onchange="onPactadoChange(this)">' +
+          'Pre-seleccionado' +
+        '</label>' +
+      '</div>';
     }).join('');
   }
   onLocacionChange('est');
 }
-function onAddonChange(cb) {
-  // Sin exclusion mutua: en admin se puede seleccionar cualquier combinacion.
+// Al togglear "Ofrecer": si se deja de ofrecer, el pre-seleccionado deja de aplicar.
+function onOfrecerChange(cb) {
+  const row = cb.closest('.add-item');
+  if (!row) return;
+  const pact = row.querySelector('.add-pactado');
+  const pw   = row.querySelector('.add-pactado-wrap');
+  if (cb.checked) {
+    if (pact) pact.disabled = false;
+    if (pw) pw.classList.remove('off');
+  } else {
+    if (pact) { pact.checked = false; pact.disabled = true; }
+    if (pw) pw.classList.add('off');
+  }
 }
-// Acordeon de add-ons pactados.
+// Marcar algo como pre-seleccionado implica que se ofrece.
+function onPactadoChange(cb) {
+  if (!cb.checked) return;
+  const row = cb.closest('.add-item');
+  const ofr = row && row.querySelector('.add-ofrecer');
+  if (ofr && !ofr.checked) { ofr.checked = true; onOfrecerChange(ofr); }
+}
+// Acordeon de add-ons.
 function toggleAddonsAcc() {
   const b = document.getElementById('acc-addons-body');
   const ico = document.getElementById('acc-addons-ico');
@@ -1084,12 +1113,12 @@ function toggleAddonsAcc() {
   b.style.display = abierto ? 'block' : 'none';
   if (ico) ico.textContent = abierto ? '−' : '+';
 }
-// Marca o limpia todos los add-ons aplicables (ignora los ocultos que no aplican al paquete).
+// Ofrece o quita todos los add-ons aplicables (ignora las filas ocultas que no aplican al paquete).
 function marcarTodosAddons(val) {
-  document.querySelectorAll('#lista-adicionales input[type="checkbox"]').forEach(function(cb) {
-    const l = cb.closest('label');
-    if (l && l.style.display === 'none') return;
-    cb.checked = val;
+  document.querySelectorAll('#lista-adicionales .add-item').forEach(function(row) {
+    if (row.style.display === 'none') return;
+    const ofr = row.querySelector('.add-ofrecer');
+    if (ofr) { ofr.checked = val; onOfrecerChange(ofr); }
   });
 }
 // Add-ons que no aplican a pedidas de mano porque esos paquetes ya incluyen foto y video.
@@ -1112,14 +1141,16 @@ function onPaqueteSelect() {
   const clave = opt.value;
   const esPedida = /^(SAFI|RINCON)-/.test(clave);
   ADDONS_SOLO_NOVIAZGO.forEach(function(addonClave) {
-    const input = document.querySelector('#lista-adicionales input[value="' + addonClave + '"]');
+    const input = document.querySelector('#lista-adicionales .add-ofrecer[value="' + addonClave + '"]');
     if (!input) return;
-    const label = input.closest('label');
+    const row = input.closest('.add-item');
     if (esPedida) {
       input.checked = false;
-      if (label) label.style.display = 'none';
+      const pact = row && row.querySelector('.add-pactado');
+      if (pact) pact.checked = false;
+      if (row) row.style.display = 'none';
     } else {
-      if (label) label.style.display = '';
+      if (row) row.style.display = '';
     }
   });
 }
@@ -2128,12 +2159,16 @@ async function crearContrato(tipo) {
   if (isEst) {
     const paqueteClave = document.getElementById('est-paquete').value;
     if (!paqueteClave) { setMsg(msgId, 'Selecciona un paquete.', 'error'); return; }
-    // Menu = todos los add-ons aplicables (visibles) que el cliente vera como opciones.
-    // adicionales (pactados) = solo los marcados, que vienen pre-seleccionados en el portal.
-    const cbsAdd = Array.prototype.slice.call(document.querySelectorAll('#lista-adicionales input[type="checkbox"]'));
-    const visiblesAdd = cbsAdd.filter(function(cb) { const l = cb.closest('label'); return !l || l.style.display !== 'none'; });
-    const addonsOfrecidos = visiblesAdd.map(function(cb) { return cb.value; });
-    const adicionales = visiblesAdd.filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
+    // addonsOfrecidos = filas con "Ofrecer" marcado (el menu del portal).
+    // adicionales (pactados) = filas con "Pre-seleccionado" marcado (vienen palomeados).
+    const rowsAdd = Array.prototype.slice.call(document.querySelectorAll('#lista-adicionales .add-item'))
+      .filter(function(r) { return r.style.display !== 'none'; });
+    const addonsOfrecidos = rowsAdd
+      .filter(function(r) { const o = r.querySelector('.add-ofrecer'); return o && o.checked; })
+      .map(function(r) { return r.querySelector('.add-ofrecer').value; });
+    const adicionales = rowsAdd
+      .filter(function(r) { const p = r.querySelector('.add-pactado'); return p && p.checked; })
+      .map(function(r) { return r.querySelector('.add-pactado').value; });
     body = {
       action: 'crearContrato', tipoContrato: 'estandar',
       nombreCliente: nombre, correoCliente: correo, telefonoCliente: telefono,
