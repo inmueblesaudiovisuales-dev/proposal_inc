@@ -760,6 +760,10 @@ function accionObtenerContrato1(e) {
   try { addonsExtra = JSON.parse(contrato.AddonsExtraJSON || '[]'); } catch (err) { addonsExtra = []; }
   if (!Array.isArray(addonsExtra)) addonsExtra = [];
 
+  // HoraEvento puede llegar como Date de 1899 desde Sheets; normalizarlo antes
+  // de serializar para que el admin reciba "HH:MM" y no un ISO 1899 corrido.
+  contrato.HoraEvento = horaHHMM1(contrato.HoraEvento);
+
   return jsonResponse1({
     ok          : true,
     contrato    : contrato,
