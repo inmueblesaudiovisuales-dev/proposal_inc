@@ -385,6 +385,22 @@ function renderPasos(activo) {
   }).join('');
 }
 
+function clasificarAddonsPortal(addons, adicionales) {
+  const preseleccionados = new Set((adicionales || []).map(function(a) {
+    return (a && a.clave) ? a.clave : a;
+  }));
+  return {
+    visibles: (addons || []).filter(function(a) {
+      const esCombo = a.componentes && a.componentes.length > 0;
+      return esCombo || preseleccionados.has(a.clave);
+    }),
+    enAcordeon: (addons || []).filter(function(a) {
+      const esCombo = a.componentes && a.componentes.length > 0;
+      return !esCombo && !preseleccionados.has(a.clave);
+    })
+  };
+}
+
 // ── ETAPA 1: FIRMA ──
 function renderEtapa1() {
   const d = datos;
@@ -409,21 +425,20 @@ function renderEtapa1() {
     '</div>';
   }
 
-  const combos       = addons.filter(function(a) { return a.componentes && a.componentes.length > 0; });
-  const individuales = addons.filter(function(a) { return !a.componentes || a.componentes.length === 0; });
+  const grupos = clasificarAddonsPortal(addons, d.adicionales);
 
   let addonsHtml = '';
   if (addons.length) {
     addonsHtml = '<div class="card"><h2>Servicios adicionales</h2>' +
       '<p class="sub" style="margin-bottom:12px">Puedes agregar estos servicios a tu evento. El total se actualiza al seleccionarlos.</p>' +
       '<div id="addon-combo-msg" class="addon-combo-msg"></div>' +
-      combos.map(renderAddonRow).join('') +
-      (individuales.length
+      grupos.visibles.map(renderAddonRow).join('') +
+      (grupos.enAcordeon.length
         ? '<button type="button" class="btn-individuales" onclick="toggleIndividuales()">' +
             '<span>Personalizar con servicios sueltos</span><span id="ico-individuales">+</span>' +
           '</button>' +
           '<div id="individuales-wrap" style="display:none;margin-top:8px">' +
-            individuales.map(renderAddonRow).join('') +
+            grupos.enAcordeon.map(renderAddonRow).join('') +
           '</div>'
         : '') +
     '</div>';
