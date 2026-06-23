@@ -1134,7 +1134,24 @@ function renderEtapa2() {
       '<h1>Aparta tu fecha</h1>' +
       '<p class="sub">Tu contrato está firmado. Para confirmar tu evento, realiza el anticipo.</p>' +
       '<div class="precio-box">' +
-        '<div class="precio-fila sub"><span>Total del contrato</span><span>' + fmxn(d.precio) + '</span></div>' +
+        (function() {
+          // Desglose completo: paquete base + cada servicio adicional (pactados al
+          // firmar y agregados despues de firmar). El precio base se deriva del total
+          // menos la suma de los adicionales, asi el portal no depende del backend.
+          var adic   = d.adicionales || [];
+          var extras = d.addonsExtra || [];
+          if (!adic.length && !extras.length) return '';
+          var sumAdd = 0;
+          adic.forEach(function(a)   { sumAdd += parseFloat(a.precio) || 0; });
+          extras.forEach(function(a) { sumAdd += parseFloat(a.precio) || 0; });
+          var base   = (parseFloat(d.precio) || 0) - sumAdd;
+          var lineas = '<div class="precio-fila sub"><span>' + esc(d.paqueteNombre || 'Servicio personalizado') + '</span><span>' + fmxn(base) + '</span></div>';
+          adic.concat(extras).forEach(function(a) {
+            lineas += '<div class="precio-fila sub"><span>' + esc(a.nombre) + '</span><span>' + fmxn(a.precio) + '</span></div>';
+          });
+          return lineas;
+        })() +
+        '<div class="precio-fila' + ((d.adicionales && d.adicionales.length) || (d.addonsExtra && d.addonsExtra.length) ? ' total' : ' sub') + '"><span>Total del contrato</span><span>' + fmxn(d.precio) + '</span></div>' +
         '<div class="precio-fila"><span>Anticipo para apartar</span><span style="font-weight:800;color:var(--gold)">' + fmxn(anticipo) + '</span></div>' +
         '<div class="precio-fila sub"><span>Saldo restante</span><span>' + fmxn(saldo) + '</span></div>' +
       '</div>' +
